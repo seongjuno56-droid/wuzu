@@ -2,10 +2,11 @@ import { Image, ImageStyle, StyleProp } from 'react-native';
 
 // Microsoft Fluent Emoji 3D (MIT) — assets/icons/LICENSE.txt 참고
 const SOURCES = {
-  ring: require('../../../assets/icons/ring.webp'),
-  cake: require('../../../assets/icons/cake.webp'),
-  cheers: require('../../../assets/icons/cheers.webp'),
-  trophy: require('../../../assets/icons/trophy.webp'),
+  chapel: require('../../../assets/icons/chapel.webp'),
+  baby: require('../../../assets/icons/baby.webp'),
+  together: require('../../../assets/icons/together.webp'),
+  hotel: require('../../../assets/icons/hotel.webp'),
+  champagne: require('../../../assets/icons/champagne.webp'),
   gift: require('../../../assets/icons/gift.webp'),
   leaves: require('../../../assets/icons/leaves.webp'),
   alarm: require('../../../assets/icons/alarm.webp'),
