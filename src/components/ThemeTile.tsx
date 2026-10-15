@@ -12,7 +12,7 @@ export function ThemeArt({ theme, size }: { theme: InviteTheme; size: number }) 
   const box = { width: size, height: size, backgroundColor: theme.tintSoft };
 
   if (companion?.mode === 'pair') {
-    // 같은 아이콘 두 개를 살짝 겹쳐 '여럿이 함께'로 보이게 (뒤쪽은 조금 작게)
+    // 두 인물을 살짝 겹쳐 나란히 세운다 (뒤쪽은 조금 작게) — 예: 신랑·신부
     const icon = Math.round(size * 0.7);
     return (
       <View style={[styles.art, box]}>
