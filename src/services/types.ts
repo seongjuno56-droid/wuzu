@@ -1,3 +1,5 @@
+import type { Invitation } from '../features/invitation/model';
+
 export type Gender = 'male' | 'female' | 'none';
 export type AccountStatus = 'active' | 'withdrawing' | 'banned';
 export type Provider = 'email' | 'kakao' | 'google' | 'apple';
@@ -65,4 +67,37 @@ export interface AuthService {
 export interface KeyValueStorage {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
+}
+
+// ── 초대장 / 방명록 ───────────────────────────────────
+
+export interface GuestbookEntry {
+  id: string;
+  invitationId: string;
+  name: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface GuestbookInput {
+  name: string;
+  password: string;
+  content: string;
+}
+
+/** 방명록 삭제 권한: 작성 시 비밀번호, 또는 초대장 작성자 */
+export type RemoveGuestbookAuth = { password: string } | { ownerId: string };
+
+export interface InvitationService {
+  list(ownerId: string): Promise<Invitation[]>;
+  get(id: string): Promise<Invitation | null>;
+  save(invitation: Invitation): Promise<Invitation>;
+  remove(id: string): Promise<void>;
+  listGuestbook(invitationId: string): Promise<GuestbookEntry[]>;
+  addGuestbook(invitationId: string, input: GuestbookInput): Promise<GuestbookEntry>;
+  removeGuestbook(
+    invitationId: string,
+    entryId: string,
+    auth: RemoveGuestbookAuth,
+  ): Promise<'ok' | 'wrong_password' | 'not_found'>;
 }
