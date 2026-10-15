@@ -13,14 +13,13 @@ interface Props {
 export function TemplatePreview({ template, coverOnly }: Props) {
   const { style } = template;
   const c = SAMPLE_CONTENT[template.themeId];
-  const family = templateFontFamily[style.font];
+  const [regularFace, boldFace] = templateFontFamily[style.font];
   const t = (size: number, color: string, weight: 'regular' | 'bold' = 'regular', extra?: TextStyle): TextStyle => ({
     fontSize: size,
     lineHeight: Math.round(size * 1.6),
     color,
     textAlign: 'center',
-    fontFamily: family ?? (weight === 'bold' ? fonts.bold : fonts.regular),
-    fontWeight: family && weight === 'bold' ? '700' : undefined,
+    fontFamily: weight === 'bold' ? boldFace : regularFace,
     ...extra,
   });
 

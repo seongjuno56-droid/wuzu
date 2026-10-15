@@ -8,31 +8,34 @@ import { Txt } from './Txt';
 export interface ModalAction {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'outline' | 'ghost' | 'secondary';
+  variant?: 'primary' | 'outline' | 'ghost' | 'secondary' | 'tint';
 }
 
 interface Props {
   visible: boolean;
   title?: string;
   message?: string;
+  /** 제목 위 일러스트/아이콘 */
+  art?: ReactNode;
   children?: ReactNode;
   actions: ModalAction[];
   /** 바깥 영역을 눌러 닫을 때 호출. 없으면 바깥 클릭 무시 */
   onDismiss?: () => void;
 }
 
-export function AppModal({ visible, title, message, children, actions, onDismiss }: Props) {
+export function AppModal({ visible, title, message, art, children, actions, onDismiss }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable style={styles.dim} onPress={onDismiss} accessibilityLabel="닫기">
         <Pressable style={styles.card} onPress={() => {}}>
+          {art && <View style={styles.art}>{art}</View>}
           {title && (
-            <Txt variant="subtitle" weight="bold" align="center">
+            <Txt variant="title" align="center">
               {title}
             </Txt>
           )}
           {message && (
-            <Txt color={colors.textSub} align="center">
+            <Txt color={colors.muted} align="center">
               {message}
             </Txt>
           )}
@@ -56,21 +59,18 @@ export function AppModal({ visible, title, message, children, actions, onDismiss
 }
 
 const styles = StyleSheet.create({
-  dim: {
-    flex: 1,
-    backgroundColor: colors.dim,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xxl,
-  },
+  dim: { flex: 1, backgroundColor: colors.dim, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   card: {
     width: '100%',
-    maxWidth: 360,
-    backgroundColor: colors.bg,
+    maxWidth: 320,
+    backgroundColor: colors.canvas,
     borderRadius: radius.xl,
-    padding: spacing.xxl,
-    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl + spacing.xs,
+    paddingBottom: spacing.xl,
+    gap: spacing.sm,
   },
-  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  art: { alignItems: 'center', marginBottom: spacing.sm },
+  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
   action: { flex: 1 },
 });

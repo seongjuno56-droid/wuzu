@@ -21,10 +21,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
-        tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.bg },
+        tabBarActiveTintColor: colors.inkSoft,
+        tabBarInactiveTintColor: colors.placeholder,
+        tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
+        tabBarStyle: { borderTopColor: colors.hairline, borderTopWidth: 1, backgroundColor: colors.canvas, height: 60 },
       }}
     >
       <Tabs.Screen name="home" options={{ title: '홈', tabBarIcon: icon('home', 'home-outline') }} />

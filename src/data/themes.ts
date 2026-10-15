@@ -22,8 +22,8 @@ export const THEMES: InviteTheme[] = [
     description: '두 사람의 시작을 알리는 한 장',
     tags: ['#결혼', '#우리행복', '#응원해주세요'],
     icon: 'heart',
-    tint: '#B5646B',
-    tintSoft: '#F7E9E8',
+    tint: '#D9607E',
+    tintSoft: '#FCE9EE',
   },
   {
     id: 'dol',
@@ -32,8 +32,8 @@ export const THEMES: InviteTheme[] = [
     description: '아이의 첫 생일을 함께해요',
     tags: ['#장군감', '#첫돌', '#내딸내아들'],
     icon: 'balloon',
-    tint: '#C38B2E',
-    tintSoft: '#FAF0DC',
+    tint: '#E0A21B',
+    tintSoft: '#FFF4D9',
   },
   {
     id: 'meetup',
@@ -42,8 +42,8 @@ export const THEMES: InviteTheme[] = [
     description: '생일, 동창회, 집들이까지',
     tags: ['#생일도', '#동창회도', '#뭐든좋아'],
     icon: 'people',
-    tint: '#3C7A8C',
-    tintSoft: '#E3F0F2',
+    tint: '#2E9A6E',
+    tintSoft: '#E1F4EA',
   },
   {
     id: 'corporate',
@@ -52,8 +52,8 @@ export const THEMES: InviteTheme[] = [
     description: '송년회, 신년회, 세미나',
     tags: ['#송년회', '#신년회', '#유대감뿜뿜'],
     icon: 'business',
-    tint: '#1F5E46',
-    tintSoft: '#E8F1EC',
+    tint: '#6A5FD0',
+    tintSoft: '#ECEBFB',
   },
 ];
 

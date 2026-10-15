@@ -11,35 +11,44 @@ interface Props {
   onBack?: () => void;
   hideBack?: boolean;
   right?: ReactNode;
+  background?: string;
+  tint?: string;
+  /** 아래 헤어라인 표시 (기본 true) */
+  divider?: boolean;
 }
 
-export function Header({ title, onBack, hideBack, right }: Props) {
+/** 흰 바탕 헤더: 왼쪽 뒤로가기, 가운데 제목(18/600), 오른쪽 액션 */
+export function Header({
+  title,
+  onBack,
+  hideBack,
+  right,
+  background = colors.canvas,
+  tint = colors.inkSoft,
+  divider = true,
+}: Props) {
   const back = onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/home')));
   return (
-    <View style={styles.bar}>
-      {!hideBack && (
-        <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="뒤로 가기">
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </Pressable>
-      )}
-      <Txt variant="subtitle" weight="bold" style={styles.title} numberOfLines={1}>
+    <View style={[styles.bar, { backgroundColor: background }, divider && styles.divider]}>
+      <View style={styles.side}>
+        {!hideBack && (
+          <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="뒤로 가기">
+            <Ionicons name="chevron-back" size={24} color={tint} />
+          </Pressable>
+        )}
+      </View>
+      <Txt variant="title" color={tint} style={styles.title} numberOfLines={1} align="center">
         {title}
       </Txt>
-      {right}
+      <View style={[styles.side, styles.right]}>{right}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.bg,
-  },
+  bar: { height: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg },
+  divider: { borderBottomWidth: 1, borderBottomColor: colors.hairline },
+  side: { minWidth: 48, flexDirection: 'row', alignItems: 'center' },
+  right: { justifyContent: 'flex-end' },
   title: { flex: 1 },
 });

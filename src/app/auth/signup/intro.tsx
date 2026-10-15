@@ -9,45 +9,42 @@ import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
 import { Txt } from '../../../components/Txt';
 import { useSignupGuard } from '../../../features/auth/useSignupGuard';
-import { colors, radius, spacing } from '../../../theme';
+import { colors, radius, shadow, spacing } from '../../../theme';
 
 const FEATURES: { icon: ComponentProps<typeof Ionicons>['name']; title: string; body: string }[] = [
-  { icon: 'time-outline', title: '10분이면 나만의 초대장 완성!', body: '모바일 앱으로 직접 만드는 특별한 초대장.\n시간과 비용 모두 합리적인 wuzu.' },
-  { icon: 'color-palette-outline', title: '템플릿, 컬러, 폰트 모두 내맘대로', body: '손으로 쓰는 것처럼 편하고 자유롭게!\n수정횟수 제한없이 편하게 사용하세요.' },
-  { icon: 'sparkles-outline', title: '세상에는 초대할 일이 정말 많아요!', body: '청첩장, 돌잔치 뿐만 아니라 다양한 유형의\n이색 초대장들도 가득하답니다.' },
+  { icon: 'time-outline', title: '10분이면 완성', body: '휴대폰으로 직접 만들고, 링크로 바로 보내요.' },
+  { icon: 'color-palette-outline', title: '템플릿·컬러·폰트 자유롭게', body: '수정 횟수 제한 없이 몇 번이고 고칠 수 있어요.' },
+  { icon: 'albums-outline', title: '청첩장부터 기업 행사까지', body: '돌잔치, 모임, 송년회 초대장도 준비되어 있어요.' },
 ];
 
 export default function SignupIntro() {
   useSignupGuard();
   return (
     <Screen
-      header={<Header title="wuzu 회원가입" />}
+      header={<Header title="회원가입" />}
       background={colors.surface}
       footer={
         <BottomCTA>
-          <Button label="wuzu, 지금 바로 시작할래요" onPress={() => router.push('/auth/signup/terms')} />
+          <Button label="이메일로 가입 시작하기" onPress={() => router.push('/auth/signup/terms')} />
         </BottomCTA>
       }
       contentStyle={styles.content}
     >
-      <Txt variant="title" align="center">
-        반가워요!{'\n'}wuzu와 함께 한다는 건,{'\n'}
-        <Txt variant="title" color={colors.primary}>
-          당신에게 기쁜 소식
+      <View style={styles.head}>
+        <Txt variant="headline">반가워요!{'\n'}wuzu에서 초대장을 만들어 보세요</Txt>
+        <Txt variant="caption" color={colors.muted}>
+          가입은 1분이면 끝나요.
         </Txt>
-        이 생긴 거겠죠?
-      </Txt>
-      <View style={styles.list}>
-        {FEATURES.map((f) => (
-          <View key={f.title} style={styles.item}>
-            <View style={styles.iconTile}>
-              <Ionicons name={f.icon} size={30} color={colors.primary} />
+      </View>
+      <View style={[styles.list, shadow]}>
+        {FEATURES.map((f, i) => (
+          <View key={f.title} style={[styles.item, i > 0 && styles.divider]}>
+            <View style={styles.icon}>
+              <Ionicons name={f.icon} size={22} color={colors.inkSoft} />
             </View>
             <View style={styles.flex}>
-              <Txt variant="bodyStrong" weight="bold">
-                {f.title}
-              </Txt>
-              <Txt variant="caption" color={colors.textSub}>
+              <Txt variant="bodyStrong">{f.title}</Txt>
+              <Txt variant="caption" color={colors.muted}>
                 {f.body}
               </Txt>
             </View>
@@ -59,22 +56,17 @@ export default function SignupIntro() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, gap: spacing.xs },
-  content: { padding: spacing.xl, gap: spacing.xxl, paddingTop: spacing.xxxl },
-  list: { gap: spacing.md },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    backgroundColor: colors.bg,
+  flex: { flex: 1 },
+  content: { padding: spacing.lg, gap: spacing.xl },
+  head: { paddingHorizontal: spacing.xs, paddingTop: spacing.lg, gap: spacing.xs },
+  list: { backgroundColor: colors.canvas, borderRadius: radius.xl, overflow: 'hidden' },
+  item: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg },
+  divider: { borderTopWidth: 1, borderTopColor: colors.hairline },
+  icon: {
+    width: 48,
+    height: 48,
     borderRadius: radius.lg,
-    padding: spacing.lg,
-  },
-  iconTile: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.md,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

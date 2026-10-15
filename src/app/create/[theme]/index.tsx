@@ -22,22 +22,24 @@ import { useRequireLoginToCreate } from '../../../features/create/useRequireLogi
 import { colors, radius, shadow, spacing } from '../../../theme';
 
 const CARD_RATIO = 0.72; // 화면 폭 대비 카드 폭
+const CARD_ASPECT = 0.62; // 카드 가로/세로
 const GAP = spacing.md;
 
 export default function TemplateSelect() {
   const { theme: themeId } = useLocalSearchParams<{ theme: string }>();
   const theme = getTheme(themeId);
   const templates = getTemplates(themeId);
-  const [width, setWidth] = useState(0);
+  const [size, setSize] = useState({ w: 0, h: 0 });
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<InviteTemplate>>(null);
   const { start, modal } = useRequireLoginToCreate();
 
   if (!theme) return <Redirect href="/create" />;
 
-  const cardWidth = width * CARD_RATIO;
+  // 폭과 높이 둘 다에 맞춰 카드 크기를 정한다 (넓은 웹 화면에서도 잘리지 않게)
+  const cardWidth = Math.min(size.w * CARD_RATIO, (size.h - 32) * CARD_ASPECT);
   const interval = cardWidth + GAP;
-  const sidePadding = (width - cardWidth) / 2;
+  const sidePadding = (size.w - cardWidth) / 2;
 
   const goTo = (i: number) => {
     const next = Math.max(0, Math.min(templates.length - 1, i));
@@ -53,18 +55,24 @@ export default function TemplateSelect() {
   const current = templates[index];
 
   return (
-    <Screen scroll={false} header={<Header title={theme.label} />} background={colors.surface}>
+    <Screen scroll={false} header={<Header title={theme.title} />} background={colors.surface}>
       <View style={styles.titleRow}>
-        <Txt variant="bodyStrong" weight="bold">
-          템플릿 선택
-        </Txt>
-        <Txt variant="bodyStrong" weight="bold" color={colors.primary}>
-          {index + 1}/{templates.length}
+        <Txt variant="title">템플릿 선택</Txt>
+        <Txt variant="caption" color={colors.faint}>
+          <Txt variant="caption" weight="semibold" color={colors.inkSoft}>
+            {index + 1}
+          </Txt>{' '}
+          / {templates.length}
         </Txt>
       </View>
 
-      <View style={styles.carousel} onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}>
-        {width > 0 && (
+      <View
+        style={styles.carousel}
+        onLayout={(e: LayoutChangeEvent) =>
+          setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })
+        }
+      >
+        {size.w > 0 && (
           <FlatList
             ref={listRef}
             data={templates}
@@ -73,31 +81,44 @@ export default function TemplateSelect() {
             showsHorizontalScrollIndicator={false}
             snapToInterval={interval}
             decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: sidePadding, gap: GAP }}
+            contentContainerStyle={{ paddingHorizontal: sidePadding, gap: GAP, alignItems: 'center' }}
             onScroll={onScroll}
             scrollEventThrottle={16}
             renderItem={({ item, index: i }) => (
               <Pressable
                 onPress={() => (i === index ? router.push(`/create/${themeId}/${item.id}`) : goTo(i))}
-                style={[styles.card, shadow, { width: cardWidth, opacity: i === index ? 1 : 0.55 }]}
+                accessibilityLabel={`${item.name} 템플릿`}
+                style={[
+                  styles.card,
+                  shadow,
+                  { width: cardWidth, height: cardWidth / CARD_ASPECT, opacity: i === index ? 1 : 0.5 },
+                ]}
               >
-                <View style={styles.cardPreview}>
-                  <TemplatePreview template={item} coverOnly />
-                </View>
+                <TemplatePreview template={item} coverOnly />
               </Pressable>
             )}
           />
         )}
-        <Pressable style={[styles.arrow, styles.left]} onPress={() => goTo(index - 1)} accessibilityRole="button" accessibilityLabel="이전 템플릿">
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
+        <Pressable
+          style={[styles.arrow, shadow, styles.left]}
+          onPress={() => goTo(index - 1)}
+          accessibilityRole="button"
+          accessibilityLabel="이전 템플릿"
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.inkSoft} />
         </Pressable>
-        <Pressable style={[styles.arrow, styles.right]} onPress={() => goTo(index + 1)} accessibilityRole="button" accessibilityLabel="다음 템플릿">
-          <Ionicons name="chevron-forward" size={22} color={colors.text} />
+        <Pressable
+          style={[styles.arrow, shadow, styles.right]}
+          onPress={() => goTo(index + 1)}
+          accessibilityRole="button"
+          accessibilityLabel="다음 템플릿"
+        >
+          <Ionicons name="chevron-forward" size={20} color={colors.inkSoft} />
         </Pressable>
       </View>
 
       <View style={styles.footer}>
-        <Txt variant="subtitle" weight="bold" align="center">
+        <Txt variant="bodyStrong" align="center">
           {current?.name}
         </Txt>
         <View style={styles.actions}>
@@ -107,7 +128,7 @@ export default function TemplateSelect() {
             style={styles.flex}
             onPress={() => router.push(`/create/${themeId}/${current.id}`)}
           />
-          <Button label="선택하기" style={styles.flex} onPress={() => start(current.name)} />
+          <Button label="이 템플릿으로 만들기" style={styles.wide} onPress={() => start(current.name)} />
         </View>
       </View>
       {modal}
@@ -117,34 +138,37 @@ export default function TemplateSelect() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  wide: { flex: 2 },
   titleRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
   },
   carousel: { flex: 1, justifyContent: 'center' },
-  card: {
-    alignSelf: 'center',
-    aspectRatio: 0.62,
-    borderRadius: radius.lg,
-    backgroundColor: colors.bg,
-    overflow: 'hidden',
-  },
-  cardPreview: { flex: 1 },
+  card: { borderRadius: radius.xl, backgroundColor: colors.canvas, overflow: 'hidden' },
   arrow: {
     position: 'absolute',
     top: '50%',
     marginTop: -20,
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: radius.pill,
+    backgroundColor: colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  left: { left: spacing.sm },
-  right: { right: spacing.sm },
-  footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md },
+  left: { left: spacing.md },
+  right: { right: spacing.md },
+  footer: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
+    backgroundColor: colors.canvas,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+  },
   actions: { flexDirection: 'row', gap: spacing.sm },
 });

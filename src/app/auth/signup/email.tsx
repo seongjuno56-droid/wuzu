@@ -4,7 +4,7 @@ import { StyleSheet } from 'react-native';
 
 import { BottomCTA } from '../../../components/BottomCTA';
 import { Button } from '../../../components/Button';
-import { Header } from '../../../components/Header';
+import { SignupStepHeader } from '../../../features/auth/SignupStepHeader';
 import { Screen } from '../../../components/Screen';
 import { FieldMessage, TextField } from '../../../components/TextField';
 import { Txt } from '../../../components/Txt';
@@ -56,7 +56,13 @@ export default function SignupEmail() {
 
   return (
     <Screen
-      header={<Header />}
+      header={
+        <SignupStepHeader
+          step="email"
+          title={'사용하실 이메일을\n입력해 주세요'}
+          description="이메일은 로그인 아이디로 사용돼요."
+        />
+      }
       contentStyle={styles.content}
       footer={
         <BottomCTA>
@@ -64,8 +70,6 @@ export default function SignupEmail() {
         </BottomCTA>
       }
     >
-      <Txt variant="title">사용하실 이메일을{'\n'}입력해 주세요!</Txt>
-      <Txt color={colors.textSub}>이메일은 로그인 시 회원님의 아이디로 사용됩니다.</Txt>
       <TextField
         label="이메일"
         placeholder="example@wuzu.kr"

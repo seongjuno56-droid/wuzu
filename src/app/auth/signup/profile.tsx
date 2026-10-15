@@ -4,11 +4,11 @@ import { StyleSheet, View } from 'react-native';
 
 import { BottomCTA } from '../../../components/BottomCTA';
 import { Button } from '../../../components/Button';
-import { Header } from '../../../components/Header';
+import { OptionGroup } from '../../../components/OptionGroup';
 import { Screen } from '../../../components/Screen';
-import { SegmentedTabs } from '../../../components/SegmentedTabs';
 import { FieldMessage, TextField } from '../../../components/TextField';
 import { Txt } from '../../../components/Txt';
+import { SignupStepHeader } from '../../../features/auth/SignupStepHeader';
 import { useCompleteSignup } from '../../../features/auth/useCompleteSignup';
 import { useSignupGuard } from '../../../features/auth/useSignupGuard';
 import { formatBirthInput, isValidBirth } from '../../../lib/format';
@@ -52,7 +52,13 @@ export default function SignupProfile() {
 
   return (
     <Screen
-      header={<Header title="회원가입 정보 입력" />}
+      header={
+        <SignupStepHeader
+          step="profile"
+          title={'회원님에 대해\n알려주세요'}
+          description="이름은 초대장과 마이페이지에 표시돼요."
+        />
+      }
       contentStyle={styles.content}
       footer={
         <BottomCTA>
@@ -65,12 +71,9 @@ export default function SignupProfile() {
         </BottomCTA>
       }
     >
-      <Txt variant="title">회원님에 대한 정보를{'\n'}입력해 주세요.</Txt>
-      <Txt variant="caption" color={colors.textMuted} align="right">
-        * 필수 입력
-      </Txt>
       <TextField
-        label="이름(닉네임) *"
+        label="이름(닉네임)"
+        required
         placeholder="한글, 영문, 숫자 입력 가능"
         value={name}
         onChangeText={setName}
@@ -88,10 +91,10 @@ export default function SignupProfile() {
         maxLength={10}
       />
       <View style={styles.field}>
-        <Txt variant="caption" weight="medium" color={colors.textSub}>
+        <Txt variant="caption" weight="semibold" color={colors.label}>
           성별
         </Txt>
-        <SegmentedTabs options={GENDERS} value={gender} onChange={setGender} />
+        <OptionGroup options={GENDERS} value={gender} onChange={setGender} />
       </View>
       <TextField
         label="휴대전화번호"

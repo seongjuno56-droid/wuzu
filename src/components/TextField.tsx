@@ -9,34 +9,50 @@ export type FieldMessage = { type: 'error' | 'success' | 'info'; text: string } 
 
 interface Props extends Omit<TextInputProps, 'style'> {
   label?: string;
+  required?: boolean;
   message?: FieldMessage;
   secureToggle?: boolean;
   clearable?: boolean;
   right?: ReactNode;
 }
 
-// web: 브라우저 기본 포커스 외곽선 제거 (박스 테두리 색으로 대신 표시)
+// web: 브라우저 기본 포커스 외곽선 제거 (테두리 색으로 대신 표시)
 const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null;
 
-const messageColor = { error: colors.danger, success: colors.success, info: colors.info };
+const messageColor = { error: colors.danger, success: colors.success, info: colors.infoInk };
 
-export function TextField({ label, message, secureToggle, clearable, right, value, onChangeText, ...rest }: Props) {
+export function TextField({
+  label,
+  required,
+  message,
+  secureToggle,
+  clearable,
+  right,
+  value,
+  onChangeText,
+  ...rest
+}: Props) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
-  const borderColor = message?.type === 'error' ? colors.danger : focused ? colors.primary : colors.border;
+  const borderColor = message?.type === 'error' ? colors.danger : focused ? colors.inkSoft : colors.hairline;
 
   return (
     <View style={styles.wrap}>
       {label && (
-        <Txt variant="caption" weight="medium" color={colors.textSub}>
+        <Txt variant="caption" weight="semibold" color={colors.label}>
           {label}
+          {required && (
+            <Txt variant="caption" color={colors.danger}>
+              {' '}*
+            </Txt>
+          )}
         </Txt>
       )}
       <View style={[styles.box, { borderColor }]}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           secureTextEntry={secureToggle ? hidden : rest.secureTextEntry}
           autoCapitalize="none"
           onFocus={() => setFocused(true)}
@@ -46,7 +62,7 @@ export function TextField({ label, message, secureToggle, clearable, right, valu
         />
         {clearable && !!value && (
           <Pressable onPress={() => onChangeText?.('')} hitSlop={8} accessibilityLabel="입력 지우기">
-            <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+            <Ionicons name="close-circle" size={20} color={colors.placeholder} />
           </Pressable>
         )}
         {secureToggle && (
@@ -55,13 +71,13 @@ export function TextField({ label, message, secureToggle, clearable, right, valu
             hitSlop={8}
             accessibilityLabel={hidden ? '비밀번호 보기' : '비밀번호 숨기기'}
           >
-            <Ionicons name={hidden ? 'eye-outline' : 'eye-off-outline'} size={22} color={colors.textSub} />
+            <Ionicons name={hidden ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.faint} />
           </Pressable>
         )}
         {right}
       </View>
       {message && (
-        <Txt variant="caption" color={messageColor[message.type]}>
+        <Txt variant="tiny" color={messageColor[message.type]}>
           {message.text}
         </Txt>
       )}
@@ -72,21 +88,21 @@ export function TextField({ label, message, secureToggle, clearable, right, valu
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
   box: {
-    minHeight: 52,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderWidth: 1.2,
-    borderRadius: radius.md,
+    borderWidth: 1,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.canvas,
   },
   input: {
     flex: 1,
     minWidth: 0,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.text,
-    paddingVertical: 14,
+    color: colors.ink,
+    paddingVertical: 12,
   },
 });

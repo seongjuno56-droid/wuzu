@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TextProps } from 'react-native';
+import { Text, TextProps } from 'react-native';
 
 import { colors, fonts, FontWeightName, typography, TypographyVariant } from '../theme';
 
@@ -14,8 +14,13 @@ export function Txt({ variant = 'body', weight, color = colors.text, align, styl
   return (
     <Text
       style={[
-        styles.base,
-        { fontSize: t.fontSize, lineHeight: t.lineHeight, fontFamily: fonts[weight ?? t.weight], color },
+        {
+          fontSize: t.fontSize,
+          lineHeight: t.lineHeight,
+          letterSpacing: t.tracking,
+          fontFamily: fonts[weight ?? t.weight],
+          color,
+        },
         align && { textAlign: align },
         style,
       ]}
@@ -23,5 +28,3 @@ export function Txt({ variant = 'body', weight, color = colors.text, align, styl
     />
   );
 }
-
-const styles = StyleSheet.create({ base: { letterSpacing: -0.2 } });

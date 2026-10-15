@@ -9,26 +9,32 @@ interface Props {
   checked: boolean;
   label: string;
   onToggle: () => void;
+  /** 전체 동의처럼 강조되는 행 */
   emphasized?: boolean;
+  /** 필수/선택 표시 */
+  tag?: '필수' | '선택';
   /** 체크 행 아래에 펼쳐지는 본문 (약관 전문 등) */
   children?: ReactNode;
 }
 
-export function CheckRow({ checked, label, onToggle, emphasized, children }: Props) {
+export function CheckRow({ checked, label, onToggle, emphasized, tag, children }: Props) {
   return (
-    <View style={[styles.card, emphasized && styles.emphasized, checked && emphasized && styles.emphasizedOn]}>
+    <View style={emphasized && styles.allBox}>
       <Pressable
         onPress={onToggle}
         style={styles.row}
         accessibilityRole="checkbox"
         accessibilityState={{ checked }}
       >
-        <Ionicons
-          name={checked ? 'checkmark-circle' : 'checkmark-circle-outline'}
-          size={26}
-          color={checked ? colors.primary : colors.borderStrong}
-        />
-        <Txt variant="bodyStrong" weight={emphasized ? 'bold' : 'semibold'} style={styles.label}>
+        <View style={[styles.box, checked && styles.boxOn]}>
+          {checked && <Ionicons name="checkmark" size={15} color={colors.canvas} />}
+        </View>
+        <Txt variant={emphasized ? 'bodyStrong' : 'body'} style={styles.label}>
+          {tag && (
+            <Txt variant={emphasized ? 'bodyStrong' : 'body'} color={tag === '필수' ? colors.infoInk : colors.faint}>
+              [{tag}]{' '}
+            </Txt>
+          )}
           {label}
         </Txt>
       </Pressable>
@@ -38,15 +44,27 @@ export function CheckRow({ checked, label, onToggle, emphasized, children }: Pro
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.bg },
-  emphasized: { backgroundColor: colors.surface },
-  emphasizedOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
+  allBox: { borderRadius: radius.sm, backgroundColor: colors.surface },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  box: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.xs,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    backgroundColor: colors.canvas,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxOn: { backgroundColor: colors.inkSoft, borderColor: colors.inkSoft },
   label: { flex: 1 },
   body: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    marginHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    marginLeft: 50,
+    marginRight: spacing.lg,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.hairline,
   },
 });

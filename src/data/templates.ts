@@ -1,5 +1,4 @@
-import { Platform } from 'react-native';
-
+import { fonts } from '../theme';
 import type { ThemeId } from './themes';
 
 export const TEMPLATES_PER_THEME = 10;
@@ -115,7 +114,8 @@ export const SAMPLE_CONTENT: Record<ThemeId, SampleContent> = {
   },
 };
 
-export const templateFontFamily: Record<TemplateFont, string | undefined> = {
-  sans: undefined, // 앱 기본 Pretendard
-  serif: Platform.select({ ios: 'Georgia', default: 'serif' }),
+/** 템플릿 서체: [본문, 강조] */
+export const templateFontFamily: Record<TemplateFont, [string, string]> = {
+  sans: [fonts.regular, fonts.semibold],
+  serif: [fonts.serif, fonts.serifBold],
 };

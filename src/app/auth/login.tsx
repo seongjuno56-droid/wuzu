@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../components/AppModal';
+import { Wordmark } from '../../components/brand/Wordmark';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
@@ -13,7 +14,7 @@ import { useLoginResultHandler } from '../../features/auth/AccountStatusModals';
 import { goHome } from '../../lib/nav';
 import { authService } from '../../services';
 import { useSignupDraft } from '../../store/signupDraft';
-import { colors, fonts, spacing } from '../../theme';
+import { colors, radius, spacing } from '../../theme';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -53,15 +54,21 @@ export default function Login() {
     }
   };
 
+  const startEmailSignup = () => {
+    resetDraft();
+    patchDraft({ provider: 'email' });
+    router.push('/auth/signup/intro');
+  };
+
   const canSubmit = email.trim().length > 0 && password.length > 0;
 
   return (
-    <Screen header={<Header />} contentStyle={styles.content}>
+    <Screen header={<Header title="로그인" />} contentStyle={styles.content}>
       <View style={styles.brand}>
-        <Txt style={styles.logo} color={colors.primary}>
-          wuzu
+        <Wordmark size={40} />
+        <Txt variant="caption" color={colors.muted}>
+          우리를 만나게 할 단 한 장의 마법
         </Txt>
-        <Txt color={colors.textSub}>우리를 만나게 할 단 한 장의 마법</Txt>
       </View>
 
       <View style={styles.section}>
@@ -69,24 +76,24 @@ export default function Login() {
           variant="kakao"
           label="카카오로 시작하기"
           loading={loading === 'kakao'}
-          icon={<Ionicons name="chatbubble" size={18} color={colors.kakaoText} />}
+          icon={<Ionicons name="chatbubble" size={17} color={colors.kakaoText} />}
           onPress={loginWithKakao}
         />
         <View style={styles.socialRow}>
           <Button
-            variant="social"
+            variant="outline"
             label="Google"
             size="md"
             style={styles.flex}
-            icon={<Ionicons name="logo-google" size={16} color={colors.text} />}
+            icon={<Ionicons name="logo-google" size={15} color={colors.label} />}
             onPress={() => setComingSoon('구글')}
           />
           <Button
-            variant="social"
+            variant="outline"
             label="Apple"
             size="md"
             style={styles.flex}
-            icon={<Ionicons name="logo-apple" size={18} color={colors.text} />}
+            icon={<Ionicons name="logo-apple" size={17} color={colors.label} />}
             onPress={() => setComingSoon('애플')}
           />
         </View>
@@ -94,7 +101,7 @@ export default function Login() {
 
       <View style={styles.divider}>
         <View style={styles.line} />
-        <Txt variant="caption" color={colors.textMuted}>
+        <Txt variant="tiny" color={colors.faint}>
           또는 이메일로 로그인
         </Txt>
         <View style={styles.line} />
@@ -102,7 +109,7 @@ export default function Login() {
 
       <View style={styles.section}>
         <TextField
-          placeholder="이메일을 입력해 주세요."
+          placeholder="이메일"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -110,7 +117,7 @@ export default function Login() {
           clearable
         />
         <TextField
-          placeholder="비밀번호를 입력해 주세요."
+          placeholder="비밀번호"
           value={password}
           onChangeText={setPassword}
           secureToggle
@@ -118,45 +125,47 @@ export default function Login() {
           onSubmitEditing={canSubmit ? loginWithEmail : undefined}
         />
         <Button label="로그인" disabled={!canSubmit} loading={loading === 'email'} onPress={loginWithEmail} />
-        <Pressable onPress={() => router.push('/auth/find')} style={styles.link}>
-          <Txt variant="caption" color={colors.textSub}>
-            아이디 또는 비밀번호를 잊으셨나요?
-          </Txt>
-        </Pressable>
+        <View style={styles.linkRow}>
+          <Pressable onPress={() => router.push('/auth/find')} hitSlop={6}>
+            <Txt variant="caption" color={colors.muted}>
+              아이디 찾기
+            </Txt>
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable onPress={() => router.push('/auth/find?tab=pw')} hitSlop={6}>
+            <Txt variant="caption" color={colors.muted}>
+              비밀번호 찾기
+            </Txt>
+          </Pressable>
+          <View style={styles.sep} />
+          <Pressable onPress={startEmailSignup} hitSlop={6}>
+            <Txt variant="caption" weight="semibold" color={colors.inkSoft}>
+              회원가입
+            </Txt>
+          </Pressable>
+        </View>
         {__DEV__ && (
           <View style={styles.devHint}>
-            <Txt variant="tiny" color={colors.textSub}>
-              [개발용 테스트 계정 · 비밀번호 wuzu1234!]{'\n'}정상 test@wuzu.kr · 탈퇴신청 leaving@wuzu.kr · 제재 banned@wuzu.kr
+            <Txt variant="tiny" color={colors.infoInk}>
+              개발용 테스트 계정 (비밀번호 wuzu1234!){'\n'}정상 test@wuzu.kr / 탈퇴 신청 leaving@wuzu.kr / 제재
+              banned@wuzu.kr
             </Txt>
           </View>
         )}
       </View>
 
       <View style={styles.bottom}>
-        <Button
-          label="이메일로 회원가입"
-          variant="outline"
-          onPress={() => {
-            resetDraft();
-            patchDraft({ provider: 'email' });
-            router.push('/auth/signup/intro');
-          }}
-        />
-        <Pressable onPress={goHome} style={styles.link}>
-          <Txt variant="caption" color={colors.textSub}>
-            로그인 전에 먼저 구경할래요 &gt;
-          </Txt>
-        </Pressable>
-        <Txt variant="tiny" color={colors.textMuted} align="center">
-          가입을 진행한 경우, 이용약관과 개인정보 수집 및 이용에 대해 동의한 것으로 간주됩니다.
+        <Button label="로그인 전에 둘러보기" variant="outline" size="md" onPress={goHome} />
+        <Txt variant="tiny" color={colors.faint} align="center">
+          가입하면 이용약관과 개인정보 처리방침에 동의하게 됩니다.
         </Txt>
       </View>
 
       {modals}
       <AppModal
         visible={!!comingSoon}
-        title={`${comingSoon} 로그인`}
-        message="2차 오픈 예정이에요. 조금만 기다려 주세요!"
+        title={`${comingSoon} 로그인은 준비 중이에요`}
+        message="지금은 카카오나 이메일로 시작해 주세요."
         onDismiss={() => setComingSoon(null)}
         actions={[{ label: '확인', onPress: () => setComingSoon(null) }]}
       />
@@ -167,13 +176,19 @@ export default function Login() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, gap: spacing.xxl },
-  brand: { alignItems: 'center', gap: spacing.xs, paddingTop: spacing.xxl },
-  logo: { fontFamily: fonts.bold, fontSize: 48, lineHeight: 56, letterSpacing: -1.5 },
-  section: { gap: spacing.md },
+  brand: { alignItems: 'center', gap: spacing.xs, paddingTop: spacing.xxxl, paddingBottom: spacing.sm },
+  section: { gap: spacing.sm },
   socialRow: { flexDirection: 'row', gap: spacing.sm },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong },
-  link: { alignSelf: 'center', padding: spacing.xs },
+  line: { flex: 1, height: 1, backgroundColor: colors.hairline },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  sep: { width: 1, height: 10, backgroundColor: colors.hairline },
+  devHint: { backgroundColor: colors.infoTint, borderRadius: radius.sm, padding: spacing.md },
   bottom: { gap: spacing.md, marginTop: 'auto' },
-  devHint: { backgroundColor: colors.accentSoft, borderRadius: 8, padding: spacing.sm },
 });

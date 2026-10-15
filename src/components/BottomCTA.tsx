@@ -14,6 +14,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     gap: spacing.sm,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.canvas,
   },
 });

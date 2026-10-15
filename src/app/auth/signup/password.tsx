@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BottomCTA } from '../../../components/BottomCTA';
 import { Button } from '../../../components/Button';
-import { Header } from '../../../components/Header';
+import { SignupStepHeader } from '../../../features/auth/SignupStepHeader';
 import { Screen } from '../../../components/Screen';
 import { TextField } from '../../../components/TextField';
 import { Txt } from '../../../components/Txt';
@@ -24,7 +24,7 @@ export default function SignupPassword() {
 
   return (
     <Screen
-      header={<Header />}
+      header={<SignupStepHeader step="password" title={'마지막으로\n비밀번호를 정해 주세요'} />}
       contentStyle={styles.content}
       footer={
         <BottomCTA>
@@ -42,7 +42,6 @@ export default function SignupPassword() {
         </BottomCTA>
       }
     >
-      <Txt variant="title">거의 다 왔어요!{'\n'}사용하실 비밀번호를 입력해 주세요.</Txt>
       <View style={styles.emailChip}>
         <Txt weight="medium" style={styles.flex} numberOfLines={1}>
           {draft.email}

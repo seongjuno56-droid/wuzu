@@ -1,5 +1,6 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 
+import { BottomCTA } from '../../../components/BottomCTA';
 import { Button } from '../../../components/Button';
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
@@ -18,13 +19,12 @@ export default function TemplateDetail() {
 
   return (
     <Screen
-      edges={['top']}
+      header={<Header title={`${template.name} 미리보기`} />}
       background={template.style.bg}
-      header={
-        <Header
-          title={theme.title}
-          right={<Button label="제작하기" size="sm" onPress={() => start(template.name)} />}
-        />
+      footer={
+        <BottomCTA>
+          <Button label="이 템플릿으로 만들기" onPress={() => start(template.name)} />
+        </BottomCTA>
       }
     >
       <TemplatePreview template={template} />

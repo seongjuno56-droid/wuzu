@@ -20,7 +20,7 @@ export function Screen({
   footer,
   header,
   scroll = true,
-  background = colors.bg,
+  background = colors.canvas,
   contentStyle,
   edges = ['top', 'bottom'],
 }: Props) {

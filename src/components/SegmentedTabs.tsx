@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '../theme';
+import { colors, spacing } from '../theme';
 import { Txt } from './Txt';
 
 interface Props<T extends string> {
@@ -9,9 +9,10 @@ interface Props<T extends string> {
   onChange: (value: T) => void;
 }
 
+/** 텍스트 탭: 선택 항목만 600 + 2px 밑줄, 나머지 400 */
 export function SegmentedTabs<T extends string>({ options, value, onChange }: Props<T>) {
   return (
-    <View style={styles.wrap} accessibilityRole="tablist">
+    <View style={styles.row} accessibilityRole="tablist">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -22,7 +23,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Pr
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
           >
-            <Txt weight={active ? 'semibold' : 'regular'} color={active ? colors.primary : colors.textSub}>
+            <Txt variant="subtitle" weight={active ? 'semibold' : 'regular'} color={active ? colors.inkSoft : colors.faint}>
               {o.label}
             </Txt>
           </Pressable>
@@ -33,16 +34,16 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Pr
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.xs,
+  row: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.hairline },
+  tab: {
+    flex: 1,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    marginBottom: -1,
+    paddingHorizontal: spacing.sm,
   },
-  tab: { flex: 1, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm },
-  active: {
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
+  active: { borderBottomColor: colors.inkSoft },
 });

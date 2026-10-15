@@ -1,51 +1,77 @@
-import { Fragment } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Fragment, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BUSINESS_INFO } from '../../config';
-import { colors, fonts, spacing } from '../../theme';
+import { colors, radius, spacing } from '../../theme';
+import { Button } from '../Button';
 import { Txt } from '../Txt';
 
 const LINKS = ['이용약관', '유료 이용약관', '개인정보 처리방침', '구매 복원'];
 
-export function HomeFooter({ onLinkPress }: { onLinkPress: (label: string) => void }) {
+interface Props {
+  loggedIn: boolean;
+  onAuthPress: () => void;
+  onLinkPress: (label: string) => void;
+}
+
+/** 푸터: 24px 칩 + '사업자 정보' 토글 */
+export function HomeFooter({ loggedIn, onAuthPress, onLinkPress }: Props) {
+  const [open, setOpen] = useState(false);
   return (
     <View style={styles.wrap}>
+      <View style={styles.row}>
+        <Button variant="chip" label={loggedIn ? '로그아웃' : '로그인'} onPress={onAuthPress} />
+        <Pressable
+          style={styles.toggle}
+          onPress={() => setOpen((o) => !o)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+        >
+          <Txt variant="tiny" color={colors.label}>
+            사업자 정보
+          </Txt>
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={12} color={colors.label} />
+        </Pressable>
+      </View>
+      {open && (
+        <Txt variant="tiny" color={colors.faint}>
+          상호 {BUSINESS_INFO.company} | 대표 {BUSINESS_INFO.ceo}
+          {'\n'}사업자등록번호 {BUSINESS_INFO.registrationNo}
+          {'\n'}
+          {BUSINESS_INFO.address}
+        </Txt>
+      )}
       <View style={styles.links}>
         {LINKS.map((l, i) => (
           <Fragment key={l}>
-            {i > 0 && (
-              <Txt variant="tiny" color={colors.borderStrong}>
-                |
-              </Txt>
-            )}
-            <Pressable onPress={() => onLinkPress(l)}>
-              <Txt variant="tiny" weight={l === '개인정보 처리방침' ? 'bold' : 'regular'} color={colors.textSub}>
+            {i > 0 && <View style={styles.sep} />}
+            <Pressable onPress={() => onLinkPress(l)} hitSlop={6}>
+              <Txt variant="tiny" weight={l === '개인정보 처리방침' ? 'semibold' : 'regular'} color={colors.muted}>
                 {l}
               </Txt>
             </Pressable>
           </Fragment>
         ))}
       </View>
-      <Txt style={styles.logo} color={colors.textMuted}>
-        wuzu
-      </Txt>
-      <Txt variant="tiny" color={colors.textMuted} align="center">
-        {BUSINESS_INFO.company}   대표 {BUSINESS_INFO.ceo}   사업자등록번호 {BUSINESS_INFO.registrationNo}
-        {'\n'}
-        {BUSINESS_INFO.address}
+      <Txt variant="tiny" color={colors.faint}>
+        © 2026 {BUSINESS_INFO.company}. All rights reserved.
       </Txt>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    backgroundColor: colors.surfaceStrong,
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.xl,
+  wrap: { paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl, gap: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  toggle: {
+    height: 24,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: 2,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.xs,
   },
-  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm },
-  logo: { fontFamily: fonts.bold, fontSize: 18 },
+  links: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  sep: { width: 1, height: 10, backgroundColor: colors.hairline },
 });

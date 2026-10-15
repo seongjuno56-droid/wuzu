@@ -4,7 +4,11 @@ import { ActivityIndicator, Pressable, StyleSheet, View, ViewStyle } from 'react
 import { colors, radius, spacing } from '../theme';
 import { Txt } from './Txt';
 
-type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'kakao' | 'social';
+/**
+ * primary: 다크 블록(#3d3d3d) / outline: 흰 바탕 + 헤어라인 / tint: 파란 틴트
+ * chip: 24px 아웃라인 칩 / kakao·social: 소셜 로그인
+ */
+type Variant = 'primary' | 'outline' | 'tint' | 'ghost' | 'kakao' | 'social' | 'chip' | 'secondary' | 'light';
 type Size = 'lg' | 'md' | 'sm';
 
 interface Props {
@@ -19,19 +23,23 @@ interface Props {
 }
 
 const palette: Record<Variant, { bg: string; pressed: string; text: string; border?: string }> = {
-  primary: { bg: colors.primary, pressed: colors.primaryPressed, text: colors.textOnPrimary },
-  secondary: { bg: colors.primarySoft, pressed: '#D8E8DF', text: colors.primary },
-  outline: { bg: colors.bg, pressed: colors.surface, text: colors.text, border: colors.borderStrong },
-  ghost: { bg: 'transparent', pressed: colors.surface, text: colors.textSub },
+  primary: { bg: colors.label, pressed: colors.inkSoft, text: colors.canvas },
+  outline: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
+  social: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
+  secondary: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
+  light: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
+  tint: { bg: colors.infoTint, pressed: '#DCEBFF', text: colors.infoInk },
+  ghost: { bg: 'transparent', pressed: colors.surface, text: colors.label },
+  chip: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
   kakao: { bg: colors.kakao, pressed: '#F2D900', text: colors.kakaoText },
-  social: { bg: colors.bg, pressed: colors.surface, text: colors.text, border: colors.border },
 };
 
-const heights: Record<Size, number> = { lg: 54, md: 46, sm: 34 };
+const heights: Record<Size, number> = { lg: 52, md: 44, sm: 32 };
 
 export function Button({ label, onPress, variant = 'primary', size = 'lg', disabled, loading, icon, style }: Props) {
   const p = palette[variant];
   const inactive = disabled || loading;
+  const chip = variant === 'chip';
   return (
     <Pressable
       onPress={onPress}
@@ -41,10 +49,11 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', disab
       style={({ pressed }) => [
         styles.base,
         {
-          height: heights[size],
-          paddingHorizontal: size === 'sm' ? spacing.md : spacing.xl,
+          height: chip ? 24 : heights[size],
+          borderRadius: chip ? radius.xs : radius.sm,
+          paddingHorizontal: chip ? spacing.sm : size === 'sm' ? spacing.md : spacing.lg,
           backgroundColor: disabled ? colors.surfaceStrong : pressed ? p.pressed : p.bg,
-          borderColor: p.border ?? 'transparent',
+          borderColor: disabled ? 'transparent' : (p.border ?? 'transparent'),
         },
         style,
       ]}
@@ -55,9 +64,9 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', disab
         <View style={styles.row}>
           {icon}
           <Txt
-            variant={size === 'sm' ? 'caption' : 'bodyStrong'}
-            weight={size === 'sm' ? 'medium' : 'semibold'}
-            color={disabled ? colors.textMuted : p.text}
+            variant={chip ? 'tiny' : size === 'sm' ? 'caption' : 'subtitle'}
+            weight={chip ? 'regular' : 'semibold'}
+            color={disabled ? colors.faint : p.text}
           >
             {label}
           </Txt>
@@ -68,6 +77,6 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', disab
 }
 
 const styles = StyleSheet.create({
-  base: { borderRadius: radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  base: { borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

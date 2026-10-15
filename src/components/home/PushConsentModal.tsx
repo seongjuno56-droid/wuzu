@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '../../theme';
+import { colors, radius, spacing } from '../../theme';
 import { AppModal } from '../AppModal';
 import { Txt } from '../Txt';
 
@@ -11,43 +12,51 @@ interface Props {
 }
 
 const ITEMS = [
-  { title: '새로운 소식 알림', body: '업데이트 및 새로운 소식' },
-  { title: '이벤트 알림', body: '할인소식이나 각종 이벤트에 대한 소식' },
-];
+  { icon: 'megaphone-outline', title: '새로운 소식', body: '업데이트와 새 템플릿 소식' },
+  { icon: 'pricetag-outline', title: '이벤트', body: '할인과 이벤트 소식' },
+] as const;
 
 export function PushConsentModal({ visible, onAgree, onDecline }: Props) {
   return (
     <AppModal
       visible={visible}
-      title="APP PUSH 알림 수신 동의"
+      title="앱 푸시 알림을 받으시겠어요?"
       actions={[
         { label: '동의 안함', onPress: onDecline, variant: 'outline' },
         { label: '동의', onPress: onAgree },
       ]}
     >
       <View style={styles.list}>
-        <Txt variant="caption" weight="semibold" color={colors.textSub}>
-          [APP PUSH 설정 시]
-        </Txt>
         {ITEMS.map((it) => (
           <View key={it.title} style={styles.item}>
-            <Txt variant="bodyStrong" weight="semibold" color={colors.primary}>
-              • {it.title}
-            </Txt>
-            <Txt variant="caption" color={colors.textSub}>
-              {it.body}
-            </Txt>
+            <Ionicons name={it.icon} size={20} color={colors.label} />
+            <View style={styles.flex}>
+              <Txt variant="caption" weight="semibold">
+                {it.title}
+              </Txt>
+              <Txt variant="tiny" color={colors.muted}>
+                {it.body}
+              </Txt>
+            </View>
           </View>
         ))}
-        <Txt variant="tiny" color={colors.textMuted}>
-          PUSH 알림은 마이페이지 &gt; 앱 설정에서 변경 가능합니다.
-        </Txt>
       </View>
+      <Txt variant="tiny" color={colors.faint} align="center">
+        마이페이지 &gt; 앱 설정에서 언제든 바꿀 수 있어요.
+      </Txt>
     </AppModal>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { gap: spacing.md, paddingVertical: spacing.sm },
-  item: { gap: 2 },
+  flex: { flex: 1 },
+  list: { gap: spacing.sm, marginVertical: spacing.sm },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface,
+  },
 });
