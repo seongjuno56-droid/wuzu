@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "wuzu",
+    "slug": "wuzu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "kr.wuzu.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1F5E46",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "kr.wuzu.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "scheme": "wuzu",
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
+  }
+}
