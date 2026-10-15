@@ -3,17 +3,14 @@ import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { InviteTheme } from '../data/themes';
 import { colors, radius, shadow, spacing } from '../theme';
-import { Stamp } from './brand/Stamp';
+import { Icon3D } from './brand/Icon3D';
 import { Txt } from './Txt';
 
-/** 테마 '이미지': 색은 여기서만 — 파스텔 바탕 위 기울어진 우표 */
+/** 테마 '이미지': 색은 여기서만 — 파스텔 바탕 위 3D 일러스트 */
 export function ThemeArt({ theme, size }: { theme: InviteTheme; size: number }) {
-  const sw = Math.round(size * 0.46);
   return (
     <View style={[styles.art, { width: size, height: size, backgroundColor: theme.tintSoft }]}>
-      <Stamp width={sw} height={Math.round(sw * 1.22)} color={theme.tint} backdrop={theme.tintSoft} rotate={8}>
-        <Ionicons name={theme.icon} size={Math.round(sw * 0.45)} color="#fff" />
-      </Stamp>
+      <Icon3D name={theme.art} size={Math.round(size * 0.68)} />
     </View>
   );
 }

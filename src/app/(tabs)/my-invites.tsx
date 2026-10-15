@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Envelope } from '../../components/brand/Envelope';
+import { Icon3D } from '../../components/brand/Icon3D';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
@@ -25,7 +25,7 @@ export default function MyInvites() {
         ]}
       />
       <View style={styles.empty}>
-        <Envelope width={120} />
+        <Icon3D name="loveLetter" size={96} />
         <Txt variant="title" align="center" style={styles.title}>
           {filter === 'active' ? '진행 중인 초대장이 없어요' : '지난 초대장이 없어요'}
         </Txt>

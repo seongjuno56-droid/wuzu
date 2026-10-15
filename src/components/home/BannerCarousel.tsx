@@ -1,15 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BANNERS } from '../../data/home';
 import { radius, spacing } from '../../theme';
-import { Stamp } from '../brand/Stamp';
+import { Icon3D } from '../brand/Icon3D';
 import { Txt } from '../Txt';
 
 const AUTO_MS = 4500;
 
-/** 배너 카드 (16px 반경) — 색은 배너 이미지가 담당 */
+/** 배너 카드 (16px 반경) — 색과 3D 일러스트가 '이미지' 역할 */
 export function BannerCarousel() {
   const [index, setIndex] = useState(0);
   const total = BANNERS.length;
@@ -35,9 +34,7 @@ export function BannerCarousel() {
           {b.body}
         </Txt>
       </View>
-      <Stamp width={84} height={102} color={b.stamp} backdrop={b.bg} rotate={-8} style={styles.stamp}>
-        <Ionicons name={b.icon} size={36} color="#fff" />
-      </Stamp>
+      <Icon3D name={b.art} size={112} style={styles.art} />
       <View style={styles.counter}>
         <Txt variant="tiny" color="#fff">
           {index + 1} / {total}
@@ -51,11 +48,11 @@ const styles = StyleSheet.create({
   banner: { height: 180, borderRadius: radius.xl, padding: spacing.xl, overflow: 'hidden' },
   text: { gap: spacing.xs },
   body: { opacity: 0.7 },
-  stamp: { position: 'absolute', right: 28, bottom: 26 },
+  art: { position: 'absolute', right: 20, bottom: 18 },
   counter: {
     position: 'absolute',
-    right: spacing.md,
-    bottom: spacing.md,
+    left: spacing.xl,
+    bottom: spacing.lg,
     backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,

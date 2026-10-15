@@ -1,5 +1,4 @@
-import type { ComponentProps } from 'react';
-import type { Ionicons } from '@expo/vector-icons';
+import type { Icon3DName } from '../components/brand/Icon3D';
 
 export type ThemeId = 'wedding' | 'dol' | 'meetup' | 'corporate';
 
@@ -9,7 +8,8 @@ export interface InviteTheme {
   title: string;
   description: string;
   tags: string[];
-  icon: ComponentProps<typeof Ionicons>['name'];
+  /** 3D 일러스트 아이콘 */
+  art: Icon3DName;
   tint: string;
   tintSoft: string;
 }
@@ -21,7 +21,7 @@ export const THEMES: InviteTheme[] = [
     title: '결혼식 청첩장',
     description: '두 사람의 시작을 알리는 한 장',
     tags: ['#결혼', '#우리행복', '#응원해주세요'],
-    icon: 'heart',
+    art: 'ring',
     tint: '#D9607E',
     tintSoft: '#FCE9EE',
   },
@@ -31,7 +31,7 @@ export const THEMES: InviteTheme[] = [
     title: '돌잔치 초대장',
     description: '아이의 첫 생일을 함께해요',
     tags: ['#장군감', '#첫돌', '#내딸내아들'],
-    icon: 'balloon',
+    art: 'cake',
     tint: '#E0A21B',
     tintSoft: '#FFF4D9',
   },
@@ -41,7 +41,7 @@ export const THEMES: InviteTheme[] = [
     title: '모임 초대장',
     description: '생일, 동창회, 집들이까지',
     tags: ['#생일도', '#동창회도', '#뭐든좋아'],
-    icon: 'people',
+    art: 'cheers',
     tint: '#2E9A6E',
     tintSoft: '#E1F4EA',
   },
@@ -51,7 +51,7 @@ export const THEMES: InviteTheme[] = [
     title: '기업 행사 초대장',
     description: '송년회, 신년회, 세미나',
     tags: ['#송년회', '#신년회', '#유대감뿜뿜'],
-    icon: 'business',
+    art: 'trophy',
     tint: '#6A5FD0',
     tintSoft: '#ECEBFB',
   },

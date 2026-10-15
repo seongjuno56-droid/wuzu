@@ -1,8 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { Envelope } from '../../../components/brand/Envelope';
-import { Stamp } from '../../../components/brand/Stamp';
+import { Icon3D } from '../../../components/brand/Icon3D';
 import { BottomCTA } from '../../../components/BottomCTA';
 import { Button } from '../../../components/Button';
 import { Screen } from '../../../components/Screen';
@@ -28,12 +26,7 @@ export default function SignupDone() {
         </BottomCTA>
       }
     >
-      <View style={styles.art}>
-        <Envelope width={168} />
-        <Stamp width={44} height={54} rotate={8} backdrop={colors.canvas} style={styles.stamp}>
-          <Ionicons name="heart" size={20} color={colors.canvas} />
-        </Stamp>
-      </View>
+      <Icon3D name="party" size={120} style={styles.art} />
       <Txt variant="headline" align="center">
         {name ? `${name}님, ` : ''}가입을 환영해요
       </Txt>
@@ -46,6 +39,5 @@ export default function SignupDone() {
 
 const styles = StyleSheet.create({
   content: { alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
-  art: { marginBottom: spacing.xxl },
-  stamp: { position: 'absolute', top: -14, right: -10 },
+  art: { marginBottom: spacing.xl },
 });

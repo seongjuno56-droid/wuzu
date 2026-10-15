@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { colors, radius, spacing } from '../../theme';
 import { AppModal } from '../AppModal';
+import { Icon3D } from '../brand/Icon3D';
 import { Txt } from '../Txt';
 
 interface Props {
@@ -21,6 +22,7 @@ export function PushConsentModal({ visible, onAgree, onDecline }: Props) {
     <AppModal
       visible={visible}
       title="앱 푸시 알림을 받으시겠어요?"
+      art={<Icon3D name="bell" size={72} />}
       actions={[
         { label: '동의 안함', onPress: onDecline, variant: 'outline' },
         { label: '동의', onPress: onAgree },

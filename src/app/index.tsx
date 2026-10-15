@@ -1,45 +1,60 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useRef } from 'react';
-import { Animated, Linking, Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { AccessibilityInfo, Animated, Easing, Linking, Platform, StyleSheet } from 'react-native';
 
 import { AppModal } from '../components/AppModal';
-import { OpeningEnvelope } from '../components/brand/OpeningEnvelope';
+import { Icon3D } from '../components/brand/Icon3D';
+import { Wordmark } from '../components/brand/Wordmark';
 import { Screen } from '../components/Screen';
 import { Txt } from '../components/Txt';
 import { FORCE_UPDATE, SPLASH_DURATION_MS, STORE_URLS } from '../config';
 import { colors, spacing } from '../theme';
 
-/** 봉투 연출이 끝난 뒤 문구를 잠시 보여주고 넘어가는 시간 */
-const HOLD_AFTER_OPEN_MS = 600;
+const useNative = Platform.OS !== 'web';
 
 export default function Splash() {
+  // 단 한 번의 연출: 편지가 살짝 떠오르며 나타나고, 로고와 문구가 뒤따른다
+  const letter = useRef(new Animated.Value(0)).current;
   const copy = useRef(new Animated.Value(0)).current;
-  const startedAt = useRef(Date.now()).current;
 
-  const onOpened = useCallback(() => {
-    Animated.timing(copy, { toValue: 1, duration: 350, useNativeDriver: Platform.OS !== 'web' }).start();
-    if (FORCE_UPDATE) return;
-    const wait = Math.max(HOLD_AFTER_OPEN_MS, SPLASH_DURATION_MS - (Date.now() - startedAt));
-    setTimeout(() => router.replace('/home'), wait);
-  }, [copy, startedAt]);
-
-  useEffect(() => () => copy.stopAnimation(), [copy]);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
+      if (reduce) {
+        letter.setValue(1);
+        copy.setValue(1);
+      } else {
+        Animated.sequence([
+          Animated.timing(letter, { toValue: 1, duration: 600, easing: Easing.out(Easing.back(1.6)), useNativeDriver: useNative }),
+          Animated.timing(copy, { toValue: 1, duration: 350, useNativeDriver: useNative }),
+        ]).start();
+      }
+      if (!FORCE_UPDATE) timer = setTimeout(() => router.replace('/home'), SPLASH_DURATION_MS);
+    });
+    return () => timer && clearTimeout(timer);
+  }, [letter, copy]);
 
   const openStore = () => Linking.openURL(Platform.OS === 'ios' ? STORE_URLS.ios : STORE_URLS.android);
 
   return (
     <Screen scroll={false} contentStyle={styles.center}>
-      <View style={styles.stage}>
-        <OpeningEnvelope onDone={onOpened} />
-        <Animated.View style={[styles.copy, { opacity: copy }]}>
-          <Txt variant="title" align="center">
-            우리를 만나게 할 단 한 장의 마법
-          </Txt>
-          <Txt variant="caption" color={colors.muted} align="center">
-            우쥬와 함께 만드는 나만의 초대장
-          </Txt>
-        </Animated.View>
-      </View>
+      <Animated.View
+        style={{
+          opacity: letter,
+          transform: [
+            { translateY: letter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
+            { scale: letter.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) },
+          ],
+        }}
+      >
+        <Icon3D name="loveLetter" size={128} />
+      </Animated.View>
+      <Animated.View style={[styles.copy, { opacity: copy }]}>
+        <Wordmark size={36} />
+        <Txt variant="caption" color={colors.muted} align="center">
+          우리를 만나게 할 단 한 장의 마법
+        </Txt>
+      </Animated.View>
 
       <AppModal
         visible={FORCE_UPDATE}
@@ -52,7 +67,6 @@ export default function Splash() {
 }
 
 const styles = StyleSheet.create({
-  center: { justifyContent: 'center' },
-  stage: { gap: spacing.xxxl, marginTop: -40 },
-  copy: { gap: spacing.xs, paddingHorizontal: spacing.xxl },
+  center: { alignItems: 'center', justifyContent: 'center', gap: spacing.xl, paddingBottom: 60 },
+  copy: { alignItems: 'center', gap: spacing.xs },
 });

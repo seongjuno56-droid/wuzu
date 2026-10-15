@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../components/AppModal';
+import { Icon3D } from '../../components/brand/Icon3D';
 import { Wordmark } from '../../components/brand/Wordmark';
 import { Button } from '../../components/Button';
 import { BannerCarousel } from '../../components/home/BannerCarousel';
@@ -87,10 +88,15 @@ export default function Home() {
             </>
           ) : (
             <>
-              <Txt variant="title">로그인하고 첫 초대장을 만들어 보세요</Txt>
-              <Txt variant="caption" color={colors.muted}>
-                만든 초대장의 조회수와 참석 응답을 한곳에서 확인할 수 있어요.
-              </Txt>
+              <View style={styles.guestRow}>
+                <View style={styles.flex}>
+                  <Txt variant="title">로그인하고{'\n'}첫 초대장을 만들어 보세요</Txt>
+                  <Txt variant="caption" color={colors.muted} style={styles.guestSub}>
+                    조회수와 응답을 한눈에 확인해요.
+                  </Txt>
+                </View>
+                <Icon3D name="loveLetter" size={72} />
+              </View>
               <Button label="로그인하고 시작하기" onPress={() => router.push('/auth/login')} style={styles.cardButton} />
             </>
           )}
@@ -180,6 +186,8 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.canvas, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
   cardHead: { flexDirection: 'row', alignItems: 'center' },
   cardButton: { marginTop: spacing.xs },
+  guestRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  guestSub: { marginTop: spacing.xs },
   stats: {
     flexDirection: 'row',
     paddingVertical: spacing.md,
