@@ -91,6 +91,17 @@ describe('password reset codes', () => {
     }
     expect(await svc.sendCode('test@wuzu.kr')).toEqual({ ok: false, reason: 'limit' });
   });
+  it('lifts the send limit once the last code has expired', async () => {
+    const now = 1_000_000;
+    let last = 0;
+    for (let i = 0; i < MAX_SEND; i++) {
+      const r = await svc.sendCode('test@wuzu.kr', now);
+      if (r.ok) last = r.expiresAt;
+    }
+    expect((await svc.sendCode('test@wuzu.kr', last)).ok).toBe(false);
+    const after = await svc.sendCode('test@wuzu.kr', last + 1);
+    expect(after.ok && after.sentCount).toBe(1);
+  });
   it('refuses unknown emails', async () => {
     expect(await svc.sendCode('ghost@wuzu.kr')).toEqual({ ok: false, reason: 'not_found' });
   });

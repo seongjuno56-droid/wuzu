@@ -123,7 +123,8 @@ export function createMockAuthService(opts: {
       const user = byEmail(db, email);
       if (!user) return { ok: false, reason: 'not_found' };
       const key = user.email!;
-      const prev = db.codes[key];
+      // 마지막 인증번호가 만료되면 발송 횟수도 초기화 (5분 후 재발송 가능)
+      const prev = db.codes[key] && now <= db.codes[key].expiresAt ? db.codes[key] : undefined;
       if (prev && prev.sentCount >= MAX_SEND) return { ok: false, reason: 'limit' };
       const state = { sentCount: (prev?.sentCount ?? 0) + 1, expiresAt: now + CODE_TTL_MS };
       db.codes[key] = state;

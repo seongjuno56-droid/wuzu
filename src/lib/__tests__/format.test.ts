@@ -26,3 +26,10 @@ describe('isValidBirth', () => {
   it('rejects future dates', () => expect(isValidBirth('2999-01-01')).toBe(false));
   it('rejects partial input', () => expect(isValidBirth('1991-01')).toBe(false));
 });
+
+describe('formatRemaining', () => {
+  const { formatRemaining } = require('../format');
+  it('shows mm:ss', () => expect(formatRemaining(299_000)).toBe('04:59'));
+  it('rounds partial seconds up', () => expect(formatRemaining(1_200)).toBe('00:02'));
+  it('never goes negative', () => expect(formatRemaining(-5_000)).toBe('00:00'));
+});

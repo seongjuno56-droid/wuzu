@@ -20,3 +20,9 @@ export function isValidBirth(value: string): boolean {
   const date = new Date(y, mo - 1, d);
   return date.getMonth() === mo - 1 && date.getDate() === d && date <= new Date() && y >= 1900;
 }
+
+/** 남은 시간(ms)을 mm:ss 로 */
+export function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+}
