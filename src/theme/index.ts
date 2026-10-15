@@ -34,12 +34,12 @@ export const fonts = {
 } as const;
 export type FontWeightName = keyof typeof fonts;
 
-const CDN = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/public/static';
+// Pretendard (OFL-1.1) — assets/fonts 에 포함
 export const fontSources = {
-  [fonts.regular]: { uri: `${CDN}/Pretendard-Regular.otf` },
-  [fonts.medium]: { uri: `${CDN}/Pretendard-Medium.otf` },
-  [fonts.semibold]: { uri: `${CDN}/Pretendard-SemiBold.otf` },
-  [fonts.bold]: { uri: `${CDN}/Pretendard-Bold.otf` },
+  [fonts.regular]: require('../../assets/fonts/Pretendard-Regular.otf'),
+  [fonts.medium]: require('../../assets/fonts/Pretendard-Medium.otf'),
+  [fonts.semibold]: require('../../assets/fonts/Pretendard-SemiBold.otf'),
+  [fonts.bold]: require('../../assets/fonts/Pretendard-Bold.otf'),
 };
 
 export const typography = {

@@ -2,11 +2,11 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useSession } from '../store/session';
-import { colors, fontSources } from '../theme';
+import { colors, fontSources, MAX_APP_WIDTH } from '../theme';
 
 const FONT_TIMEOUT_MS = 3000;
 
@@ -25,11 +25,19 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      {ready ? (
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
-      ) : (
-        <View style={{ flex: 1, backgroundColor: colors.bg }} />
-      )}
+      {/* 웹에서도 폰 폭으로 보이도록 앱 전체를 가운데 고정 폭 프레임에 담는다 */}
+      <View style={styles.outer}>
+        <View style={styles.frame}>
+          {ready && (
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+          )}
+        </View>
+      </View>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  outer: { flex: 1, backgroundColor: colors.surfaceStrong, alignItems: 'center' },
+  frame: { flex: 1, width: '100%', maxWidth: MAX_APP_WIDTH, backgroundColor: colors.bg, overflow: 'hidden' },
+});

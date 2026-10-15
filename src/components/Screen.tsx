@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { Edge, SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, MAX_APP_WIDTH } from '../theme';
+import { colors } from '../theme';
 
 interface Props {
   children: ReactNode;
@@ -25,29 +25,25 @@ export function Screen({
   edges = ['top', 'bottom'],
 }: Props) {
   return (
-    <View style={styles.outer}>
-      <SafeAreaView edges={edges} style={[styles.frame, { backgroundColor: background }]}>
-        {header}
-        {scroll ? (
-          <ScrollView
-            style={styles.flex}
-            contentContainerStyle={[styles.content, contentStyle]}
-            keyboardShouldPersistTaps="handled"
-          >
-            {children}
-          </ScrollView>
-        ) : (
-          <View style={[styles.flex, contentStyle]}>{children}</View>
-        )}
-        {footer}
-      </SafeAreaView>
-    </View>
+    <SafeAreaView edges={edges} style={[styles.flex, { backgroundColor: background }]}>
+      {header}
+      {scroll ? (
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[styles.content, contentStyle]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={[styles.flex, contentStyle]}>{children}</View>
+      )}
+      {footer}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  outer: { flex: 1, backgroundColor: colors.surfaceStrong, alignItems: 'center' },
-  frame: { flex: 1, width: '100%', maxWidth: MAX_APP_WIDTH },
   flex: { flex: 1 },
   content: { flexGrow: 1 },
 });
