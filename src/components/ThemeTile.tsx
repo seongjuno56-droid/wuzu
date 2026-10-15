@@ -10,7 +10,23 @@ import { Txt } from './Txt';
 export function ThemeArt({ theme, size }: { theme: InviteTheme; size: number }) {
   return (
     <View style={[styles.art, { width: size, height: size, backgroundColor: theme.tintSoft }]}>
-      <Icon3D name={theme.art} size={Math.round(size * 0.68)} />
+      {typeof theme.art === 'string' ? (
+        <Icon3D name={theme.art} size={Math.round(size * 0.68)} />
+      ) : (
+        theme.art.map((l) => (
+          <Icon3D
+            key={l.name}
+            name={l.name}
+            size={Math.round(size * l.size)}
+            style={{
+              position: 'absolute',
+              left: size * l.x,
+              top: size * l.y,
+              transform: [{ rotate: `${l.rotate ?? 0}deg` }],
+            }}
+          />
+        ))
+      )}
     </View>
   );
 }
