@@ -10,6 +10,7 @@ import { Screen } from '../../components/Screen';
 import { FieldMessage, TextField } from '../../components/TextField';
 import { Txt } from '../../components/Txt';
 import { useLoginResultHandler } from '../../features/auth/AccountStatusModals';
+import { goHome } from '../../lib/nav';
 import { authService } from '../../services';
 import { useSignupDraft } from '../../store/signupDraft';
 import { colors, fonts, spacing } from '../../theme';
@@ -141,7 +142,7 @@ export default function Login() {
             router.push('/auth/signup/intro');
           }}
         />
-        <Pressable onPress={() => router.replace('/home')} style={styles.link}>
+        <Pressable onPress={goHome} style={styles.link}>
           <Txt variant="caption" color={colors.textSub}>
             로그인 전에 먼저 구경할래요 &gt;
           </Txt>

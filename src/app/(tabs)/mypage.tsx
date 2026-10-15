@@ -50,7 +50,7 @@ export default function MyPage() {
           variant="outline"
           onPress={() => {
             logout();
-            router.replace('/home');
+            router.navigate('/home');
           }}
         />
       </View>

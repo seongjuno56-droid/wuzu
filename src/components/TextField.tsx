@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
 
 import { colors, fonts, radius, spacing } from '../theme';
 import { Txt } from './Txt';
@@ -14,6 +14,9 @@ interface Props extends Omit<TextInputProps, 'style'> {
   clearable?: boolean;
   right?: ReactNode;
 }
+
+// web: 브라우저 기본 포커스 외곽선 제거 (박스 테두리 색으로 대신 표시)
+const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null;
 
 const messageColor = { error: colors.danger, success: colors.success, info: colors.info };
 
@@ -38,7 +41,7 @@ export function TextField({ label, message, secureToggle, clearable, right, valu
           autoCapitalize="none"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          style={styles.input}
+          style={[styles.input, webNoOutline]}
           {...rest}
         />
         {clearable && !!value && (
@@ -85,6 +88,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.text,
     paddingVertical: 14,
-    outlineWidth: 0, // web: 기본 포커스 외곽선 제거 (박스 테두리로 대신 표시)
   },
 });

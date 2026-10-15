@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../components/AppModal';
 import { Txt } from '../../components/Txt';
 import { formatDate } from '../../lib/format';
+import { goHome } from '../../lib/nav';
 import { authService, LoginResult, User } from '../../services';
 import { useSession } from '../../store/session';
 import { colors, spacing } from '../../theme';
@@ -15,7 +15,7 @@ type Withdrawing = Extract<LoginResult, { reason: 'withdrawing' }>;
  * 로그인 결과(LoginResult)를 받아 성공 시 세션 저장 후 이동하고,
  * 탈퇴 신청/제재 계정이면 해당 모달을 띄운다.
  */
-export function useLoginResultHandler(onSuccess: (user: User) => void = () => router.replace('/home')) {
+export function useLoginResultHandler(onSuccess: (user: User) => void = goHome) {
   const setUser = useSession((s) => s.setUser);
   const [withdrawing, setWithdrawing] = useState<Withdrawing | null>(null);
   const [banned, setBanned] = useState(false);

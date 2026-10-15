@@ -22,7 +22,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Pr
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
           >
-            <Txt weight={active ? 'semibold' : 'regular'} color={active ? colors.text : colors.textSub}>
+            <Txt weight={active ? 'semibold' : 'regular'} color={active ? colors.primary : colors.textSub}>
               {o.label}
             </Txt>
           </Pressable>
@@ -43,6 +43,6 @@ const styles = StyleSheet.create({
   active: {
     backgroundColor: colors.bg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.primary,
   },
 });
