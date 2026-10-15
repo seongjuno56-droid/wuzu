@@ -10,8 +10,6 @@ export interface InviteTheme {
   tags: string[];
   /** 3D 일러스트 아이콘 */
   art: Icon3DName;
-  /** 함께 그릴 아이콘: pair = 왼쪽 뒤에 나란히 겹쳐 세움, badge = 오른쪽 아래 작은 배지 */
-  companion?: { name: Icon3DName; mode: 'pair' | 'badge' };
   tint: string;
   tintSoft: string;
 }
@@ -23,8 +21,7 @@ export const THEMES: InviteTheme[] = [
     title: '결혼식 청첩장',
     description: '두 사람의 시작을 알리는 한 장',
     tags: ['#결혼', '#우리행복', '#응원해주세요'],
-    art: 'bride',
-    companion: { name: 'groom', mode: 'pair' },
+    art: 'bouquet',
     tint: '#D9607E',
     tintSoft: '#FCE9EE',
   },
@@ -34,7 +31,7 @@ export const THEMES: InviteTheme[] = [
     title: '돌잔치 초대장',
     description: '아이의 첫 생일을 함께해요',
     tags: ['#장군감', '#첫돌', '#내딸내아들'],
-    art: 'baby',
+    art: 'teddy',
     tint: '#E0A21B',
     tintSoft: '#FFF4D9',
   },
@@ -55,7 +52,6 @@ export const THEMES: InviteTheme[] = [
     description: '송년회, 신년회, 세미나',
     tags: ['#송년회', '#신년회', '#유대감뿜뿜'],
     art: 'office',
-    companion: { name: 'champagne', mode: 'badge' },
     tint: '#6A5FD0',
     tintSoft: '#ECEBFB',
   },

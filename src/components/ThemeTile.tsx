@@ -8,32 +8,9 @@ import { Txt } from './Txt';
 
 /** 테마 '이미지': 색은 여기서만 — 파스텔 바탕 위 3D 일러스트 */
 export function ThemeArt({ theme, size }: { theme: InviteTheme; size: number }) {
-  const { companion } = theme;
-  const box = { width: size, height: size, backgroundColor: theme.tintSoft };
-
-  if (companion?.mode === 'pair') {
-    // 두 인물을 살짝 겹쳐 나란히 세운다 (뒤쪽은 조금 작게) — 예: 신랑·신부
-    const icon = Math.round(size * 0.7);
-    return (
-      <View style={[styles.art, box]}>
-        <View style={styles.pair}>
-          <Icon3D name={companion.name} size={Math.round(icon * 0.9)} style={{ marginRight: -icon * 0.38 }} />
-          <Icon3D name={theme.art} size={icon} />
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.art, box]}>
+    <View style={[styles.art, { width: size, height: size, backgroundColor: theme.tintSoft }]}>
       <Icon3D name={theme.art} size={Math.round(size * 0.68)} />
-      {companion?.mode === 'badge' && (
-        <Icon3D
-          name={companion.name}
-          size={Math.round(size * 0.4)}
-          style={{ position: 'absolute', right: size * 0.04, bottom: size * 0.04 }}
-        />
-      )}
     </View>
   );
 }
@@ -81,7 +58,6 @@ export function ThemeRow({ theme, onPress }: { theme: InviteTheme; onPress: () =
 
 const styles = StyleSheet.create({
   art: { borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  pair: { flexDirection: 'row', alignItems: 'flex-end' },
   tile: {
     flex: 1,
     alignItems: 'center',
