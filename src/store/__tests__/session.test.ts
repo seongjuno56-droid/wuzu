@@ -37,3 +37,16 @@ describe('signup draft', () => {
     expect(useSignupDraft.getState().draft.name).toBeUndefined();
   });
 });
+
+describe('onboarding flag', () => {
+  it('is set after a social signup and cleared once handled or on logout', () => {
+    useSession.getState().setUser(user);
+    useSession.getState().setNeedsOnboarding(true);
+    expect(useSession.getState().needsOnboarding).toBe(true);
+    useSession.getState().setNeedsOnboarding(false);
+    expect(useSession.getState().needsOnboarding).toBe(false);
+    useSession.getState().setNeedsOnboarding(true);
+    useSession.getState().logout();
+    expect(useSession.getState().needsOnboarding).toBe(false);
+  });
+});

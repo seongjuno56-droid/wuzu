@@ -62,6 +62,8 @@ export interface AuthService {
   sendCode(email: string, now?: number): Promise<SendCodeResult>;
   verifyCode(email: string, code: string, now?: number): Promise<boolean>;
   resetPassword(email: string, newPassword: string): Promise<void>;
+  /** 선택 프로필 저장 (값이 undefined 면 비운다) */
+  updateProfile(userId: string, values: Pick<User, 'birth' | 'gender' | 'marketingAgreed'>): Promise<User>;
 }
 
 export interface KeyValueStorage {

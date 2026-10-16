@@ -13,6 +13,7 @@ import { Txt } from '../../components/Txt';
 import { useLoginResultHandler } from '../../features/auth/AccountStatusModals';
 import { goHome } from '../../lib/nav';
 import { authService } from '../../services';
+import { useSession } from '../../store/session';
 import { useSignupDraft } from '../../store/signupDraft';
 import { colors, radius, spacing } from '../../theme';
 
@@ -25,6 +26,8 @@ export default function Login() {
   const { handle, modals } = useLoginResultHandler();
   const patchDraft = useSignupDraft((s) => s.patch);
   const resetDraft = useSignupDraft((s) => s.reset);
+  const setUser = useSession((s) => s.setUser);
+  const setNeedsOnboarding = useSession((s) => s.setNeedsOnboarding);
 
   const loginWithEmail = async () => {
     setError(null);
@@ -45,10 +48,16 @@ export default function Login() {
         handle(result);
         return;
       }
-      // 첫 카카오 로그인: 약관 동의 → 정보 확인 단계만 거쳐 가입
-      resetDraft();
-      patchDraft({ provider: 'kakao', providerKey: profile.providerKey, name: profile.name });
-      router.push('/auth/signup/terms');
+      // 첫 카카오 로그인: 바로 가입하고, 홈에서 생년월일·성별·마케팅 동의를 받는다 (설계: 최초 회원정보 기입 모달)
+      const user = await authService.signup({
+        name: profile.name,
+        provider: 'kakao',
+        providerKey: profile.providerKey,
+        marketingAgreed: false,
+      });
+      setUser(user);
+      setNeedsOnboarding(true);
+      goHome();
     } finally {
       setLoading(null);
     }

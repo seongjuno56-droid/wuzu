@@ -8,6 +8,7 @@ import { Wordmark } from '../../components/brand/Wordmark';
 import { BannerCarousel } from '../../components/home/BannerCarousel';
 import { HomeFooter } from '../../components/home/HomeFooter';
 import { InvitationStatusCard } from '../../components/home/InvitationStatusCard';
+import { OnboardingModal } from '../../components/home/OnboardingModal';
 import { PushConsentModal } from '../../components/home/PushConsentModal';
 import { RecommendedCards } from '../../components/home/RecommendedCards';
 import { Screen } from '../../components/Screen';
@@ -22,6 +23,7 @@ export default function Home() {
   const logout = useSession((s) => s.logout);
   const pushConsent = useSession((s) => s.pushConsent);
   const setPushConsent = useSession((s) => s.setPushConsent);
+  const needsOnboarding = useSession((s) => s.needsOnboarding);
   const [info, setInfo] = useState<string | null>(null);
   const { list: invitations } = useMyInvitations();
   // 공지사항: 비회원은 로그인 먼저 (회원용 공지 페이지는 마이페이지 > 우쥬 정보에 들어갈 예정)
@@ -113,6 +115,8 @@ export default function Home() {
         onAgree={() => setPushConsent('agreed')}
         onDecline={() => setPushConsent('declined')}
       />
+      {/* 푸시 동의를 먼저 받고, 그 다음 간편 가입 회원정보 기입 */}
+      <OnboardingModal visible={!!user && needsOnboarding && pushConsent !== null} />
       <AppModal visible={!!info} message={info ?? ''} actions={[{ label: '확인', onPress: () => setInfo(null) }]} />
     </Screen>
   );

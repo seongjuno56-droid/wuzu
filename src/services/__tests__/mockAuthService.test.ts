@@ -73,6 +73,24 @@ describe('signup', () => {
   });
 });
 
+describe('updateProfile', () => {
+  it('saves optional profile fields and keeps them on the next login', async () => {
+    const r = await svc.login('test@wuzu.kr', PW);
+    if (!r.ok) throw new Error('login failed');
+    const updated = await svc.updateProfile(r.user.id, { birth: '1990-05-05', gender: 'female', marketingAgreed: false });
+    expect(updated).toMatchObject({ birth: '1990-05-05', gender: 'female', marketingAgreed: false });
+    const again = await svc.login('test@wuzu.kr', PW);
+    expect(again.ok && again.user.gender).toBe('female');
+  });
+  it('clears fields when given undefined (다음에 하기)', async () => {
+    const r = await svc.login('test@wuzu.kr', PW);
+    if (!r.ok) throw new Error('login failed');
+    const updated = await svc.updateProfile(r.user.id, { birth: undefined, gender: undefined, marketingAgreed: false });
+    expect(updated.birth).toBeUndefined();
+    expect(updated.gender).toBeUndefined();
+  });
+});
+
 describe('findId', () => {
   it('returns email and join date for matching info', async () => {
     const r = await svc.findId({ name: '홍길동', birth: '1991-01-01', phone: '01012345678' });

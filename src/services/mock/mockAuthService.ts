@@ -138,6 +138,18 @@ export function createMockAuthService(opts: {
       return !!state && now <= state.expiresAt && code === MOCK_CODE;
     },
 
+    async updateProfile(userId, values) {
+      await wait();
+      const db = await load();
+      const user = db.users.find((u) => u.id === userId);
+      if (!user) throw new Error('NOT_FOUND');
+      user.birth = values.birth;
+      user.gender = values.gender;
+      user.marketingAgreed = values.marketingAgreed;
+      await save(db);
+      return toPublic(user);
+    },
+
     async resetPassword(email, newPassword) {
       await wait();
       const db = await load();
