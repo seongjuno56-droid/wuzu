@@ -128,7 +128,7 @@ export default function TemplateSelect() {
             style={styles.flex}
             onPress={() => router.push(`/create/${themeId}/${current.id}`)}
           />
-          <Button label="이 템플릿으로 만들기" style={styles.wide} onPress={() => start(current.name)} />
+          <Button label="이 템플릿으로 만들기" style={styles.wide} onPress={() => start(themeId, current.id, current.name)} />
         </View>
       </View>
       {modal}
