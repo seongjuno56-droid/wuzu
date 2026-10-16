@@ -427,3 +427,19 @@ export function fileExtension(nameOrUri: string): string {
   const dot = clean.lastIndexOf('.');
   return dot >= 0 ? clean.slice(dot + 1).toLowerCase() : '';
 }
+
+const IMAGE_MIME = ['image/jpeg', 'image/jpg', 'image/png'];
+
+/** jpg·jpeg·png 만 허용 (MIME 또는 파일 이름/경로의 확장자로 판단) */
+export function checkImageFile(f: { mimeType?: string | null; fileName?: string | null; uri?: string }): boolean {
+  if (f.mimeType) return IMAGE_MIME.includes(f.mimeType.toLowerCase());
+  const ext = fileExtension(f.fileName ?? f.uri ?? '');
+  return IMAGE_EXTENSIONS.includes(ext);
+}
+
+/** BGM: MP3·M4A·AAC·WAV·OGG, 5MB 이하 */
+export function checkAudioFile(f: { name: string; size?: number | null }): 'ok' | 'extension' | 'size' {
+  if (!AUDIO_EXTENSIONS.includes(fileExtension(f.name))) return 'extension';
+  if ((f.size ?? 0) > LIMITS.bgmBytes) return 'size';
+  return 'ok';
+}

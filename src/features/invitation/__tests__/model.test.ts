@@ -172,3 +172,21 @@ describe('helpers', () => {
     expect(validateGuestbookEntry({ name: '', password: '12', content: '' })).toEqual(['name', 'password', 'content']);
   });
 });
+
+describe('file checks', () => {
+  const { checkImageFile, checkAudioFile } = require('../model');
+  it('accepts jpg/jpeg/png by mime type or file name', () => {
+    expect(checkImageFile({ mimeType: 'image/jpeg' })).toBe(true);
+    expect(checkImageFile({ fileName: 'photo.PNG' })).toBe(true);
+    expect(checkImageFile({ uri: 'file:///a/b/c.jpeg' })).toBe(true);
+  });
+  it('rejects other image types', () => {
+    expect(checkImageFile({ mimeType: 'image/gif', fileName: 'a.gif' })).toBe(false);
+    expect(checkImageFile({ mimeType: 'image/heic' })).toBe(false);
+  });
+  it('checks audio extension and the 5MB limit', () => {
+    expect(checkAudioFile({ name: 'song.mp3', size: 1024 })).toBe('ok');
+    expect(checkAudioFile({ name: 'song.flac', size: 1024 })).toBe('extension');
+    expect(checkAudioFile({ name: 'song.m4a', size: 5 * 1024 * 1024 + 1 })).toBe('size');
+  });
+});
