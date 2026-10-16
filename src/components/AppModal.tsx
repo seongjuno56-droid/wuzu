@@ -24,6 +24,9 @@ interface Props {
 }
 
 export function AppModal({ visible, title, message, art, children, actions, onDismiss }: Props) {
+  // 버튼 문구가 길면 나란히 두면 줄바꿈되므로 세로로 쌓는다 (주 버튼이 위)
+  const stacked = actions.some((a) => a.label.length > 8);
+  const ordered = stacked ? [...actions].reverse() : actions;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable style={styles.dim} onPress={onDismiss} accessibilityLabel="닫기">
@@ -40,15 +43,15 @@ export function AppModal({ visible, title, message, art, children, actions, onDi
             </Txt>
           )}
           {children}
-          <View style={styles.actions}>
-            {actions.map((a) => (
+          <View style={[styles.actions, stacked && styles.stacked]}>
+            {ordered.map((a) => (
               <Button
                 key={a.label}
                 label={a.label}
                 onPress={a.onPress}
                 variant={a.variant ?? 'primary'}
                 size="md"
-                style={styles.action}
+                style={stacked ? undefined : styles.action}
               />
             ))}
           </View>
@@ -73,4 +76,5 @@ const styles = StyleSheet.create({
   art: { alignItems: 'center', marginBottom: spacing.sm },
   actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
   action: { flex: 1 },
+  stacked: { flexDirection: 'column' },
 });

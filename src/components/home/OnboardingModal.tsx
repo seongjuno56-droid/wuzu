@@ -76,7 +76,7 @@ export function OnboardingModal({ visible }: { visible: boolean }) {
         </View>
         <Check label="마케팅 정보 수신에 동의합니다." value={marketing} onChange={setMarketing} />
         <Txt variant="tiny" color={colors.faint}>
-          모두 선택 항목이에요. 마이페이지에서 언제든 바꿀 수 있어요.
+          모두 선택 항목이에요. 나중에 바꿀 수 있어요.
         </Txt>
       </View>
     </AppModal>

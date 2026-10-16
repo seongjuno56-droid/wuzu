@@ -41,7 +41,7 @@ export default function EditorOrder() {
     <Screen
       header={<Header title="페이지 순서 변경" />}
       background={colors.surface}
-      scroll={!dragging}
+      scrollEnabled={!dragging}
       contentStyle={styles.content}
       footer={
         <BottomCTA>

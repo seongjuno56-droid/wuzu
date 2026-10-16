@@ -41,13 +41,13 @@ export function DatePickerModal(props: { visible: boolean; value: string; onClos
       ]}
     >
       <View style={styles.monthRow}>
-        <Pressable onPress={() => shift(-1)} hitSlop={10} accessibilityLabel="이전 달">
+        <Pressable onPress={() => shift(-1)} hitSlop={10} accessibilityRole="button" accessibilityLabel="이전 달">
           <Ionicons name="chevron-back" size={20} color={colors.inkSoft} />
         </Pressable>
         <Txt variant="title">
           {month.y}년 {month.m}월
         </Txt>
-        <Pressable onPress={() => shift(1)} hitSlop={10} accessibilityLabel="다음 달">
+        <Pressable onPress={() => shift(1)} hitSlop={10} accessibilityRole="button" accessibilityLabel="다음 달">
           <Ionicons name="chevron-forward" size={20} color={colors.inkSoft} />
         </Pressable>
       </View>

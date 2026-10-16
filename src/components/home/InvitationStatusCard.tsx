@@ -44,14 +44,17 @@ export function InvitationStatusCard({ user, invitations }: Props) {
       <Txt color={colors.muted} style={styles.flex}>
         현재 활성화 중인 초대장
       </Txt>
-      <Txt variant="headline">{activeCount}장</Txt>
+      {/* 불러오는 동안 0장으로 보이지 않게 */}
+      <Txt variant="headline">{invitations ? `${activeCount}장` : '–'}</Txt>
     </View>
   );
 
   if (invitations && list.length === 0) {
     return (
       <View style={[styles.card, shadow]}>
-        <Txt variant="title">{user.name}님만의 초대장이 정말 기대되네요!</Txt>
+        <Txt variant="title">
+          {user.name}님만의 초대장이{'\n'}정말 기대되네요!
+        </Txt>
         {count}
         <Button label="나만의 초대장 제작하기" onPress={() => router.navigate('/create')} />
       </View>
@@ -77,7 +80,7 @@ export function InvitationStatusCard({ user, invitations }: Props) {
           최근 제작
         </Txt>
         <Txt variant="caption" weight="semibold" style={styles.flex} numberOfLines={1}>
-          {list[0]?.name ?? '-'}
+          {invitations ? (list[0]?.name ?? '-') : ''}
         </Txt>
       </View>
     </Pressable>

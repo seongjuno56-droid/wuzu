@@ -7,7 +7,7 @@ import { AppModal } from '../../components/AppModal';
 import { Button } from '../../components/Button';
 import { TextArea } from '../../components/TextArea';
 import { TextField } from '../../components/TextField';
-import { toast } from '../../components/Toast';
+import { toast, ToastHost } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
 import type { GuestbookEntry, GuestbookInput } from '../../services/types';
 import { colors, spacing } from '../../theme';
@@ -38,6 +38,8 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
           </Pressable>
         </View>
         {children}
+        {/* 전체 화면 모달은 앱의 토스트를 가리므로 모달 안에서도 띄운다 */}
+        <ToastHost />
       </SafeAreaView>
     </Modal>
   );

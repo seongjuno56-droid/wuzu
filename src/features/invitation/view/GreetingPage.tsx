@@ -10,7 +10,8 @@ function familyLine(father: Person, mother: Person, child: Person): string | nul
     .filter((p) => p.name.trim())
     .map((p) => `${p.deceased ? '故 ' : ''}${p.name.trim()}`);
   if (!child.name.trim()) return null;
-  return parents.length ? `${parents.join(' · ')}의 ${child.title} ${child.name}` : `${child.title} ${child.name}`;
+  // 부모님 정보가 없으면 '딸 성춘향'처럼 어색해지므로 이름만 쓴다
+  return parents.length ? `${parents.join(' · ')}의 ${child.title} ${child.name}` : child.name;
 }
 
 export function GreetingPage({ content }: { content: InvitationContent }) {
