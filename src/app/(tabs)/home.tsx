@@ -4,25 +4,18 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../components/AppModal';
-import { Icon3D } from '../../components/brand/Icon3D';
 import { Wordmark } from '../../components/brand/Wordmark';
-import { Button } from '../../components/Button';
 import { BannerCarousel } from '../../components/home/BannerCarousel';
 import { HomeFooter } from '../../components/home/HomeFooter';
+import { InvitationStatusCard } from '../../components/home/InvitationStatusCard';
 import { PushConsentModal } from '../../components/home/PushConsentModal';
+import { RecommendedCards } from '../../components/home/RecommendedCards';
 import { Screen } from '../../components/Screen';
-import { ThemeTile } from '../../components/ThemeTile';
 import { Txt } from '../../components/Txt';
 import { NOTICES } from '../../data/home';
-import { THEMES } from '../../data/themes';
+import { useMyInvitations } from '../../features/invitation/useMyInvitations';
 import { useSession } from '../../store/session';
 import { colors, radius, shadow, spacing } from '../../theme';
-
-const STATS = [
-  { label: '진행 중', value: 0 },
-  { label: '받은 응답', value: 0 },
-  { label: '총 조회수', value: 0 },
-];
 
 export default function Home() {
   const user = useSession((s) => s.user);
@@ -30,6 +23,9 @@ export default function Home() {
   const pushConsent = useSession((s) => s.pushConsent);
   const setPushConsent = useSession((s) => s.setPushConsent);
   const [info, setInfo] = useState<string | null>(null);
+  const { list: invitations } = useMyInvitations();
+  // 공지사항: 비회원은 로그인 먼저 (회원용 공지 페이지는 마이페이지 > 우쥬 정보에 들어갈 예정)
+  const openNotice = () => (user ? setInfo('공지사항은 곧 마이페이지 > 우쥬 정보에서 볼 수 있어요.') : router.push('/auth/login'));
 
   const header = (
     <View style={styles.header}>
@@ -64,64 +60,24 @@ export default function Home() {
       <View style={styles.column}>
         <BannerCarousel />
 
-        {/* 내 초대장 요약 — 데이터 먼저 */}
-        <View style={[styles.card, shadow]}>
-          {user ? (
-            <>
-              <Pressable style={styles.cardHead} onPress={() => router.navigate('/my-invites')}>
-                <Txt variant="title" style={styles.flex}>
-                  {user.name}님의 초대장
-                </Txt>
-                <Ionicons name="chevron-forward" size={18} color={colors.placeholder} />
-              </Pressable>
-              <View style={styles.stats}>
-                {STATS.map((s, i) => (
-                  <View key={s.label} style={[styles.stat, i > 0 && styles.statDivider]}>
-                    <Txt variant="headline">{s.value}</Txt>
-                    <Txt variant="tiny" color={colors.muted}>
-                      {s.label}
-                    </Txt>
-                  </View>
-                ))}
-              </View>
-              <Button label="새 초대장 만들기" onPress={() => router.navigate('/create')} />
-            </>
-          ) : (
-            <>
-              <View style={styles.guestRow}>
-                <View style={styles.flex}>
-                  <Txt variant="title">로그인하고{'\n'}첫 초대장을 만들어 보세요</Txt>
-                  <Txt variant="caption" color={colors.muted} style={styles.guestSub}>
-                    조회수와 응답을 한눈에 확인해요.
-                  </Txt>
-                </View>
-                <Icon3D name="loveLetter" size={72} />
-              </View>
-              <Button label="로그인하고 시작하기" onPress={() => router.push('/auth/login')} style={styles.cardButton} />
-            </>
-          )}
-        </View>
+        <InvitationStatusCard user={user} invitations={invitations} />
 
         <View style={styles.section}>
           <View style={styles.sectionHead}>
-            <Txt variant="title">어떤 초대장을 만들까요?</Txt>
+            <Txt variant="title">WUZU가 추천하는 초대장</Txt>
             <Pressable onPress={() => router.navigate('/create')} hitSlop={8}>
               <Txt variant="caption" color={colors.muted}>
                 전체보기
               </Txt>
             </Pressable>
           </View>
-          <View style={styles.tiles}>
-            {THEMES.map((t) => (
-              <ThemeTile key={t.id} theme={t} onPress={() => router.push(`/create/${t.id}`)} />
-            ))}
-          </View>
+          <RecommendedCards />
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Txt variant="title">공지사항</Txt>
-            <Pressable onPress={() => setInfo('공지사항 목록은 준비 중이에요.')} hitSlop={8}>
+            <Pressable onPress={openNotice} hitSlop={8}>
               <Txt variant="caption" color={colors.muted}>
                 전체보기
               </Txt>
@@ -132,7 +88,7 @@ export default function Home() {
               <Pressable
                 key={n.id}
                 style={({ pressed }) => [styles.listRow, i > 0 && styles.listDivider, pressed && styles.pressed]}
-                onPress={() => setInfo('공지사항 상세는 준비 중이에요.')}
+                onPress={openNotice}
               >
                 <Txt style={styles.flex} numberOfLines={1}>
                   {n.title}
@@ -183,22 +139,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   column: { padding: spacing.lg, gap: spacing.xxl },
-  card: { backgroundColor: colors.canvas, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
-  cardHead: { flexDirection: 'row', alignItems: 'center' },
-  cardButton: { marginTop: spacing.xs },
-  guestRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  guestSub: { marginTop: spacing.xs },
-  stats: {
-    flexDirection: 'row',
-    paddingVertical: spacing.md,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surface,
-  },
-  stat: { flex: 1, alignItems: 'center' },
-  statDivider: { borderLeftWidth: 1, borderLeftColor: colors.hairline },
   section: { gap: spacing.md },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tiles: { flexDirection: 'row', gap: spacing.sm },
   list: { backgroundColor: colors.canvas, borderRadius: radius.sm, overflow: 'hidden' },
   listRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
   listDivider: { borderTopWidth: 1, borderTopColor: colors.hairline },

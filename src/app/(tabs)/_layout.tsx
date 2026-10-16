@@ -16,6 +16,12 @@ function icon(active: IconName, inactive: IconName) {
 
 export default function TabsLayout() {
   const loggedIn = useSession((s) => !!s.user);
+  // 비회원이 나의 초대장·마이페이지 탭을 누르면 로그인으로
+  const requireLogin = (e: { preventDefault: () => void }) => {
+    if (loggedIn) return;
+    e.preventDefault();
+    router.push('/auth/login');
+  };
 
   return (
     <Tabs
@@ -35,6 +41,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="my-invites"
         options={{ title: '나의 초대장', tabBarIcon: icon('mail', 'mail-outline') }}
+        listeners={{ tabPress: requireLogin }}
       />
       <Tabs.Screen
         name="mypage"
@@ -42,14 +49,7 @@ export default function TabsLayout() {
           title: loggedIn ? '마이페이지' : '로그인',
           tabBarIcon: icon('person', 'person-outline'),
         }}
-        listeners={{
-          tabPress: (e) => {
-            if (!loggedIn) {
-              e.preventDefault();
-              router.push('/auth/login');
-            }
-          },
-        }}
+        listeners={{ tabPress: requireLogin }}
       />
     </Tabs>
   );
