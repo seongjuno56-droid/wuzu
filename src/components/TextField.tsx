@@ -11,6 +11,8 @@ interface Props extends Omit<TextInputProps, 'style'> {
   label?: string;
   required?: boolean;
   message?: FieldMessage;
+  /** 문구 없이 빨간 테두리만 (필수 항목 미입력 등) */
+  invalid?: boolean;
   secureToggle?: boolean;
   clearable?: boolean;
   right?: ReactNode;
@@ -25,6 +27,7 @@ export function TextField({
   label,
   required,
   message,
+  invalid,
   secureToggle,
   clearable,
   right,
@@ -34,7 +37,8 @@ export function TextField({
 }: Props) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
-  const borderColor = message?.type === 'error' ? colors.danger : focused ? colors.inkSoft : colors.hairline;
+  const borderColor =
+    message?.type === 'error' || invalid ? colors.danger : focused ? colors.inkSoft : colors.hairline;
 
   return (
     <View style={styles.wrap}>
