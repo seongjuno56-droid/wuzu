@@ -51,6 +51,8 @@ export default function MyInvites() {
   const [renaming, setRenaming] = useState<Invitation | null>(null);
   const [deleting, setDeleting] = useState<Invitation | null>(null);
   const [newBook, setNewBook] = useState<Record<string, boolean>>({});
+  // 목록을 다시 불러올 때마다 현재 시각을 새로 잡는다 (의도한 의존성)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => new Date(), [list]);
 
   // 방명록 (New) 표시: 방명록을 켠 초대장만 확인

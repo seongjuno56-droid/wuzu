@@ -12,6 +12,8 @@ import {
   sectionTabs,
   validateGuestbookEntry,
   validateSection,
+  checkAudioFile,
+  checkImageFile,
 } from '../model';
 
 const TODAY = new Date(2026, 9, 15); // 2026-10-15
@@ -177,7 +179,6 @@ describe('helpers', () => {
 });
 
 describe('file checks', () => {
-  const { checkImageFile, checkAudioFile } = require('../model');
   it('accepts jpg/jpeg/png by mime type or file name', () => {
     expect(checkImageFile({ mimeType: 'image/jpeg' })).toBe(true);
     expect(checkImageFile({ fileName: 'photo.PNG' })).toBe(true);
