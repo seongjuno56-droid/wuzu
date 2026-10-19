@@ -46,7 +46,7 @@ export default function EditorCompose() {
       const result = await invitationService.save({
         ...draft,
         name,
-        status: saveKind === 'final' ? 'active' : draft.status,
+        status: saveKind === 'final' ? 'final' : draft.status,
       });
       markSaved(result);
       setSaveKind(null);

@@ -36,9 +36,9 @@ function InvitationCard({ inv, onDelete }: { inv: Invitation; onDelete: () => vo
           <Ionicons name="heart" size={18} color={template?.style.accent ?? colors.muted} />
         </View>
         <View style={styles.flex}>
-          <View style={[styles.badge, inv.status === 'active' ? styles.badgeActive : styles.badgeDraft]}>
-            <Txt variant="tiny" weight="semibold" color={inv.status === 'active' ? colors.success : colors.infoInk}>
-              {inv.status === 'active' ? '활성화' : '임시저장'}
+          <View style={[styles.badge, inv.status === 'final' ? styles.badgeActive : styles.badgeDraft]}>
+            <Txt variant="tiny" weight="semibold" color={inv.status === 'final' ? colors.success : colors.infoInk}>
+              {inv.status === 'final' ? '활성화' : '임시저장'}
             </Txt>
           </View>
           <Txt variant="bodyStrong" numberOfLines={1}>

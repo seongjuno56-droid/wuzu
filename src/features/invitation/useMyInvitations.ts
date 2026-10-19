@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { invitationService } from '../../services';
 import { useSession } from '../../store/session';
 import { Invitation } from './model';
+import { screenStatus } from './status';
 
 /** 로그인한 사용자의 초대장 목록 (화면에 돌아올 때마다 새로 읽는다, 최근 저장 순) */
 export function useMyInvitations() {
@@ -20,6 +21,6 @@ export function useMyInvitations() {
     }, [reload]),
   );
 
-  const active = (list ?? []).filter((i) => i.status === 'active');
+  const active = (list ?? []).filter((i) => screenStatus(i) === 'active');
   return { list, active, reload };
 }

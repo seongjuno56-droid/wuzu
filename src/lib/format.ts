@@ -5,6 +5,12 @@ export function formatDate(iso: string, sep = '.'): string {
   return [d.getFullYear(), pad(d.getMonth() + 1), pad(d.getDate())].join(sep);
 }
 
+/** 2024.01.01 11:50:33 (sep '-' 이면 2024-01-01 11:50:33) */
+export function formatDateTime(iso: string, sep = '.'): string {
+  const d = new Date(iso);
+  return `${formatDate(iso, sep)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 /** 숫자만 입력받아 YYYY-MM-DD 형태로 하이픈을 채운다 */
 export function formatBirthInput(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 8);

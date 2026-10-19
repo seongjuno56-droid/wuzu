@@ -32,10 +32,10 @@ describe('invitations', () => {
   });
   it('updates an existing invitation in place and bumps updatedAt', async () => {
     const first = await svc.save({ ...make('a'), name: '초안' });
-    const second = await svc.save({ ...first, name: '완성', status: 'active' });
+    const second = await svc.save({ ...first, name: '완성', status: 'final' });
     expect((await svc.list('u1')).length).toBe(1);
     expect(second.updatedAt > first.updatedAt).toBe(true);
-    expect((await svc.get('a'))?.status).toBe('active');
+    expect((await svc.get('a'))?.status).toBe('final');
   });
   it('returns null for unknown ids and removes invitations', async () => {
     expect(await svc.get('nope')).toBeNull();

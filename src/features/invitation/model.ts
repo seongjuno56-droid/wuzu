@@ -101,7 +101,8 @@ export interface InvitationContent {
   bgm: BgmInfo;
 }
 
-export type InvitationStatus = 'draft' | 'active';
+/** 저장 상태: 임시저장 / 최종저장. 화면 상태(작성중·비활성화·활성화·기한만료·사용불가)는 status.ts 에서 계산 */
+export type InvitationStatus = 'draft' | 'final';
 
 export interface Invitation {
   id: string;
@@ -109,6 +110,15 @@ export interface Invitation {
   themeId: string;
   templateId: string;
   name: string;
+  /** 초대장No (11자리) */
+  number: string;
+  /** 활성화 시작·종료 시각 (ISO). 한 번도 활성화하지 않았으면 없음 */
+  activatedAt?: string;
+  expiresAt?: string;
+  /** 관리자 제재 */
+  banned?: boolean;
+  /** 작성자가 방명록 관리를 마지막으로 확인한 시각 */
+  guestbookSeenAt?: string;
   status: InvitationStatus;
   enabled: EnabledSections;
   order: ReorderablePage[];
@@ -135,7 +145,7 @@ export const LIMITS = {
   galleryMax: 12,
   endingPhotos: 3,
   mapImages: 3,
-  invitationName: { min: 2, max: 30 },
+  invitationName: { min: 1, max: 30 },
   guestbook: { name: 10, passwordMin: 4, passwordMax: 20, content: 300 },
   bgmBytes: 5 * 1024 * 1024,
 } as const;
@@ -233,6 +243,10 @@ export function defaultContent(today: Date = new Date()): InvitationContent {
   };
 }
 
+/** 초대장No: 11자리 숫자 */
+export const newInvitationNumber = (random: () => number = Math.random) =>
+  String(Math.floor(1e10 + Math.min(random(), 0.9999999999) * 9e10));
+
 export function createInvitation(args: {
   id: string;
   ownerId: string;
@@ -247,6 +261,7 @@ export function createInvitation(args: {
     themeId: args.themeId,
     templateId: args.templateId,
     name: '',
+    number: newInvitationNumber(),
     status: 'draft',
     enabled: { ...DEFAULT_ENABLED },
     order: [...DEFAULT_ORDER],
@@ -255,6 +270,15 @@ export function createInvitation(args: {
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/** 예전 저장본 보정: 'active' → 'final', 번호가 없으면 생성. changed 면 저장해야 번호가 고정된다 */
+export function normalizeInvitation(inv: Invitation): { invitation: Invitation; changed: boolean } {
+  const raw = inv as Omit<Invitation, 'status' | 'number'> & { status: string; number?: string };
+  const status: InvitationStatus = raw.status === 'draft' ? 'draft' : 'final';
+  const number = raw.number ?? newInvitationNumber();
+  const changed = status !== raw.status || number !== raw.number;
+  return { invitation: changed ? { ...inv, status, number } : inv, changed };
 }
 
 // ── 순서 / 탭 ─────────────────────────────────────────

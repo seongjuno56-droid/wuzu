@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Invitation } from '../../features/invitation/model';
+import { screenStatus } from '../../features/invitation/status';
 import type { User } from '../../services/types';
 import { colors, radius, shadow, spacing } from '../../theme';
 import { Icon3D } from '../brand/Icon3D';
@@ -38,7 +39,7 @@ export function InvitationStatusCard({ user, invitations }: Props) {
   }
 
   const list = invitations ?? [];
-  const activeCount = list.filter((i) => i.status === 'active').length;
+  const activeCount = list.filter((i) => screenStatus(i) === 'active').length;
   const count = (
     <View style={styles.countRow}>
       <Txt color={colors.muted} style={styles.flex}>

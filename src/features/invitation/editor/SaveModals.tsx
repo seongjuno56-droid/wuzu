@@ -6,7 +6,7 @@ import { Txt } from '../../../components/Txt';
 import { colors } from '../../../theme';
 import { isValidInvitationName, LIMITS } from '../model';
 
-/** 초대장 저장 / 임시저장: 이름 2~30자 입력 */
+/** 초대장 저장 / 임시저장: 이름 1~30자 입력 */
 export function SaveNameModal(props: {
   visible: boolean;
   kind: 'draft' | 'final';
@@ -45,7 +45,7 @@ export function SaveNameModal(props: {
       </Txt>
       {kind === 'final' && (
         <Txt variant="tiny" color={colors.muted} align="center">
-          저장하면 초대장이 활성화되어 링크로 보낼 수 있어요.
+          저장 후 나의 초대장에서 활성화하면 링크로 보낼 수 있어요.
         </Txt>
       )}
     </AppModal>

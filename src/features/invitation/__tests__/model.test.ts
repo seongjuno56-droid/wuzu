@@ -6,6 +6,8 @@ import {
   givenName,
   isValidInvitationName,
   monthMatrix,
+  newInvitationNumber,
+  normalizeInvitation,
   pageOrder,
   sectionTabs,
   validateGuestbookEntry,
@@ -165,8 +167,9 @@ describe('helpers', () => {
     expect(rows[0]).toEqual([1, 2, 3, 4, 5, 6, 7]); // 2024-12-01 은 일요일
     expect(rows[rows.length - 1]).toEqual([29, 30, 31, null, null, null, null]);
   });
-  it('validates invitation names (2~30) and guestbook entries', () => {
-    expect(isValidInvitationName('a')).toBe(false);
+  it('validates invitation names (1~30) and guestbook entries', () => {
+    expect(isValidInvitationName('a')).toBe(true);
+    expect(isValidInvitationName('')).toBe(false);
     expect(isValidInvitationName(' 우리 결혼 ')).toBe(true);
     expect(validateGuestbookEntry({ name: '홍길동', password: '1234', content: '축하해' })).toEqual([]);
     expect(validateGuestbookEntry({ name: '', password: '12', content: '' })).toEqual(['name', 'password', 'content']);
@@ -188,5 +191,27 @@ describe('file checks', () => {
     expect(checkAudioFile({ name: 'song.mp3', size: 1024 })).toBe('ok');
     expect(checkAudioFile({ name: 'song.flac', size: 1024 })).toBe('extension');
     expect(checkAudioFile({ name: 'song.m4a', size: 5 * 1024 * 1024 + 1 })).toBe('size');
+  });
+});
+
+describe('초대장 번호·이름·보정', () => {
+  it('번호는 11자리 숫자', () => {
+    expect(newInvitationNumber(() => 0)).toBe('10000000000');
+    expect(newInvitationNumber(() => 0.999999999999)).toMatch(/^\d{11}$/);
+    expect(createInvitation({ id: 'x', ownerId: 'u', themeId: 'wedding', templateId: 'wedding-1' }).number).toMatch(/^\d{11}$/);
+  });
+  it('이름은 1~30자', () => {
+    expect(isValidInvitationName('가')).toBe(true);
+    expect(isValidInvitationName('  ')).toBe(false);
+    expect(isValidInvitationName('가'.repeat(31))).toBe(false);
+  });
+  it('예전 active 저장본은 final 로, 번호가 없으면 만들고 changed 표시', () => {
+    const old = { ...createInvitation({ id: 'x', ownerId: 'u', themeId: 'wedding', templateId: 'wedding-1' }), status: 'active' } as unknown as Parameters<typeof normalizeInvitation>[0];
+    delete (old as Partial<typeof old>).number;
+    const { invitation, changed } = normalizeInvitation(old);
+    expect(invitation.status).toBe('final');
+    expect(invitation.number).toMatch(/^\d{11}$/);
+    expect(changed).toBe(true);
+    expect(normalizeInvitation(invitation).changed).toBe(false);
   });
 });
