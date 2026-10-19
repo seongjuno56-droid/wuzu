@@ -24,6 +24,11 @@
 - 개발 서버는 사용자가 요청할 때만 켠다(메모리 부족으로 자동 종료된 적 있음).
 - 작업 완료 전: `npx tsc --noEmit`, `npx jest`, (최종 작업에서) `npx expo lint`, `npx expo-doctor`.
 
+> **선행 작업 반영(2026-10-20 나의 초대장·레터):**
+> - `normalizeInvitation`은 이미 있다(`{ invitation, changed }` 반환, 저장소에서 바뀌면 저장). Task 3의 viewMode·design 보정은 이 함수 안에 더하고 `changed` 판정에 포함한다. mock 저장소는 `src/services/mock/invitationStore.ts`.
+> - Task 8의 compose 전체 코드는 수정 모드(origin·설정·임시저장 숨김·수정 결제·입력 누락 모달)를 포함하도록 합쳐서 쓴다 — 지금 `compose.tsx`의 수정 모드 부분(`origin`, `editing`, `paid`)을 그대로 옮긴다. 이탈 경고(`useLeaveGuard`)는 포커스를 다시 얻을 때 `useFocusEffect`로 재무장하고, 수정 모드의 `order.tsx`는 설정으로 갈 때 쌓아 둔 compose 로 `router.dismissTo('/create/editor/compose')` 로 돌아간다(새로 만들 때는 `push`). 이 동작을 덮어쓰지 않는다.
+> - 나의 초대장 썸네일 `src/features/my-invites/CoverThumb.tsx`는 `CoverPage`(360px 폭을 1/3로 축소)를 쓴다. Task 5에서 `CoverPage`를 지울 때 `CoverThumb`을 `CoverSlide`(폭 120)로 바꾼다.
+
 ## Review Focus
 
 1. **웹 저장 용량 초과** — 웹에서 GIF·동영상을 data URI로 저장하면 localStorage 한도를 넘어 저장이 실패한다. 기대: 객체 URL로 바꿔 보관하고 저장은 성공(Task 2 `needsSessionUrl` 테스트, Task 11에서 사용).
