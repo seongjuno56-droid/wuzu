@@ -1,15 +1,6 @@
-import { Invitation, validateGuestbookEntry } from '../../features/invitation/model';
+import { Invitation, isValidInvitationName, validateGuestbookEntry } from '../../features/invitation/model';
 import { GuestbookEntry, GuestbookInput, InvitationService, KeyValueStorage, RemoveGuestbookAuth } from '../types';
-
-const DB_KEY = 'wuzu.mock.invitations.v1';
-
-interface StoredEntry extends GuestbookEntry {
-  password: string;
-}
-interface Db {
-  invitations: Invitation[];
-  guestbook: StoredEntry[];
-}
+import { createInvitationStore, StoredEntry } from './invitationStore';
 
 export function createMockInvitationService(opts: {
   delayMs: number;
@@ -20,13 +11,7 @@ export function createMockInvitationService(opts: {
   const now = opts.now ?? (() => new Date());
   const wait = () => new Promise((r) => setTimeout(r, delayMs));
 
-  async function load(): Promise<Db> {
-    const raw = await storage.getItem(DB_KEY);
-    return raw ? (JSON.parse(raw) as Db) : { invitations: [], guestbook: [] };
-  }
-  async function save(db: Db) {
-    await storage.setItem(DB_KEY, JSON.stringify(db));
-  }
+  const { load, save } = createInvitationStore(storage);
   const strip = ({ password: _p, ...e }: StoredEntry): GuestbookEntry => e;
 
   return {
@@ -58,6 +43,27 @@ export function createMockInvitationService(opts: {
       const db = await load();
       db.invitations = db.invitations.filter((i) => i.id !== id);
       db.guestbook = db.guestbook.filter((e) => e.invitationId !== id);
+      await save(db);
+    },
+
+    async rename(id, name) {
+      await wait();
+      if (!isValidInvitationName(name)) throw new Error('INVALID');
+      const db = await load();
+      const inv = db.invitations.find((i) => i.id === id);
+      if (!inv) throw new Error('NOT_FOUND');
+      inv.name = name.trim();
+      inv.updatedAt = now().toISOString();
+      await save(db);
+      return inv;
+    },
+
+    async markGuestbookSeen(id, at) {
+      await wait();
+      const db = await load();
+      const inv = db.invitations.find((i) => i.id === id);
+      if (!inv) return;
+      inv.guestbookSeenAt = at;
       await save(db);
     },
 

@@ -102,6 +102,10 @@ export interface InvitationService {
     entryId: string,
     auth: RemoveGuestbookAuth,
   ): Promise<'ok' | 'wrong_password' | 'not_found'>;
+  /** 이름만 바꾼다 (1~30자, 앞뒤 공백 제거) */
+  rename(id: string, name: string): Promise<Invitation>;
+  /** 작성자가 방명록 관리를 확인한 시각 */
+  markGuestbookSeen(id: string, at: string): Promise<void>;
 }
 
 // ── 레터(지갑) / 결제 ─────────────────────────────────

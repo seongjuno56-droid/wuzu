@@ -73,4 +73,27 @@ describe('guestbook', () => {
   it('reports missing entries', async () => {
     expect(await svc.removeGuestbook('inv', 'ghost', { password: '1234' })).toBe('not_found');
   });
+  it('이름 바꾸기 (앞뒤 공백 제거)', async () => {
+    await svc.save(make('a'));
+    const r = await svc.rename('a', '  새 이름 ');
+    expect(r.name).toBe('새 이름');
+    expect((await svc.get('a'))?.name).toBe('새 이름');
+  });
+  it('방명록 확인 시각 저장', async () => {
+    await svc.save(make('a'));
+    await svc.markGuestbookSeen('a', '2026-10-20T00:00:00.000Z');
+    expect((await svc.get('a'))?.guestbookSeenAt).toBe('2026-10-20T00:00:00.000Z');
+  });
+  it('예전 저장본의 번호는 처음 보정할 때 저장되어 다음에도 같다', async () => {
+    const storage = memoryStorage();
+    const old = { ...make('old'), status: 'active' } as Record<string, unknown>;
+    delete old.number;
+    await storage.setItem('wuzu.mock.invitations.v1', JSON.stringify({ invitations: [old], guestbook: [] }));
+    const s = createMockInvitationService({ delayMs: 0, storage });
+    const first = await s.get('old');
+    const second = await s.get('old');
+    expect(first?.status).toBe('final');
+    expect(first?.number).toMatch(/^\d{11}$/);
+    expect(second?.number).toBe(first?.number);
+  });
 });
