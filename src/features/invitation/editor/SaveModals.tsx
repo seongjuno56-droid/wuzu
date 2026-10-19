@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { AppModal } from '../../../components/AppModal';
 import { TextField } from '../../../components/TextField';
@@ -17,9 +17,12 @@ export function SaveNameModal(props: {
 }) {
   const { visible, kind, initialName, saving, onCancel, onSave } = props;
   const [name, setName] = useState(initialName);
-  useEffect(() => {
+  // 모달이 열릴 때(또는 초기 이름이 바뀔 때) 입력값을 맞춘다
+  const [synced, setSynced] = useState({ visible, initialName });
+  if (synced.visible !== visible || synced.initialName !== initialName) {
+    setSynced({ visible, initialName });
     if (visible) setName(initialName);
-  }, [visible, initialName]);
+  }
   const valid = isValidInvitationName(name);
   const max = LIMITS.invitationName.max;
 

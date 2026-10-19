@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
@@ -24,13 +24,13 @@ export default function GuestbookManage() {
   const [limit, setLimit] = useState(PAGE);
   const [removing, setRemoving] = useState<GuestbookEntry | null>(null);
   // 들어올 때의 확인 시각 기준으로 '신규'를 보여준다 (보는 중에 사라지지 않게)
-  const seenAt = useRef<string | undefined>(undefined);
+  const [seenAt, setSeenAt] = useState<string | undefined>(undefined);
 
   const load = useCallback(async () => setEntries(await invitationService.listGuestbook(id)), [id]);
 
   useEffect(() => {
     invitationService.get(id).then((inv) => {
-      seenAt.current = inv?.guestbookSeenAt;
+      setSeenAt(inv?.guestbookSeenAt);
       load();
     });
     return () => {
@@ -62,7 +62,7 @@ export default function GuestbookManage() {
         <>
           {entries.slice(0, limit).map((e) => (
             <View key={e.id} style={styles.card}>
-              {isNewEntry(e, seenAt.current) && (
+              {isNewEntry(e, seenAt) && (
                 <View style={styles.newTag}>
                   <Txt variant="tiny" weight="semibold" color={colors.canvas}>
                     신규

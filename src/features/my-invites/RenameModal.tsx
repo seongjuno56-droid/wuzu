@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { AppModal } from '../../components/AppModal';
 import { TextField } from '../../components/TextField';
@@ -20,9 +20,12 @@ export function RenameModal({
 }) {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
-  useEffect(() => {
+  // 대상 초대장이 바뀌면 입력값을 그 이름으로 맞춘다
+  const [syncedFor, setSyncedFor] = useState<Invitation | null>(null);
+  if (syncedFor !== invitation) {
+    setSyncedFor(invitation);
     if (invitation) setName(invitation.name);
-  }, [invitation]);
+  }
   const max = LIMITS.invitationName.max;
   const valid = isValidInvitationName(name);
 

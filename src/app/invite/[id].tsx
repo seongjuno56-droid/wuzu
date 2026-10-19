@@ -25,8 +25,8 @@ export default function InvitationScreen() {
 
   useEffect(() => {
     invitationService.get(id).then(setInvitation);
-    loadGuestbook();
-  }, [id, loadGuestbook]);
+    invitationService.listGuestbook(id).then(setEntries);
+  }, [id]);
 
   if (invitation === undefined) {
     return (

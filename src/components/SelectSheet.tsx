@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,9 +18,12 @@ interface Props<T extends string | number> {
 /** 바텀시트 단일 선택: 고른 항목은 검정 바탕, [선택]으로 확정 */
 export function SelectSheet<T extends string | number>({ visible, title, options, value, onSelect, onClose }: Props<T>) {
   const [picked, setPicked] = useState(value);
-  useEffect(() => {
+  // 시트가 열릴 때(또는 값이 바뀔 때) 선택값을 맞춘다
+  const [synced, setSynced] = useState({ visible, value });
+  if (synced.visible !== visible || synced.value !== value) {
+    setSynced({ visible, value });
     if (visible) setPicked(value);
-  }, [visible, value]);
+  }
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
