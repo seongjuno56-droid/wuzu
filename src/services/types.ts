@@ -103,3 +103,64 @@ export interface InvitationService {
     auth: RemoveGuestbookAuth,
   ): Promise<'ok' | 'wrong_password' | 'not_found'>;
 }
+
+// ── 레터(지갑) / 결제 ─────────────────────────────────
+
+export type ExtendDays = 30 | 60 | 180;
+
+/** 레터로 사는 것: 활성화(+연장) / 연장 / 활성화된 초대장 수정(수정 내용 저장까지) */
+export type SpendOrder =
+  | { kind: 'activate'; invitationId: string; extendDays: ExtendDays | 0 }
+  | { kind: 'extend'; invitationId: string; extendDays: ExtendDays }
+  | { kind: 'edit'; invitation: Invitation };
+
+export type LedgerKind = 'activate' | 'extend' | 'edit' | 'charge';
+
+/** 구매 정보·이력 한 줄 (amount: 차감은 음수, 충전은 양수) */
+export interface OrderLine {
+  label: string;
+  amount: number;
+}
+
+export interface LedgerEntry {
+  id: string;
+  /** 이력No (11자리) */
+  number: string;
+  userId: string;
+  invitationId: string | null;
+  invitationName: string | null;
+  kind: LedgerKind;
+  title: string;
+  lines: OrderLine[];
+  /** 줄 합계 (부호 포함) */
+  total: number;
+  createdAt: string;
+}
+
+export type SpendResult =
+  | { ok: true; invitation: Invitation; balance: number }
+  | { ok: false; reason: 'insufficient' | 'blocked' | 'not_found' | 'invalid' };
+
+export interface WalletService {
+  balance(userId: string): Promise<number>;
+  history(userId: string, filter?: { invitationId?: string; kind?: 'charge' | 'spend' }): Promise<LedgerEntry[]>;
+  /** 잔액 확인 → 차감 → 초대장 변경 → 기록을 한 번에. 실패하면 아무것도 바꾸지 않는다 */
+  spend(userId: string, order: SpendOrder): Promise<SpendResult>;
+  /** 결제 성공 후에만 부른다. 새 잔액을 돌려준다 */
+  charge(userId: string, productId: string): Promise<number>;
+}
+
+export interface LetterProduct {
+  id: string;
+  letters: number;
+  bonus: number;
+  /** 원 */
+  price: number;
+}
+
+export type PurchaseResult = 'success' | 'cancelled' | 'failed';
+
+export interface PaymentService {
+  products(): Promise<LetterProduct[]>;
+  purchase(productId: string): Promise<PurchaseResult>;
+}
