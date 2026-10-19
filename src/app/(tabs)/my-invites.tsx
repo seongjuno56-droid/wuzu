@@ -1,113 +1,189 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../components/AppModal';
-import { Icon3D } from '../../components/brand/Icon3D';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
+import { LetterBadge } from '../../components/LetterBadge';
 import { Screen } from '../../components/Screen';
-import { SegmentedTabs } from '../../components/SegmentedTabs';
+import { SelectSheet } from '../../components/SelectSheet';
 import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
-import { getTemplate } from '../../data/templates';
-import { formatDate } from '../../lib/format';
 import { useEditor } from '../../features/invitation/editorStore';
 import { Invitation } from '../../features/invitation/model';
+import {
+  filterInvitations,
+  hasNewGuestbook,
+  InviteFilter,
+  ScreenStatus,
+  STATUS_LABEL,
+  STATUS_ORDER,
+  yearOptions,
+} from '../../features/invitation/status';
 import { useMyInvitations } from '../../features/invitation/useMyInvitations';
+import { CardAction, InviteCard } from '../../features/my-invites/InviteCard';
+import { MoreAction, MoreSheet } from '../../features/my-invites/MoreSheet';
+import { RenameModal } from '../../features/my-invites/RenameModal';
+import { shareInvitation } from '../../features/my-invites/share';
 import { invitationService } from '../../services';
 import { useSession } from '../../store/session';
-import { colors, radius, shadow, spacing } from '../../theme';
+import { colors, radius, spacing } from '../../theme';
 
-type Filter = 'active' | 'draft';
-
-function InvitationCard({ inv, onDelete }: { inv: Invitation; onDelete: () => void }) {
-  const template = getTemplate(inv.themeId, inv.templateId);
-  const edit = () => {
-    useEditor.getState().load(inv);
-    router.push('/create/editor/compose');
-  };
+function FilterButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <View style={[styles.card, shadow]}>
-      <Pressable style={styles.cardMain} onPress={() => router.push(`/invite/${inv.id}`)} accessibilityRole="button">
-        {/* 작은 썸네일은 템플릿 색 견본으로 (표지 글자를 줄이면 읽히지 않는다) */}
-        <View style={[styles.thumb, { backgroundColor: template?.style.bg ?? colors.surface }]}>
-          <Ionicons name="heart" size={18} color={template?.style.accent ?? colors.muted} />
-        </View>
-        <View style={styles.flex}>
-          <View style={[styles.badge, inv.status === 'final' ? styles.badgeActive : styles.badgeDraft]}>
-            <Txt variant="tiny" weight="semibold" color={inv.status === 'final' ? colors.success : colors.infoInk}>
-              {inv.status === 'final' ? '활성화' : '임시저장'}
-            </Txt>
-          </View>
-          <Txt variant="bodyStrong" numberOfLines={1}>
-            {inv.name}
-          </Txt>
-          <Txt variant="tiny" color={colors.faint}>
-            {formatDate(inv.updatedAt)} 저장 · {template?.name ?? '템플릿'}
-          </Txt>
-        </View>
-      </Pressable>
-      <View style={styles.actions}>
-        <Button label="보기" variant="outline" size="sm" style={styles.flex} onPress={() => router.push(`/invite/${inv.id}`)} />
-        <Button label="수정" variant="outline" size="sm" style={styles.flex} onPress={edit} />
-        <Button label="삭제" variant="ghost" size="sm" onPress={onDelete} />
-      </View>
-    </View>
+    <Pressable onPress={onPress} style={styles.filter} accessibilityRole="button">
+      <Txt variant="caption" color={colors.label}>
+        {label}
+      </Txt>
+      <Ionicons name="caret-down" size={12} color={colors.label} />
+    </Pressable>
   );
 }
 
 export default function MyInvites() {
   const user = useSession((s) => s.user);
   const { list, reload } = useMyInvitations();
-  const [filter, setFilter] = useState<Filter>('active');
+  const [filter, setFilter] = useState<InviteFilter>({ year: 'all', status: 'all' });
+  const [sheet, setSheet] = useState<'year' | 'status' | null>(null);
+  const [more, setMore] = useState<Invitation | null>(null);
+  const [renaming, setRenaming] = useState<Invitation | null>(null);
   const [deleting, setDeleting] = useState<Invitation | null>(null);
+  const [newBook, setNewBook] = useState<Record<string, boolean>>({});
+  const now = useMemo(() => new Date(), [list]);
+
+  // 방명록 (New) 표시: 방명록을 켠 초대장만 확인
+  useEffect(() => {
+    if (!list) return;
+    let alive = true;
+    Promise.all(
+      list
+        .filter((i) => i.enabled.guestbook)
+        .map(async (i) => [i.id, hasNewGuestbook(await invitationService.listGuestbook(i.id), i.guestbookSeenAt)] as const),
+    ).then((pairs) => alive && setNewBook(Object.fromEntries(pairs)));
+    return () => {
+      alive = false;
+    };
+  }, [list]);
+
   if (!user) return <Redirect href="/auth/login" />;
 
-  const shown = (list ?? []).filter((i) => i.status === filter);
+  const all = list ?? [];
+  const shown = filterInvitations(all, filter, now);
+  const years = yearOptions(all);
+
+  const edit = (inv: Invitation) => {
+    useEditor.getState().load(inv);
+    router.push('/create/editor/compose');
+  };
+
+  const onCard = (inv: Invitation, a: CardAction) => {
+    switch (a) {
+      case 'complete':
+        return edit(inv);
+      case 'activate':
+        return router.push(`/invitation/${inv.id}/activate`);
+      case 'extend':
+        return router.push(`/invitation/${inv.id}/extend`);
+      case 'share':
+        return shareInvitation(inv);
+      case 'guestbook':
+        return router.push(`/invitation/${inv.id}/guestbook`);
+      case 'preview':
+        return router.push(`/invite/${inv.id}`);
+      case 'more':
+        return setMore(inv);
+      case 'delete':
+        return setDeleting(inv);
+    }
+  };
+
+  const onMore = (a: MoreAction) => {
+    const inv = more!;
+    setMore(null);
+    if (a === 'history') router.push(`/invitation/${inv.id}/history`);
+    if (a === 'rename') setRenaming(inv);
+    if (a === 'edit') edit(inv);
+    if (a === 'delete') setDeleting(inv);
+  };
+
+  const filtered = filter.year !== 'all' || filter.status !== 'all';
 
   return (
-    <Screen edges={['top']} header={<Header title="나의 초대장" hideBack divider={false} />} background={colors.surface}>
-      <View style={styles.tabs}>
-        <SegmentedTabs
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { value: 'active', label: '활성화' },
-            { value: 'draft', label: '임시저장' },
-          ]}
-        />
+    <Screen
+      edges={['top']}
+      header={<Header title="나의 초대장" hideBack right={<LetterBadge />} />}
+      background={colors.surface}
+    >
+      <View style={styles.filters}>
+        <FilterButton label={filter.year === 'all' ? '제작 연도' : `${filter.year}년`} onPress={() => setSheet('year')} />
+        <FilterButton label={filter.status === 'all' ? '상태' : STATUS_LABEL[filter.status]} onPress={() => setSheet('status')} />
       </View>
+
       {list === null ? (
         <ActivityIndicator style={styles.loading} color={colors.inkSoft} />
       ) : shown.length === 0 ? (
         <View style={styles.empty}>
-          <Icon3D name="loveLetter" size={96} />
-          <Txt variant="title" align="center" style={styles.emptyTitle}>
-            {filter === 'active' ? '활성화된 초대장이 없어요' : '임시저장한 초대장이 없어요'}
+          <Txt variant="subtitle" align="center">
+            {all.length === 0 ? '제작된 초대장이 없습니다.' : '조건에 맞는 초대장이 없습니다.'}
           </Txt>
-          <Txt variant="caption" color={colors.muted} align="center">
-            템플릿을 고르고 내용을 채우면{'\n'}링크로 바로 보낼 수 있어요.
-          </Txt>
-          <Button label="초대장 만들기" size="md" onPress={() => router.navigate('/create')} style={styles.cta} />
+          {all.length === 0 ? (
+            <Button label="초대장 제작하러 가기" variant="outline" size="md" onPress={() => router.navigate('/create')} style={styles.cta} />
+          ) : (
+            filtered && (
+              <Button label="필터 초기화" variant="outline" size="md" onPress={() => setFilter({ year: 'all', status: 'all' })} style={styles.cta} />
+            )
+          )}
         </View>
       ) : (
         <View style={styles.list}>
           {shown.map((inv) => (
-            <InvitationCard key={inv.id} inv={inv} onDelete={() => setDeleting(inv)} />
+            <InviteCard key={inv.id} invitation={inv} now={now} hasNew={!!newBook[inv.id]} onAction={(a) => onCard(inv, a)} />
           ))}
         </View>
       )}
+
+      <SelectSheet<number | 'all'>
+        visible={sheet === 'year'}
+        title="제작 연도"
+        options={[{ value: 'all', label: '전체' }, ...years.map((y) => ({ value: y, label: `${y}년` }))]}
+        value={filter.year}
+        onClose={() => setSheet(null)}
+        onSelect={(year) => {
+          setFilter((f) => ({ ...f, year }));
+          setSheet(null);
+        }}
+      />
+      <SelectSheet<ScreenStatus | 'all'>
+        visible={sheet === 'status'}
+        title="상태"
+        options={[{ value: 'all', label: '전체' }, ...STATUS_ORDER.map((s) => ({ value: s, label: STATUS_LABEL[s] }))]}
+        value={filter.status}
+        onClose={() => setSheet(null)}
+        onSelect={(status) => {
+          setFilter((f) => ({ ...f, status }));
+          setSheet(null);
+        }}
+      />
+      <MoreSheet invitation={more} visible={!!more} onSelect={onMore} onClose={() => setMore(null)} />
+      <RenameModal
+        invitation={renaming}
+        onClose={() => setRenaming(null)}
+        onRenamed={() => {
+          setRenaming(null);
+          reload();
+        }}
+      />
       <AppModal
         visible={!!deleting}
-        title="초대장을 삭제하시겠습니까?"
-        message="삭제하면 방명록까지 모두 사라지고 되돌릴 수 없어요."
+        title="삭제하시겠습니까?"
+        message="삭제 시 복구할 수 없습니다."
         onDismiss={() => setDeleting(null)}
         actions={[
-          { label: '닫기', variant: 'outline', onPress: () => setDeleting(null) },
+          { label: '취소', variant: 'outline', onPress: () => setDeleting(null) },
           {
-            label: '삭제',
+            label: '삭제하기',
             onPress: async () => {
               if (!deleting) return;
               await invitationService.remove(deleting.id);
@@ -123,26 +199,20 @@ export default function MyInvites() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  tabs: { backgroundColor: colors.canvas },
+  filters: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, backgroundColor: colors.canvas },
+  filter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.xs,
+    backgroundColor: colors.canvas,
+  },
   loading: { marginTop: 80 },
   list: { padding: spacing.lg, gap: spacing.md },
-  card: { backgroundColor: colors.canvas, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md },
-  cardMain: { flexDirection: 'row', gap: spacing.lg, alignItems: 'center' },
-  thumb: {
-    width: 56,
-    height: 80,
-    borderRadius: radius.xs,
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badge: { alignSelf: 'flex-start', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.xs, marginBottom: 4 },
-  badgeActive: { backgroundColor: '#E6F4EC' },
-  badgeDraft: { backgroundColor: colors.infoTint },
-  actions: { flexDirection: 'row', gap: spacing.sm },
-  empty: { alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xxl, minHeight: 420 },
-  emptyTitle: { marginTop: spacing.lg },
-  cta: { marginTop: spacing.lg, paddingHorizontal: spacing.xxl },
+  empty: { alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.xxl, minHeight: 420 },
+  cta: { paddingHorizontal: spacing.xxl },
 });
