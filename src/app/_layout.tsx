@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ToastHost } from '../components/Toast';
+import { PaymentSheetHost } from '../features/wallet/PaymentSheetHost';
 import { useSession } from '../store/session';
 import { colors, fontSources, MAX_APP_WIDTH } from '../theme';
 
@@ -32,6 +33,7 @@ export default function RootLayout() {
           {ready && (
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
           )}
+          <PaymentSheetHost />
           <ToastHost />
         </View>
       </View>
