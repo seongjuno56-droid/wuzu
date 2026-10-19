@@ -7,6 +7,7 @@ import { Screen } from '../../components/Screen';
 import { Txt } from '../../components/Txt';
 import { GuestbookModals, GuestbookView } from '../../features/invitation/GuestbookModals';
 import { Invitation } from '../../features/invitation/model';
+import { screenStatus } from '../../features/invitation/status';
 import { InvitationView } from '../../features/invitation/view/InvitationView';
 import { GuestbookEntry, invitationService } from '../../services';
 import { useSession } from '../../store/session';
@@ -49,12 +50,23 @@ export default function InvitationScreen() {
 
   const isOwner = !!user && user.id === invitation.ownerId;
 
+  // 활성화 전·만료·제재 초대장은 하객에게 보이지 않는다 (작성자는 미리보기)
+  if (!isOwner && screenStatus(invitation) !== 'active') {
+    return (
+      <Screen header={<Header title="초대장" />} contentStyle={styles.empty}>
+        <Txt variant="title" align="center">
+          지금은 볼 수 없는 초대장이에요
+        </Txt>
+      </Screen>
+    );
+  }
+
   return (
     <Screen header={<Header title={invitation.name || '초대장'} />} background={colors.surface}>
-      {invitation.status === 'draft' && (
+      {isOwner && screenStatus(invitation) !== 'active' && (
         <View style={styles.draftBanner}>
           <Txt variant="caption" color={colors.infoInk} align="center">
-            임시저장된 초대장이에요. 최종저장하면 하객에게 보낼 수 있어요.
+            미리보기예요. 나의 초대장에서 활성화하면 하객에게 보낼 수 있어요.
           </Txt>
         </View>
       )}

@@ -1,4 +1,5 @@
 import { useEditor } from '../editorStore';
+import { createInvitation } from '../model';
 
 const start = () =>
   useEditor.getState().start({ ownerId: 'u1', themeId: 'wedding', templateId: 'wedding-1', today: new Date(2026, 9, 15) });
@@ -52,5 +53,15 @@ describe('editor store', () => {
     useEditor.getState().markSaved({ ...useEditor.getState().draft!, name: '우리 결혼' });
     expect(useEditor.getState().dirty).toBe(false);
     expect(useEditor.getState().draft?.name).toBe('우리 결혼');
+  });
+
+  it('저장본을 불러오면 origin 에 남고, 새로 시작하면 비운다', () => {
+    const saved = { ...createInvitation({ id: 's', ownerId: 'u1', themeId: 'wedding', templateId: 'wedding-1' }), status: 'final' as const };
+    useEditor.getState().load(saved);
+    expect(useEditor.getState().origin?.id).toBe('s');
+    useEditor.getState().patch('greeting', { content: '바뀜' });
+    expect(useEditor.getState().origin?.content.greeting.content).toBe('');
+    start();
+    expect(useEditor.getState().origin).toBeNull();
   });
 });

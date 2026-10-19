@@ -15,6 +15,8 @@ interface EditorState {
   draft: Invitation | null;
   /** 마지막 저장 이후 바뀐 내용이 있는지 — 이탈 경고에 사용 */
   dirty: boolean;
+  /** 나의 초대장에서 불러온 저장본 (수정 모드 판단용). 새로 만들면 null */
+  origin: Invitation | null;
   start: (args: { ownerId: string; themeId: string; templateId: string; today?: Date }) => void;
   load: (invitation: Invitation) => void;
   reset: () => void;
@@ -31,13 +33,14 @@ const newId = () => `inv-${Date.now().toString(36)}-${Math.random().toString(36)
 export const useEditor = create<EditorState>()((set, get) => ({
   draft: null,
   dirty: false,
+  origin: null,
 
   start: ({ ownerId, themeId, templateId, today }) =>
-    set({ draft: createInvitation({ id: newId(), ownerId, themeId, templateId, today }), dirty: false }),
+    set({ draft: createInvitation({ id: newId(), ownerId, themeId, templateId, today }), dirty: false, origin: null }),
 
-  load: (invitation) => set({ draft: invitation, dirty: false }),
+  load: (invitation) => set({ draft: invitation, dirty: false, origin: invitation }),
 
-  reset: () => set({ draft: null, dirty: false }),
+  reset: () => set({ draft: null, dirty: false, origin: null }),
 
   setEnabled: (key, value) =>
     set((s) => (s.draft ? { draft: { ...s.draft, enabled: { ...s.draft.enabled, [key]: value } }, dirty: true } : s)),
@@ -61,5 +64,5 @@ export const useEditor = create<EditorState>()((set, get) => ({
     return true;
   },
 
-  markSaved: (saved) => set({ draft: saved, dirty: false }),
+  markSaved: (saved) => set({ draft: saved, dirty: false, origin: saved }),
 }));

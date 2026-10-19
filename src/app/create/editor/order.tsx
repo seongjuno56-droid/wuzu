@@ -47,7 +47,7 @@ export default function EditorOrder() {
         <BottomCTA>
           <View style={styles.actions}>
             <Button label="이전" variant="outline" style={styles.flex} onPress={() => router.back()} />
-            <Button label="정보 입력" style={styles.wide} onPress={() => router.push('/create/editor/compose')} />
+            <Button label="정보 입력" style={styles.wide} onPress={() => router.navigate('/create/editor/compose')} />
           </View>
         </BottomCTA>
       }
