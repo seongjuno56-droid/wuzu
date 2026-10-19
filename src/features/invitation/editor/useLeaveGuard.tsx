@@ -1,5 +1,5 @@
-import { useNavigation } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useNavigation } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
@@ -18,6 +18,12 @@ const WEB_BACK = 'web-back' as const;
 export function useLeaveGuard(dirty: boolean) {
   const navigation = useNavigation();
   const allowed = useRef(false);
+  // 화면이 다시 포커스를 얻으면(설정에 다녀온 뒤 등) 경고를 다시 켠다
+  useFocusEffect(
+    useCallback(() => {
+      allowed.current = false;
+    }, []),
+  );
   // 막아 둔 이동 동작 (확인 시 그대로 다시 보낸다)
   const [pending, setPending] = useState<object | typeof WEB_BACK | null>(null);
 

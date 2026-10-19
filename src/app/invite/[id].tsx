@@ -66,7 +66,9 @@ export default function InvitationScreen() {
       {isOwner && screenStatus(invitation) !== 'active' && (
         <View style={styles.draftBanner}>
           <Txt variant="caption" color={colors.infoInk} align="center">
-            미리보기예요. 나의 초대장에서 활성화하면 하객에게 보낼 수 있어요.
+            {screenStatus(invitation) === 'blocked'
+              ? '관리자로부터 제재된 초대장이에요. 하객에게 보이지 않아요.'
+              : '미리보기예요. 나의 초대장에서 활성화하면 하객에게 보낼 수 있어요.'}
           </Txt>
         </View>
       )}

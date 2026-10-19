@@ -34,6 +34,10 @@ export default function EditorOrder() {
   const [dragging, setDragging] = useState(false);
   if (!draft) return <Redirect href="/create" />;
 
+  // 수정 모드는 설정으로 올 때 쌓아 둔 compose 로 돌아가고(중복 방지), 새로 만들 때는 compose 를 새로 연다
+  const toCompose = () =>
+    useEditor.getState().origin ? router.dismissTo('/create/editor/compose') : router.push('/create/editor/compose');
+
   const visible = draft.order.filter((p) => p === 'ceremony' || draft.enabled[p]);
   const hidden = draft.order.filter((p) => !visible.includes(p));
 
@@ -47,7 +51,7 @@ export default function EditorOrder() {
         <BottomCTA>
           <View style={styles.actions}>
             <Button label="이전" variant="outline" style={styles.flex} onPress={() => router.back()} />
-            <Button label="정보 입력" style={styles.wide} onPress={() => router.navigate('/create/editor/compose')} />
+            <Button label="정보 입력" style={styles.wide} onPress={toCompose} />
           </View>
         </BottomCTA>
       }

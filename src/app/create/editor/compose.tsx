@@ -56,12 +56,13 @@ export default function EditorCompose() {
 
   const missingTab = () => tabs.find((k) => !draft.completed[k]);
 
-  const askPaidEdit = () => {
+  const askPaidEdit = async () => {
     if (!canFinalize(draft)) {
       setIncomplete(true);
       return;
     }
-    useWallet.getState().refresh();
+    // 잔액을 아직 모르면 불러온 뒤 보여준다
+    if (useWallet.getState().balance === null) await useWallet.getState().refresh();
     setPaying(true);
   };
 
@@ -179,8 +180,9 @@ export default function EditorCompose() {
           busy={pay.busy}
           onCancel={() => setPaying(false)}
           onPay={() => {
-            if ((balance ?? 0) < EDIT_COST) {
-              setPaying(false);
+            // 결제 결과 모달(레터 부족 등)과 겹치지 않게 먼저 닫는다
+            setPaying(false);
+            if ((useWallet.getState().balance ?? 0) < EDIT_COST) {
               pay.lack();
               return;
             }
