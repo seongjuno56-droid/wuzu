@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { AppModal } from '../../components/AppModal';
 import { toast } from '../../components/Toast';
@@ -17,35 +17,50 @@ import { useWallet } from './useWallet';
  */
 export function usePurchaseFlow({ onDone }: { onDone: (invitation: Invitation) => void }) {
   const userId = useSession((s) => s.user?.id);
-  const balance = useWallet((s) => s.balance);
   const [confirm, setConfirm] = useState<{ order: SpendOrder; title: string; message?: string } | null>(null);
   const [lacking, setLacking] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const running = useRef(false);
+
   const run = async (order: SpendOrder) => {
-    if (!userId || busy) return;
-    if (!(await confirmWithBiometrics())) {
-      toast('인증이 취소되었어요.');
-      return;
-    }
-    setBusy(true);
+    // 인증 대기 중 중복 실행도 막는다
+    if (!userId || running.current) return;
+    running.current = true;
+    let done: Invitation | null = null;
     try {
-      const r = await walletService.spend(userId, order);
-      if (r.ok) {
-        useWallet.getState().set(r.balance);
-        onDone(r.invitation);
-      } else if (r.reason === 'insufficient') setLacking(true);
-      else if (r.reason === 'blocked') toast('사용불가 초대장은 구매할 수 없어요.');
-      else toast('초대장 상태가 바뀌었어요. 다시 확인해 주세요.');
-    } catch {
-      toast('구매하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      if (!(await confirmWithBiometrics())) {
+        toast('인증이 취소되었어요.');
+        return;
+      }
+      setBusy(true);
+      try {
+        const r = await walletService.spend(userId, order);
+        if (r.ok) {
+          useWallet.getState().set(r.balance);
+          done = r.invitation;
+        } else if (r.reason === 'insufficient') setLacking(true);
+        else if (r.reason === 'blocked') toast('사용불가 초대장은 구매할 수 없어요.');
+        else toast('초대장 상태가 바뀌었어요. 다시 확인해 주세요.');
+      } catch {
+        toast('구매하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      } finally {
+        setBusy(false);
+      }
     } finally {
-      setBusy(false);
+      running.current = false;
     }
+    // 구매가 끝난 뒤의 후속 처리는 결제 오류 처리와 분리
+    if (done) onDone(done);
   };
 
-  const ask = (order: SpendOrder, title: string, message?: string) => {
-    if ((balance ?? 0) < orderCost(order)) setLacking(true);
+  const ask = async (order: SpendOrder, title: string, message?: string) => {
+    let current = useWallet.getState().balance;
+    if (current === null) {
+      await useWallet.getState().refresh();
+      current = useWallet.getState().balance;
+    }
+    if ((current ?? 0) < orderCost(order)) setLacking(true);
     else setConfirm({ order, title, message });
   };
 

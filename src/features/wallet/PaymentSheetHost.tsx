@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '../../components/Txt';
@@ -15,6 +15,15 @@ export function PaymentSheetHost() {
   const request = usePaymentSheet((s) => s.request);
   const settle = usePaymentSheet((s) => s.settle);
   const [busy, setBusy] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 요청이 바뀌거나 시트가 사라지면 진행 중인 타이머를 정리
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      setBusy(false);
+    };
+  }, [request]);
   if (!request) return null;
   const { product } = request;
   const google = Platform.OS === 'android';
@@ -22,9 +31,12 @@ export function PaymentSheetHost() {
 
   const buy = () => {
     setBusy(true);
-    setTimeout(() => {
+    // 누른 시점의 요청만 끝낸다
+    const target = request;
+    timer.current = setTimeout(() => {
+      timer.current = null;
       setBusy(false);
-      settle('success');
+      settle('success', target);
     }, 900);
   };
 
