@@ -28,6 +28,7 @@ import { CanvasToolbar, ToolKey } from './CanvasToolbar';
 import { EditableElement } from './EditableElement';
 import { Guides } from './Guides';
 import { PropertyBar, PropertyCommand } from './PropertyBar';
+import { BackgroundPicker, BindPicker, StickerPicker } from './Pickers';
 import { TextEditModal } from './TextEditModal';
 
 export interface CanvasEditorProps {
@@ -48,6 +49,7 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
   const [textModal, setTextModal] = useState<{ id: string | null; text: string } | null>(null);
   const [boundNotice, setBoundNotice] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [picker, setPicker] = useState<'sticker' | 'bind' | 'background' | null>(null);
   const colorsList = useMemo(() => palette(style), [style]);
   // 요소를 마지막으로 만진 시각 — 같은 터치의 배경 탭(선택 해제)을 무시하려고
   const touchedAt = useRef(0);
@@ -85,12 +87,20 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
     align: 'center' as const,
   };
 
+  // 사진 배경은 다음 작업(사진·GIF·동영상)에서 연결
+  const pickBackgroundPhoto = () => toast('준비 중이에요.');
+
   const handleTool = (t: ToolKey) => {
     switch (t) {
       case 'text':
         setTextModal({ id: null, text: '' });
         break;
       // 아래 도구는 Task 10~13 에서 채운다
+      case 'sticker':
+      case 'bind':
+      case 'background':
+        setPicker(t);
+        break;
       default:
         toast('준비 중이에요.');
     }
@@ -177,6 +187,38 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
         />
       )}
 
+      <StickerPicker
+        visible={picker === 'sticker'}
+        onClose={() => setPicker(null)}
+        onPick={(icon) => {
+          setPicker(null);
+          add({ id: newElementId(), kind: 'sticker', icon, aspect: 1, x: 0.5, y: 0.5, w: 0.25, rotation: 0 });
+        }}
+        onPickSymbol={(symbol) => {
+          setPicker(null);
+          add({ ...textBase, id: newElementId(), kind: 'text', text: symbol, w: 0.3, size: 40 / 360, color: style.accent });
+        }}
+      />
+      <BindPicker
+        visible={picker === 'bind'}
+        onClose={() => setPicker(null)}
+        onPick={(bind) => {
+          setPicker(null);
+          add({ ...textBase, id: newElementId(), kind: 'bound', bind });
+        }}
+      />
+      <BackgroundPicker
+        visible={picker === 'background'}
+        colors={colorsList}
+        current={doc.background}
+        onClose={() => setPicker(null)}
+        onTemplate={() => commit({ ...doc, background: { kind: 'template' } })}
+        onColor={(color) => commit({ ...doc, background: { kind: 'color', color } })}
+        onPhoto={() => {
+          setPicker(null);
+          pickBackgroundPhoto();
+        }}
+      />
       <TextEditModal
         visible={!!textModal}
         initial={textModal?.text ?? ''}
