@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
@@ -51,9 +51,12 @@ export function ViewModeModal({
   onCancel: () => void;
 }) {
   const [mode, setMode] = useState(initial);
-  useEffect(() => {
+  // 모달이 열릴 때 처음 값으로 맞춘다 (렌더 중 이전 값 비교)
+  const [synced, setSynced] = useState({ visible, initial });
+  if (synced.visible !== visible || synced.initial !== initial) {
+    setSynced({ visible, initial });
     if (visible) setMode(initial);
-  }, [visible, initial]);
+  }
 
   return (
     <AppModal

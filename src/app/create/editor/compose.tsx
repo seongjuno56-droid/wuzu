@@ -1,41 +1,66 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppModal } from '../../../components/AppModal';
 import { Button } from '../../../components/Button';
 import { Header } from '../../../components/Header';
 import { toast } from '../../../components/Toast';
+import { Txt } from '../../../components/Txt';
+import { styleFor } from '../../../data/templates';
+import { CanvasEditor } from '../../../features/canvas/editor/CanvasEditor';
 import { useEditor } from '../../../features/invitation/editorStore';
+import { DockBar } from '../../../features/invitation/editor/DockBar';
 import { EditPayModal } from '../../../features/invitation/editor/EditPayModal';
+import { dockItems, PAGE_SECTION } from '../../../features/invitation/editor/pages';
 import { SavedModal, SaveNameModal } from '../../../features/invitation/editor/SaveModals';
-import { SectionSheet, SectionTabBar } from '../../../features/invitation/editor/SectionSheet';
+import { SectionSheet } from '../../../features/invitation/editor/SectionSheet';
+import { SlideStage } from '../../../features/invitation/editor/SlideStage';
 import { useLeaveGuard } from '../../../features/invitation/editor/useLeaveGuard';
-import { canFinalize, savedStatus, SectionKey, sectionTabs } from '../../../features/invitation/model';
+import { ViewModeModal } from '../../../features/invitation/editor/ViewModePicker';
+import {
+  CANVAS_PAGES,
+  canFinalize,
+  PageKey,
+  savedStatus,
+  SectionKey,
+  sectionTabs,
+} from '../../../features/invitation/model';
 import { screenStatus } from '../../../features/invitation/status';
 import { useDraft } from '../../../features/invitation/useDraft';
-import { InvitationView } from '../../../features/invitation/view/InvitationView';
 import { EDIT_COST } from '../../../features/wallet/pricing';
 import { usePurchaseFlow } from '../../../features/wallet/usePurchaseFlow';
 import { useWallet } from '../../../features/wallet/useWallet';
 import { invitationService } from '../../../services';
-import { colors, spacing } from '../../../theme';
+import { colors, radius, spacing } from '../../../theme';
 
-/** Step 5. 정보 입력 — 위: 실시간 미리보기 / 아래: 섹션 탭바 + 바텀시트 */
+/**
+ * Step 5. 정보 입력 — 가운데: 9:16 슬라이드 / 아래: 독바 / 표지: 직접 꾸미기.
+ * 나의 초대장에서 불러온 저장본이면 수정 모드(활성화된 초대장은 수정할 때마다 레터 차감).
+ */
 export default function EditorCompose() {
   const draft = useDraft();
   const dirty = useEditor((s) => s.dirty);
   const markSaved = useEditor((s) => s.markSaved);
+  const startCanvas = useEditor((s) => s.startCanvas);
+  const applyCanvas = useEditor((s) => s.applyCanvas);
+  const resetDesign = useEditor((s) => s.resetDesign);
+  const setViewMode = useEditor((s) => s.setViewMode);
+  const origin = useEditor((s) => s.origin);
+  const balance = useWallet((s) => s.balance);
+  const [active, setActive] = useState(0);
   const [section, setSection] = useState<SectionKey | null>(null);
+  const [canvasPage, setCanvasPage] = useState<PageKey | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [settings, setSettings] = useState(false);
   const [saveKind, setSaveKind] = useState<'draft' | 'final' | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const guard = useLeaveGuard(dirty);
-  const origin = useEditor((s) => s.origin);
-  const balance = useWallet((s) => s.balance);
   const [incomplete, setIncomplete] = useState(false);
   const [paying, setPaying] = useState(false);
+  const guard = useLeaveGuard(dirty);
   const pay = usePurchaseFlow({
     onDone: (savedInvitation) => {
       markSaved(savedInvitation);
@@ -49,6 +74,11 @@ export default function EditorCompose() {
 
   if (!draft) return <Redirect href="/create" />;
   const tabs = sectionTabs(draft.enabled);
+  const items = dockItems(draft);
+  const pages = items.flatMap((d) => (d.kind === 'page' ? [d.page] : []));
+  const current = items[Math.min(active, items.length - 1)];
+  const currentPage = current.kind === 'page' ? current.page : null;
+  const design = currentPage ? draft.design[currentPage] : undefined;
 
   // 나의 초대장에서 불러온 저장본이면 수정 모드. 활성화된 초대장은 수정할 때마다 레터 차감
   const editing = !!origin;
@@ -68,9 +98,9 @@ export default function EditorCompose() {
 
   const askFinal = () => {
     if (!canFinalize(draft)) {
-      const firstMissing = tabs.find((k) => !draft.completed[k]);
       toast('빨간 점이 있는 항목을 먼저 작성해 주세요.');
-      if (firstMissing) setSection(firstMissing);
+      const k = missingTab();
+      if (k) setSection(k);
       return;
     }
     setSaveKind('final');
@@ -79,11 +109,7 @@ export default function EditorCompose() {
   const save = async (name: string) => {
     setSaving(true);
     try {
-      const result = await invitationService.save({
-        ...draft,
-        name,
-        status: savedStatus(saveKind ?? 'draft'),
-      });
+      const result = await invitationService.save({ ...draft, name, status: savedStatus(saveKind ?? 'draft') });
       markSaved(result);
       setSaveKind(null);
       setSaved(true);
@@ -108,6 +134,44 @@ export default function EditorCompose() {
     useEditor.getState().reset();
     router.dismissTo(href);
   };
+
+  const selectDock = (i: number) => {
+    setActive(i);
+    const item = items[i];
+    // 정보 칩(기본정보·BGM)은 페이지가 없으니 바로 입력 시트를 연다
+    setSection(item.kind === 'info' ? item.section : null);
+  };
+
+  const openCanvas = () => {
+    if (!currentPage) return;
+    if (design?.mode !== 'canvas') startCanvas(currentPage);
+    setSection(null);
+    setCanvasPage(currentPage);
+  };
+
+  // 캔버스 편집 중에는 화면 전체를 편집기에 넘긴다
+  const canvasDesign = canvasPage ? draft.design[canvasPage] : undefined;
+  if (canvasPage && canvasDesign?.mode === 'canvas') {
+    return (
+      <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
+        <CanvasEditor
+          initial={canvasDesign.canvas}
+          content={draft.content}
+          style={styleFor(draft.themeId, draft.templateId)}
+          onDone={(doc) => {
+            applyCanvas(canvasPage, doc);
+            setCanvasPage(null);
+          }}
+          onCancel={() => setCanvasPage(null)}
+          onOpenBasic={() => {
+            setCanvasPage(null);
+            setSection('basic');
+          }}
+        />
+        {guard.modal}
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
@@ -143,19 +207,78 @@ export default function EditorCompose() {
           </View>
         }
       />
-      <View style={styles.flex}>
-        <ScrollView style={{ backgroundColor: colors.surface }} contentContainerStyle={styles.preview}>
-          <InvitationView mode="scroll" invitation={draft} showBgm={false} />
-        </ScrollView>
+      {/* 보기 형태·미리보기 — 헤더가 좁아 무대 위 줄에 둔다 */}
+      <View style={styles.subBar}>
+        <Pressable onPress={() => setSettings(true)} style={styles.subBtn} accessibilityRole="button" accessibilityLabel="보기 형태 설정">
+          <Ionicons name={draft.viewMode === 'story' ? 'albums-outline' : 'reorder-four-outline'} size={16} color={colors.label} />
+          <Txt variant="caption" color={colors.label}>
+            {draft.viewMode === 'story' ? '스토리형' : '스크롤형'}
+          </Txt>
+          <Ionicons name="chevron-down" size={14} color={colors.muted} />
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/create/editor/preview')}
+          style={styles.subBtn}
+          accessibilityRole="button"
+          accessibilityLabel="미리보기"
+        >
+          <Ionicons name="eye-outline" size={16} color={colors.label} />
+          <Txt variant="caption" color={colors.label}>
+            미리보기
+          </Txt>
+        </Pressable>
+      </View>
+      <View style={[styles.flex, styles.stage]}>
+        <SlideStage
+          invitation={draft}
+          pages={pages}
+          index={currentPage ? pages.indexOf(currentPage) : -1}
+          onIndexChange={(i) => setActive(i)}
+          onEdit={(page) => setSection(PAGE_SECTION[page])}
+        />
+        {currentPage && CANVAS_PAGES.includes(currentPage) && !section && (
+          <View style={styles.slideActions}>
+            <Button
+              label={design?.mode === 'canvas' ? '다시 꾸미기' : '직접 꾸미기'}
+              variant="tint"
+              size="md"
+              onPress={openCanvas}
+            />
+            {design?.mode === 'canvas' && (
+              <Button label="템플릿 원래대로" variant="outline" size="md" onPress={() => setConfirmReset(true)} />
+            )}
+          </View>
+        )}
         {section && <SectionSheet section={section} onClose={() => setSection(null)} />}
       </View>
-      <SectionTabBar
-        tabs={tabs}
-        active={section}
-        completed={draft.completed}
-        onSelect={(k) => setSection((cur) => (cur === k ? null : k))}
-      />
+      <DockBar items={items} active={active} invitation={draft} onSelect={selectDock} />
 
+      <AppModal
+        visible={confirmReset}
+        title="템플릿 원래대로"
+        message="꾸민 내용이 모두 사라집니다."
+        onDismiss={() => setConfirmReset(false)}
+        actions={[
+          { label: '취소', variant: 'outline', onPress: () => setConfirmReset(false) },
+          {
+            label: '되돌리기',
+            onPress: () => {
+              if (currentPage) resetDesign(currentPage);
+              setConfirmReset(false);
+            },
+          },
+        ]}
+      />
+      <ViewModeModal
+        visible={settings}
+        initial={draft.viewMode}
+        confirmLabel="적용"
+        onCancel={() => setSettings(false)}
+        onConfirm={(m) => {
+          setViewMode(m);
+          setSettings(false);
+        }}
+      />
       <SaveNameModal
         visible={!!saveKind}
         kind={saveKind ?? 'draft'}
@@ -206,6 +329,31 @@ export default function EditorCompose() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.canvas },
-  headerActions: { flexDirection: 'row', gap: spacing.xs },
-  preview: { paddingBottom: 320 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  subBar: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  subBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    backgroundColor: colors.canvas,
+  },
+  stage: { backgroundColor: colors.surface },
+  slideActions: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
 });

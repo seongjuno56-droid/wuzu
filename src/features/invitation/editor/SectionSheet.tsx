@@ -10,40 +10,6 @@ import { CeremonyForm } from './CeremonyForm';
 import { BgmForm, EndingForm, GalleryForm } from './MediaForms';
 import { AccountForm, BasicForm, GreetingForm, GuestbookForm } from './TextForms';
 
-/** 섹션 탭바: 미완료는 빨간 점, ✓ 확인을 마치면 초록 점 */
-export function SectionTabBar(props: {
-  tabs: SectionKey[];
-  active: SectionKey | null;
-  completed: Partial<Record<SectionKey, boolean>>;
-  onSelect: (key: SectionKey) => void;
-}) {
-  const { tabs, active, completed, onSelect } = props;
-  return (
-    <View style={styles.tabBar}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {tabs.map((key) => {
-          const on = key === active;
-          return (
-            <Pressable
-              key={key}
-              onPress={() => onSelect(key)}
-              style={[styles.tab, on && styles.tabOn]}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
-              accessibilityLabel={`${SECTION_LABEL[key]} ${completed[key] ? '작성 완료' : '작성 필요'}`}
-            >
-              <View style={[styles.dot, { backgroundColor: completed[key] ? colors.success : colors.danger }]} />
-              <Txt variant="caption" weight={on ? 'semibold' : 'regular'} color={on ? colors.inkSoft : colors.muted}>
-                {SECTION_LABEL[key]}
-              </Txt>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
-}
-
 /** 섹션 입력 바텀시트: ▼ 닫기 / 제목 / ✓ 확인(유효할 때만) */
 export function SectionSheet({ section, onClose }: { section: SectionKey; onClose: () => void }) {
   const draft = useEditor((s) => s.draft!);
@@ -96,19 +62,6 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  tabBar: { borderTopWidth: 1, borderTopColor: colors.hairline, backgroundColor: colors.canvas },
-  tabs: { paddingHorizontal: spacing.sm },
-  tab: {
-    height: 52,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    borderTopWidth: 2,
-    borderTopColor: 'transparent',
-  },
-  tabOn: { borderTopColor: colors.inkSoft },
-  dot: { width: 6, height: 6, borderRadius: 3 },
   sheet: {
     position: 'absolute',
     left: 0,
