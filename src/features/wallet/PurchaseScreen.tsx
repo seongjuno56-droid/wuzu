@@ -123,11 +123,11 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
         <View style={styles.footer}>
           <Button label={flow.busy ? '처리 중…' : '레터로 구매하기'} onPress={buy} disabled={!order || flow.busy} />
           <Txt variant="tiny" color={colors.muted} align="center">
-            <Txt variant="tiny" color={colors.muted} onPress={() => toast('준비 중이에요.')}>이용약관</Txt>
+            <Txt variant="tiny" color={colors.muted} onPress={() => router.push('/about/terms')}>이용약관</Txt>
             {' | '}
-            <Txt variant="tiny" color={colors.muted} onPress={() => toast('준비 중이에요.')}>유료 이용약관</Txt>
+            <Txt variant="tiny" color={colors.muted} onPress={() => router.push('/about/terms')}>유료 이용약관</Txt>
             {' | '}
-            <Txt variant="tiny" color={colors.muted} onPress={() => toast('준비 중이에요.')}>개인정보 처리방침</Txt>
+            <Txt variant="tiny" color={colors.muted} onPress={() => router.push('/about/privacy')}>개인정보 처리방침</Txt>
             {' | '}
             <Txt variant="tiny" color={colors.muted} onPress={() => toast('복원할 구매 내역이 없어요.')}>구매 복원</Txt>
           </Txt>
