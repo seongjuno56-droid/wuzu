@@ -1,5 +1,6 @@
 import { Text, TextProps } from 'react-native';
 
+import { translateChildren, useLocale } from '../i18n';
 import { colors, fonts, FontWeightName, typography, TypographyVariant } from '../theme';
 
 interface Props extends TextProps {
@@ -9,7 +10,9 @@ interface Props extends TextProps {
   align?: 'left' | 'center' | 'right';
 }
 
-export function Txt({ variant = 'body', weight, color = colors.text, align, style, ...rest }: Props) {
+/** 모든 화면 글자 — 한국어 원문을 지금 언어로 번역해 그린다 (사용자 입력처럼 사전에 없는 글자는 그대로) */
+export function Txt({ variant = 'body', weight, color = colors.text, align, style, children, accessibilityLabel, ...rest }: Props) {
+  const locale = useLocale((s) => s.locale);
   const t = typography[variant];
   return (
     <Text
@@ -24,7 +27,10 @@ export function Txt({ variant = 'body', weight, color = colors.text, align, styl
         align && { textAlign: align },
         style,
       ]}
+      accessibilityLabel={accessibilityLabel && translateChildren(accessibilityLabel, locale)}
       {...rest}
-    />
+    >
+      {translateChildren(children, locale)}
+    </Text>
   );
 }

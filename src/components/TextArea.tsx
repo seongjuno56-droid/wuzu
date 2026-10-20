@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
+import { useT } from '../i18n';
 import { colors, fonts, radius, spacing } from '../theme';
 import { Txt } from './Txt';
 
@@ -23,6 +24,7 @@ const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object
 /** 여러 줄 입력 + (현재/최대) 글자 수 */
 export function TextArea({ label, required, value, onChangeText, maxLength, placeholder, invalid, minHeight = 120, right }: Props) {
   const [focused, setFocused] = useState(false);
+  const t = useT();
   const borderColor = invalid ? colors.danger : focused ? colors.inkSoft : colors.hairline;
   return (
     <View style={styles.wrap}>
@@ -43,7 +45,7 @@ export function TextArea({ label, required, value, onChangeText, maxLength, plac
           value={value}
           onChangeText={onChangeText}
           maxLength={maxLength}
-          placeholder={placeholder}
+          placeholder={placeholder && t(placeholder)}
           placeholderTextColor={colors.placeholder}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}

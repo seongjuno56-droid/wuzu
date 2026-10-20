@@ -1,6 +1,7 @@
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { Header } from '../components/Header';
+import { LanguageButton } from '../components/LanguageButton';
 import { Screen } from '../components/Screen';
 import { Txt } from '../components/Txt';
 import { useSession } from '../store/session';
@@ -29,11 +30,18 @@ export default function SettingsScreen() {
           accessibilityLabel="PUSH 알림"
         />
       </View>
+      <LanguageButton variant="row" />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1, gap: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', padding: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.hairline },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+  },
 });

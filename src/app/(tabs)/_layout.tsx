@@ -3,6 +3,7 @@ import { router, Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
 
+import { useT } from '../../i18n';
 import { useSession } from '../../store/session';
 import { colors, fonts } from '../../theme';
 
@@ -16,6 +17,7 @@ function icon(active: IconName, inactive: IconName) {
 
 export default function TabsLayout() {
   const loggedIn = useSession((s) => !!s.user);
+  const t = useT();
   // 비회원이 나의 초대장·마이페이지 탭을 누르면 로그인으로
   const requireLogin = (e: { preventDefault: () => void }) => {
     if (loggedIn) return;
@@ -33,20 +35,20 @@ export default function TabsLayout() {
         tabBarStyle: { borderTopColor: colors.hairline, borderTopWidth: 1, backgroundColor: colors.canvas, height: 60 },
       }}
     >
-      <Tabs.Screen name="home" options={{ title: '홈', tabBarIcon: icon('home', 'home-outline') }} />
+      <Tabs.Screen name="home" options={{ title: t('홈'), tabBarIcon: icon('home', 'home-outline') }} />
       <Tabs.Screen
         name="create"
-        options={{ title: '초대장 제작', tabBarIcon: icon('create', 'create-outline') }}
+        options={{ title: t('초대장 제작'), tabBarIcon: icon('create', 'create-outline') }}
       />
       <Tabs.Screen
         name="my-invites"
-        options={{ title: '나의 초대장', tabBarIcon: icon('mail', 'mail-outline') }}
+        options={{ title: t('나의 초대장'), tabBarIcon: icon('mail', 'mail-outline') }}
         listeners={{ tabPress: requireLogin }}
       />
       <Tabs.Screen
         name="mypage"
         options={{
-          title: loggedIn ? '마이페이지' : '로그인',
+          title: t(loggedIn ? '마이페이지' : '로그인'),
           tabBarIcon: icon('person', 'person-outline'),
         }}
         listeners={{ tabPress: requireLogin }}

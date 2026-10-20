@@ -2,6 +2,7 @@ import { createContext, ReactNode, useContext } from 'react';
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
 
 import { styleFor, templateFontFamily, TemplateStyle } from '../../../data/templates';
+import { translateChildren, useLocale } from '../../../i18n';
 import { spacing } from '../../../theme';
 
 /** 템플릿이 정하는 초대장 '룩' (색·서체·표지 구성) */
@@ -35,6 +36,7 @@ interface ITextProps {
 /** 초대장 본문 텍스트 — 템플릿 서체·색을 따른다 */
 export function IText({ children, size = 15, bold, tone = 'fg', align = 'center', style, numberOfLines }: ITextProps) {
   const look = useLook();
+  const locale = useLocale((s) => s.locale);
   return (
     <Text
       numberOfLines={numberOfLines}
@@ -49,7 +51,7 @@ export function IText({ children, size = 15, bold, tone = 'fg', align = 'center'
         style,
       ]}
     >
-      {children}
+      {translateChildren(children, locale)}
     </Text>
   );
 }

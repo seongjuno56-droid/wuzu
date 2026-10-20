@@ -3,6 +3,7 @@
  * (설계: docs/superpowers/specs/2026-10-15-wedding-invitation-editor-design.md)
  */
 
+import { currentLocale } from '../../i18n';
 import type { SlideDesign, ViewMode } from '../canvas/types';
 
 // ── 타입 ──────────────────────────────────────────────
@@ -460,6 +461,11 @@ export const WEEKDAYS_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursda
 /** 13:00 → 오후 1시, 14:30 → 오후 2시 30분 */
 export function formatKoreanTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
+  // 영어: 2 PM / 2:30 PM
+  if (currentLocale() === 'en') {
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h < 12 ? 'AM' : 'PM'}`;
+  }
   const period = h < 12 ? '오전' : '오후';
   const hour = h % 12 === 0 ? 12 : h % 12;
   return `${period} ${hour}시${m ? ` ${m}분` : ''}`;

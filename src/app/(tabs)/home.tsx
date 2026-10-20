@@ -8,6 +8,7 @@ import { Wordmark } from '../../components/brand/Wordmark';
 import { BannerCarousel } from '../../components/home/BannerCarousel';
 import { HomeFooter } from '../../components/home/HomeFooter';
 import { InvitationStatusCard } from '../../components/home/InvitationStatusCard';
+import { LanguageButton } from '../../components/LanguageButton';
 import { OnboardingModal } from '../../components/home/OnboardingModal';
 import { PushConsentModal } from '../../components/home/PushConsentModal';
 import { RecommendedCards } from '../../components/home/RecommendedCards';
@@ -36,15 +37,18 @@ export default function Home() {
     <View style={styles.header}>
       <View style={styles.topBar}>
         <Wordmark size={26} />
-        <Pressable
-          hitSlop={10}
-          style={styles.iconButton}
-          onPress={() => needLogin(() => router.push('/notifications'))}
-          accessibilityRole="button"
-          accessibilityLabel="알림"
-        >
-          <Ionicons name="notifications-outline" size={24} color={colors.inkSoft} />
-        </Pressable>
+        <View style={styles.topActions}>
+          <LanguageButton />
+          <Pressable
+            hitSlop={10}
+            style={styles.iconButton}
+            onPress={() => needLogin(() => router.push('/notifications'))}
+            accessibilityRole="button"
+            accessibilityLabel="알림"
+          >
+            <Ionicons name="notifications-outline" size={24} color={colors.inkSoft} />
+          </Pressable>
+        </View>
       </View>
       <Pressable
         style={styles.search}
@@ -130,6 +134,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   flex: { flex: 1 },
   header: {
     backgroundColor: colors.canvas,

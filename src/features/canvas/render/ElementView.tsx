@@ -4,6 +4,7 @@ import { LayoutChangeEvent, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { ICON_SOURCES, Icon3DName } from '../../../components/brand/Icon3D';
+import { translate, useLocale } from '../../../i18n';
 import type { InvitationContent } from '../../invitation/model';
 import { CANVAS_FONTS, resolveBind, SLIDE_RATIO } from '../model';
 import type { CanvasElement } from '../types';
@@ -30,11 +31,14 @@ export function ElementContent({
   onLayout?: (e: LayoutChangeEvent) => void;
 }) {
   const [broken, setBroken] = useState(false);
+  const locale = useLocale((s) => s.locale);
   const width = el.w * slideW;
   const height = elementHeight(el, slideW) ?? 0;
 
   if (el.kind === 'text' || el.kind === 'bound') {
-    const resolved = el.kind === 'bound' ? resolveBind(el.bind, content) : { text: el.text, placeholder: false };
+    // 연결 텍스트는 지금 언어로(날짜·안내 글자), 직접 쓴 텍스트는 사용자 내용이라 그대로
+    const bound = el.kind === 'bound' ? resolveBind(el.bind, content) : null;
+    const resolved = bound ? { ...bound, text: translate(bound.text, locale) } : { text: el.kind === 'text' ? el.text : '', placeholder: false };
     const fontSize = el.size * slideW;
     return (
       <Text

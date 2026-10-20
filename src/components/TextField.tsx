@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ReactNode, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
 
+import { useT } from '../i18n';
 import { colors, fonts, radius, spacing } from '../theme';
 import { Txt } from './Txt';
 
@@ -36,6 +37,7 @@ export function TextField({
   ...rest
 }: Props) {
   const [hidden, setHidden] = useState(true);
+  const t = useT();
   const [focused, setFocused] = useState(false);
   const borderColor =
     message?.type === 'error' || invalid ? colors.danger : focused ? colors.inkSoft : colors.hairline;
@@ -63,6 +65,7 @@ export function TextField({
           onBlur={() => setFocused(false)}
           style={[styles.input, webNoOutline]}
           {...rest}
+          placeholder={rest.placeholder && t(rest.placeholder)}
         />
         {clearable && !!value && (
           <Pressable onPress={() => onChangeText?.('')} hitSlop={8} accessibilityLabel="입력 지우기">
