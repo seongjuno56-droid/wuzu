@@ -1,116 +1,97 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Redirect, router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Button } from '../../components/Button';
+import { HomeFooter } from '../../components/home/HomeFooter';
 import { Header } from '../../components/Header';
+import { MenuGap, MenuRow } from '../../components/MenuRow';
 import { Screen } from '../../components/Screen';
+import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
-import { formatDate } from '../../lib/format';
+import { useWallet } from '../../features/wallet/useWallet';
+import { notificationService } from '../../services';
 import { useSession } from '../../store/session';
-import { colors, radius, shadow, spacing } from '../../theme';
+import { colors, spacing } from '../../theme';
 
-const GENDER_LABEL = { male: '남성', female: '여성', none: '선택안함' } as const;
-const PROVIDER_LABEL = { email: '이메일', kakao: '카카오', google: '구글', apple: '애플' } as const;
+const LINK_ROUTES: Record<string, string> = {
+  이용약관: '/about/terms',
+  '유료 이용약관': '/about/terms',
+  '개인정보 처리방침': '/about/privacy',
+};
 
+/** 마이페이지: 인사·보유 레터 / 회원정보·My 레터·앱 설정·WUZU 정보 / 로그아웃 / 사업자 정보 */
 export default function MyPage() {
   const user = useSession((s) => s.user);
   const logout = useSession((s) => s.logout);
-  const pushConsent = useSession((s) => s.pushConsent);
+  const balance = useWallet((s) => s.balance);
+  const refresh = useWallet((s) => s.refresh);
+  const [unread, setUnread] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+      if (user) notificationService.unreadCount(user.id).then(setUnread);
+    }, [refresh, user]),
+  );
+
   if (!user) return <Redirect href="/auth/login" />;
 
-  const rows: [string, string][] = [
-    ['가입 방식', PROVIDER_LABEL[user.provider]],
-    ['생년월일', user.birth ?? '-'],
-    ['성별', user.gender ? GENDER_LABEL[user.gender] : '-'],
-    ['휴대전화번호', user.phone ?? '-'],
-  ];
-  const settings: [string, string][] = [
-    ['앱 푸시 알림', pushConsent === 'agreed' ? '받음' : '받지 않음'],
-    ['마케팅 정보 수신', user.marketingAgreed ? '동의' : '미동의'],
-  ];
+  const signOut = () => {
+    logout();
+    router.navigate('/home');
+  };
+
+  const bell = (
+    <Pressable
+      onPress={() => router.push('/notifications')}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={unread ? `알림, 새 알림 ${unread}개` : '알림'}
+    >
+      <Ionicons name="notifications-outline" size={24} color={colors.inkSoft} />
+      {unread > 0 && <View style={styles.dot} />}
+    </Pressable>
+  );
 
   return (
-    <Screen edges={['top']} header={<Header title="마이페이지" hideBack />} background={colors.surface}>
-      <View style={styles.body}>
-        <View style={[styles.profile, shadow]}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={28} color={colors.placeholder} />
-          </View>
-          <View style={styles.flex}>
-            <Txt variant="title">{user.name}님</Txt>
-            <Txt variant="caption" color={colors.muted}>
-              {user.email ?? `${PROVIDER_LABEL[user.provider]} 계정`}
-            </Txt>
-            <Txt variant="tiny" color={colors.faint}>
-              {formatDate(user.createdAt)} 가입
-            </Txt>
-          </View>
+    <Screen edges={['top']} header={<Header title="마이페이지" hideBack right={bell} />} background={colors.surface}>
+      <Pressable style={styles.top} onPress={() => router.push('/wallet')} accessibilityRole="button">
+        <Txt variant="subtitle">
+          <Txt variant="subtitle" weight="semibold">
+            {user.name}
+          </Txt>
+          님 반가워요.
+        </Txt>
+        <View style={styles.balance}>
+          <Txt variant="subtitle" style={styles.flex}>
+            보유중인 레터
+          </Txt>
+          <Txt variant="title">{balance ?? '–'} 레터</Txt>
         </View>
-
-        <Section title="내 정보" rows={rows} />
-        <Section title="설정" rows={settings} />
-
-        <Button
-          label="로그아웃"
-          variant="outline"
-          size="md"
-          onPress={() => {
-            logout();
-            router.navigate('/home');
-          }}
+      </Pressable>
+      <MenuGap />
+      <MenuRow label="회원정보" onPress={() => router.push('/account')} />
+      <MenuRow label="My 레터" onPress={() => router.push('/wallet')} />
+      <MenuRow label="앱 설정" onPress={() => router.push('/settings')} />
+      <MenuRow label="WUZU 정보" onPress={() => router.push('/about')} />
+      <MenuGap />
+      <MenuRow label="로그아웃" muted onPress={signOut} />
+      <View style={styles.footer}>
+        <HomeFooter
+          loggedIn
+          onAuthPress={signOut}
+          onLinkPress={(label) => (LINK_ROUTES[label] ? router.push(LINK_ROUTES[label]) : toast('복원할 구매 내역이 없어요.'))}
         />
       </View>
     </Screen>
   );
 }
 
-function Section({ title, rows }: { title: string; rows: [string, string][] }) {
-  return (
-    <View style={styles.section}>
-      <Txt variant="caption" weight="semibold" color={colors.muted} style={styles.sectionTitle}>
-        {title}
-      </Txt>
-      <View style={styles.list}>
-        {rows.map(([k, v], i) => (
-          <View key={k} style={[styles.row, i > 0 && styles.divider]}>
-            <Txt color={colors.label}>{k}</Txt>
-            <Txt color={colors.ink}>{v}</Txt>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  body: { padding: spacing.lg, gap: spacing.xl },
-  profile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    padding: spacing.xl,
-    borderRadius: radius.xl,
-    backgroundColor: colors.canvas,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  section: { gap: spacing.sm },
-  sectionTitle: { paddingHorizontal: spacing.xs },
-  list: {
-    backgroundColor: colors.canvas,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    overflow: 'hidden',
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', padding: spacing.lg },
-  divider: { borderTopWidth: 1, borderTopColor: colors.hairline },
+  top: { backgroundColor: colors.canvas, padding: spacing.xl, gap: spacing.sm },
+  balance: { flexDirection: 'row', alignItems: 'center' },
+  dot: { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger },
+  footer: { marginTop: 'auto', paddingTop: spacing.xxl },
 });
