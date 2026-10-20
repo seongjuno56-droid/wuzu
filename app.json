@@ -31,7 +31,14 @@
       "expo-font",
       "expo-audio",
       "expo-asset",
-      ["expo-local-authentication", { "faceIDPermission": "레터 구매를 확인하기 위해 Face ID를 사용합니다." }]
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "레터 구매를 확인하기 위해 Face ID를 사용합니다."
+        }
+      ],
+      "expo-image",
+      "expo-video"
     ]
   }
 }
