@@ -31,7 +31,10 @@ export default function RootLayout() {
       <View style={styles.outer}>
         <View style={styles.frame}>
           {ready && (
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+              {/* WUZU 알림은 별도 페이지가 아닌 풀 모달 */}
+              <Stack.Screen name="notifications" options={{ presentation: 'fullScreenModal' }} />
+            </Stack>
           )}
           <PaymentSheetHost />
           <ToastHost />
