@@ -1,12 +1,12 @@
 import { Fragment } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import type { GuestbookEntry } from '../../../services/types';
 import { Invitation, pageOrder } from '../model';
 import { AccountPage } from './AccountPage';
 import { BgmButton } from './BgmButton';
 import { CeremonyPage } from './CeremonyPage';
-import { CoverPage } from './CoverPage';
+import { CoverSlide } from './CoverSlide';
 import { EndingPage } from './EndingPage';
 import { GalleryPage } from './GalleryPage';
 import { GreetingPage } from './GreetingPage';
@@ -14,7 +14,7 @@ import { GuestbookPage } from './GuestbookPage';
 import { lookFor, LookProvider } from './look';
 
 interface Props {
-  invitation: Pick<Invitation, 'themeId' | 'templateId' | 'content' | 'enabled' | 'order'>;
+  invitation: Pick<Invitation, 'themeId' | 'templateId' | 'content' | 'enabled' | 'order' | 'design'>;
   guestbook?: GuestbookEntry[];
   onGuestbookWrite?: () => void;
   onGuestbookAll?: () => void;
@@ -24,6 +24,7 @@ interface Props {
 
 /** 초대장 한 장 전체 — 템플릿 미리보기·편집 미리보기·저장본 보기가 같이 쓴다 */
 export function InvitationView({ invitation, guestbook = [], onGuestbookWrite, onGuestbookAll, showBgm = true }: Props) {
+  const { width } = useWindowDimensions();
   const look = lookFor(invitation.themeId, invitation.templateId);
   const { content, enabled } = invitation;
 
@@ -33,7 +34,7 @@ export function InvitationView({ invitation, guestbook = [], onGuestbookWrite, o
         {showBgm && enabled.bgm && content.bgm.uri && <BgmButton bgm={content.bgm} />}
         {pageOrder(enabled, invitation.order).map((page) => (
           <Fragment key={page}>
-            {page === 'cover' && <CoverPage content={content} />}
+            {page === 'cover' && <CoverSlide invitation={invitation} width={Math.min(width, 480)} />}
             {page === 'greeting' && <GreetingPage content={content} />}
             {page === 'gallery' && <GalleryPage gallery={content.gallery} />}
             {page === 'ceremony' && <CeremonyPage ceremony={content.ceremony} />}

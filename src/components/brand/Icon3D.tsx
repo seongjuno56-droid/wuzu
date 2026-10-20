@@ -1,7 +1,7 @@
 import { Image, ImageStyle, StyleProp } from 'react-native';
 
 // Microsoft Fluent Emoji 3D (MIT) — assets/icons/LICENSE.txt 참고
-const SOURCES = {
+export const ICON_SOURCES = {
   bouquet: require('../../../assets/icons/bouquet.webp'),
   ring: require('../../../assets/icons/ring.webp'),
   money: require('../../../assets/icons/money.webp'),
@@ -18,13 +18,13 @@ const SOURCES = {
   bell: require('../../../assets/icons/bell.webp'),
 } as const;
 
-export type Icon3DName = keyof typeof SOURCES;
+export type Icon3DName = keyof typeof ICON_SOURCES;
 
 /** 3D 일러스트 아이콘. 장식용이라 스크린리더에서는 숨긴다 */
 export function Icon3D({ name, size, style }: { name: Icon3DName; size: number; style?: StyleProp<ImageStyle> }) {
   return (
     <Image
-      source={SOURCES[name]}
+      source={ICON_SOURCES[name]}
       style={[{ width: size, height: size }, style]}
       resizeMode="contain"
       accessibilityElementsHidden
