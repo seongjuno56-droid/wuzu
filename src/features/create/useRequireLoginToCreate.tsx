@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { AppModal } from '../../components/AppModal';
 import { useSession } from '../../store/session';
+import type { ViewMode } from '../canvas/types';
 import { useEditor } from '../invitation/editorStore';
 
 /** 지금은 결혼식 초대장만 제작할 수 있다 */
@@ -16,7 +17,7 @@ export function useRequireLoginToCreate() {
   const user = useSession((s) => s.user);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const start = (themeId: string, templateId: string, templateName: string) => {
+  const start = (themeId: string, templateId: string, templateName: string, viewMode: ViewMode = 'story') => {
     if (!user) {
       router.push('/auth/login');
       return;
@@ -25,7 +26,7 @@ export function useRequireLoginToCreate() {
       setNotice(templateName);
       return;
     }
-    useEditor.getState().start({ ownerId: user.id, themeId, templateId });
+    useEditor.getState().start({ ownerId: user.id, themeId, templateId, viewMode });
     router.push('/create/editor/options');
   };
 
@@ -39,5 +40,8 @@ export function useRequireLoginToCreate() {
     />
   );
 
-  return { start, modal };
+  /** 로그인했고 지금 만들 수 있는 테마인지 (스타일 선택 창을 띄울지 판단) */
+  const canEdit = (themeId: string) => !!user && EDITABLE_THEMES.includes(themeId);
+
+  return { start, canEdit, modal };
 }
