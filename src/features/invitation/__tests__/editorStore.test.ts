@@ -74,4 +74,35 @@ describe('editor store', () => {
     expect(useEditor.getState().draft?.content.greeting.content).toBe('편집 중');
     expect(useEditor.getState().dirty).toBe(true);
   });
+  it('보기 형태를 지정해 시작하고 바꿀 수 있다', () => {
+    useEditor.getState().start({ ownerId: 'u1', themeId: 'wedding', templateId: 'wedding-1', viewMode: 'scroll' });
+    expect(useEditor.getState().draft?.viewMode).toBe('scroll');
+    useEditor.getState().setViewMode('story');
+    expect(useEditor.getState().draft?.viewMode).toBe('story');
+    expect(useEditor.getState().dirty).toBe(true);
+  });
+
+  it('직접 꾸미기 → 프리셋 복사본으로 캔버스 시작, 원래대로 → 형식', () => {
+    start();
+    useEditor.getState().startCanvas('cover');
+    const design = useEditor.getState().draft?.design.cover;
+    expect(design?.mode).toBe('canvas');
+    if (design?.mode !== 'canvas') throw new Error('캔버스가 아님');
+    expect(design.canvas.elements.length).toBeGreaterThan(0);
+
+    const doc = { ...design.canvas, background: { kind: 'color' as const, color: '#000000' } };
+    useEditor.getState().applyCanvas('cover', doc);
+    const applied = useEditor.getState().draft?.design.cover;
+    expect(applied?.mode === 'canvas' && applied.canvas.background).toEqual({ kind: 'color', color: '#000000' });
+
+    useEditor.getState().resetDesign('cover');
+    expect(useEditor.getState().draft?.design.cover).toBeUndefined();
+  });
+
+  it('캔버스로 바꿔도 기본정보 완료 표시는 그대로다', () => {
+    start();
+    const before = useEditor.getState().draft?.completed;
+    useEditor.getState().startCanvas('cover');
+    expect(useEditor.getState().draft?.completed).toEqual(before);
+  });
 });

@@ -3,6 +3,8 @@
  * (설계: docs/superpowers/specs/2026-10-15-wedding-invitation-editor-design.md)
  */
 
+import type { SlideDesign, ViewMode } from '../canvas/types';
+
 // ── 타입 ──────────────────────────────────────────────
 
 /** 하단 탭바 / 바텀시트 단위 */
@@ -123,6 +125,10 @@ export interface Invitation {
   enabled: EnabledSections;
   order: ReorderablePage[];
   content: InvitationContent;
+  /** 하객 보기 형태 (제작자가 고른다) */
+  viewMode: ViewMode;
+  /** 슬라이드별 디자인. 없으면 형식(템플릿 배치) */
+  design: Partial<Record<PageKey, SlideDesign>>;
   /** 바텀시트에서 ✓ 확인까지 마친 섹션 */
   completed: Partial<Record<SectionKey, boolean>>;
   createdAt: string;
@@ -176,6 +182,9 @@ export const PAGE_LABEL: Record<PageKey, string> = {
 
 export const DEFAULT_ORDER: ReorderablePage[] = ['gallery', 'ceremony', 'guestbook', 'account'];
 export const DEFAULT_ENABLED: EnabledSections = { account: true, gallery: true, guestbook: true, ending: true, bgm: false };
+
+/** [직접 꾸미기]를 열어 둔 페이지 (1차: 표지만) */
+export const CANVAS_PAGES: PageKey[] = ['cover'];
 
 const FIXED_TABS: SectionKey[] = ['basic', 'ceremony', 'greeting'];
 const OPTIONAL_TABS: OptionalSection[] = ['account', 'gallery', 'guestbook', 'ending', 'bgm'];
@@ -253,6 +262,7 @@ export function createInvitation(args: {
   themeId: string;
   templateId: string;
   today?: Date;
+  viewMode?: ViewMode;
 }): Invitation {
   const now = (args.today ?? new Date()).toISOString();
   return {
@@ -266,6 +276,8 @@ export function createInvitation(args: {
     enabled: { ...DEFAULT_ENABLED },
     order: [...DEFAULT_ORDER],
     content: defaultContent(args.today),
+    viewMode: args.viewMode ?? 'story',
+    design: {},
     completed: {},
     createdAt: now,
     updatedAt: now,
@@ -277,11 +289,15 @@ export const savedStatus = (kind: 'draft' | 'final'): InvitationStatus => kind;
 
 /** 예전 저장본 보정: 'active' → 'final', 번호가 없으면 생성. changed 면 저장해야 번호가 고정된다 */
 export function normalizeInvitation(inv: Invitation): { invitation: Invitation; changed: boolean } {
-  const raw = inv as Omit<Invitation, 'status' | 'number'> & { status: string; number?: string };
+  const raw = inv as Omit<Invitation, 'status' | 'number' | 'viewMode' | 'design'> &
+    Partial<Pick<Invitation, 'viewMode' | 'design'>> & { status: string; number?: string };
   const status: InvitationStatus = raw.status === 'draft' ? 'draft' : 'final';
   const number = raw.number ?? newInvitationNumber();
-  const changed = status !== raw.status || number !== raw.number;
-  return { invitation: changed ? { ...inv, status, number } : inv, changed };
+  // 보기 형태·디자인이 없는 저장본은 스토리형·형식 표지로
+  const viewMode = raw.viewMode ?? 'story';
+  const design = raw.design ?? {};
+  const changed = status !== raw.status || number !== raw.number || !raw.viewMode || !raw.design;
+  return { invitation: changed ? { ...inv, status, number, viewMode, design } : inv, changed };
 }
 
 // ── 순서 / 탭 ─────────────────────────────────────────

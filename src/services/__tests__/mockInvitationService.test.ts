@@ -128,3 +128,19 @@ describe('서버가 가진 값 보호', () => {
     expect((await s.get('a'))?.name).not.toBe('무료로 바꿈');
   });
 });
+
+describe('예전 저장본 보정(보기 형태·디자인)', () => {
+  it('viewMode·design 이 없는 초대장도 스토리형·형식으로 불러온다', async () => {
+    const storage = memoryStorage();
+    const old = { ...make('old'), status: 'final' } as Record<string, unknown>;
+    delete old.viewMode;
+    delete old.design;
+    await storage.setItem('wuzu.mock.invitations.v1', JSON.stringify({ invitations: [old], guestbook: [] }));
+    const s = createMockInvitationService({ delayMs: 0, storage });
+    const got = await s.get('old');
+    expect(got?.viewMode).toBe('story');
+    expect(got?.design).toEqual({});
+    const [listed] = await s.list('u1');
+    expect(listed.viewMode).toBe('story');
+  });
+});

@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext } from 'react';
 import { StyleSheet, Text, TextStyle, View } from 'react-native';
 
-import { getTemplate, templateFontFamily, TemplateStyle } from '../../../data/templates';
+import { styleFor, templateFontFamily, TemplateStyle } from '../../../data/templates';
 import { spacing } from '../../../theme';
 
 /** 템플릿이 정하는 초대장 '룩' (색·서체·표지 구성) */
@@ -10,17 +10,8 @@ export interface Look extends TemplateStyle {
   bold: string;
 }
 
-const FALLBACK: TemplateStyle = {
-  bg: '#FFFFFF',
-  fg: '#222222',
-  sub: '#777777',
-  accent: '#D9607E',
-  font: 'serif',
-  cover: 'date',
-};
-
 export function lookFor(themeId: string, templateId: string): Look {
-  const style = getTemplate(themeId, templateId)?.style ?? FALLBACK;
+  const style = styleFor(themeId, templateId);
   const [regular, bold] = templateFontFamily[style.font];
   return { ...style, regular, bold };
 }

@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 
+import { styleFor } from '../../data/templates';
+import { coverPreset } from '../canvas/preset';
+import type { CanvasDoc, ViewMode } from '../canvas/types';
 import {
   createInvitation,
   Invitation,
   InvitationContent,
   OptionalSection,
+  PageKey,
   ReorderablePage,
   SectionKey,
   validateSection,
@@ -17,7 +21,7 @@ interface EditorState {
   dirty: boolean;
   /** 나의 초대장에서 불러온 저장본 (수정 모드 판단용). 새로 만들면 null */
   origin: Invitation | null;
-  start: (args: { ownerId: string; themeId: string; templateId: string; today?: Date }) => void;
+  start: (args: { ownerId: string; themeId: string; templateId: string; today?: Date; viewMode?: ViewMode }) => void;
   load: (invitation: Invitation) => void;
   /** 서버의 최신 저장본으로 기준만 바꾼다 (편집 중 내용은 그대로) — 다른 곳에서 활성화된 경우 등 */
   setOrigin: (invitation: Invitation) => void;
@@ -27,6 +31,13 @@ interface EditorState {
   patch: <K extends SectionKey>(key: K, values: Partial<InvitationContent[K]>) => void;
   /** 바텀시트 ✓: 유효하면 완료 처리 후 true */
   confirm: (key: SectionKey) => boolean;
+  setViewMode: (mode: ViewMode) => void;
+  /** [직접 꾸미기]: 템플릿 프리셋 복사본으로 캔버스 시작 */
+  startCanvas: (page: PageKey) => void;
+  /** 캔버스 편집기 [완료] */
+  applyCanvas: (page: PageKey, doc: CanvasDoc) => void;
+  /** [템플릿 원래대로]: 형식으로 되돌림 */
+  resetDesign: (page: PageKey) => void;
   markSaved: (saved: Invitation) => void;
 }
 
@@ -37,8 +48,12 @@ export const useEditor = create<EditorState>()((set, get) => ({
   dirty: false,
   origin: null,
 
-  start: ({ ownerId, themeId, templateId, today }) =>
-    set({ draft: createInvitation({ id: newId(), ownerId, themeId, templateId, today }), dirty: false, origin: null }),
+  start: ({ ownerId, themeId, templateId, today, viewMode }) =>
+    set({
+      draft: createInvitation({ id: newId(), ownerId, themeId, templateId, today, viewMode }),
+      dirty: false,
+      origin: null,
+    }),
 
   load: (invitation) => set({ draft: invitation, dirty: false, origin: invitation }),
 
@@ -67,6 +82,31 @@ export const useEditor = create<EditorState>()((set, get) => ({
     set({ draft: { ...draft, completed: { ...draft.completed, [key]: true } }, dirty: true });
     return true;
   },
+
+  setViewMode: (mode) => set((s) => (s.draft ? { draft: { ...s.draft, viewMode: mode }, dirty: true } : s)),
+
+  startCanvas: (page) =>
+    set((s) => {
+      if (!s.draft) return s;
+      const preset = coverPreset(styleFor(s.draft.themeId, s.draft.templateId));
+      // 프리셋 원본이 바뀌지 않도록 깊은 복사
+      const canvas = JSON.parse(JSON.stringify(preset)) as CanvasDoc;
+      return { draft: { ...s.draft, design: { ...s.draft.design, [page]: { mode: 'canvas', canvas } } }, dirty: true };
+    }),
+
+  applyCanvas: (page, doc) =>
+    set((s) =>
+      s.draft
+        ? { draft: { ...s.draft, design: { ...s.draft.design, [page]: { mode: 'canvas', canvas: doc } } }, dirty: true }
+        : s,
+    ),
+
+  resetDesign: (page) =>
+    set((s) => {
+      if (!s.draft) return s;
+      const { [page]: _removed, ...design } = s.draft.design;
+      return { draft: { ...s.draft, design }, dirty: true };
+    }),
 
   markSaved: (saved) => set({ draft: saved, dirty: false, origin: saved }),
 }));

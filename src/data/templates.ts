@@ -65,6 +65,20 @@ export function getTemplate(themeId: string, templateId: string): InviteTemplate
   return getTemplates(themeId).find((t) => t.id === templateId);
 }
 
+/** 템플릿을 찾지 못했을 때 쓰는 기본 룩 */
+export const FALLBACK_STYLE: TemplateStyle = {
+  bg: '#FFFFFF',
+  fg: '#222222',
+  sub: '#777777',
+  accent: '#D9607E',
+  font: 'serif',
+  cover: 'date',
+};
+
+export function styleFor(themeId: string, templateId: string): TemplateStyle {
+  return getTemplate(themeId, templateId)?.style ?? FALLBACK_STYLE;
+}
+
 export const SAMPLE_CONTENT: Record<ThemeId, SampleContent> = {
   wedding: {
     dateLabel: '2026 / 12 / 31',
