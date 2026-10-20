@@ -22,6 +22,7 @@ import {
   reorderElement,
   updateElement,
 } from '../model';
+import { pickCanvasVideo, pickCanvasVisual } from '../media';
 import { CanvasSlide } from '../render/CanvasSlide';
 import type { CanvasDoc, CanvasElement } from '../types';
 import { CanvasToolbar, ToolKey } from './CanvasToolbar';
@@ -66,13 +67,15 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
   const selected = doc.elements.find((e) => e.id === selectedId) ?? null;
 
   /** 한도 검사 후 추가하고 선택 */
+  // 비동기(앨범 선택 등) 뒤에도 최신 문서에 더하도록 스토어에서 직접 읽는다
   const add = (el: CanvasElement) => {
-    const err = canAdd(doc, el.kind);
+    const cur = useCanvas.getState().doc!;
+    const err = canAdd(cur, el.kind);
     if (err) {
       toast(LIMIT_MESSAGE[err]);
       return;
     }
-    commit(addElement(doc, el));
+    useCanvas.getState().commit(addElement(cur, el));
     select(el.id);
   };
 
@@ -87,15 +90,52 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
     align: 'center' as const,
   };
 
-  // 사진 배경은 다음 작업(사진·GIF·동영상)에서 연결
-  const pickBackgroundPhoto = () => toast('준비 중이에요.');
+  const pickBackgroundPhoto = () =>
+    pickCanvasVisual().then((v) => {
+      if (!v) return;
+      if (v.kind === 'gif') return toast('배경은 사진만 쓸 수 있어요.');
+      const cur = useCanvas.getState().doc!;
+      useCanvas.getState().commit({ ...cur, background: { kind: 'image', uri: v.uri } });
+    });
 
   const handleTool = (t: ToolKey) => {
     switch (t) {
       case 'text':
         setTextModal({ id: null, text: '' });
         break;
-      // 아래 도구는 Task 10~13 에서 채운다
+      case 'photo':
+      case 'gif': {
+        // 같은 앨범 선택기에서 사진·GIF 를 판별한다
+        if (t === 'gif') {
+          const err = canAdd(doc, 'gif');
+          if (err) return toast(LIMIT_MESSAGE[err]);
+        }
+        pickCanvasVisual().then((v) => {
+          if (!v) return;
+          const base = { id: newElementId(), x: 0.5, y: 0.5, w: 0.6, rotation: 0, uri: v.uri, aspect: v.aspect };
+          add(v.kind === 'gif' ? { ...base, kind: 'gif' } : { ...base, kind: 'image', shape: 'rect' });
+        });
+        break;
+      }
+      case 'video': {
+        const err = canAdd(doc, 'video');
+        if (err) return toast(LIMIT_MESSAGE[err]);
+        pickCanvasVideo().then((v) => {
+          if (!v) return;
+          add({
+            id: newElementId(),
+            kind: 'video',
+            x: 0.5,
+            y: 0.5,
+            w: 0.6,
+            rotation: 0,
+            uri: v.uri,
+            aspect: v.aspect,
+            durationMs: v.durationMs,
+          });
+        });
+        break;
+      }
       case 'sticker':
       case 'bind':
       case 'background':
@@ -116,6 +156,13 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
       const r = duplicateElement(doc, selected.id);
       commit(r.doc);
       select(r.id);
+    }
+    if (c === 'replace' && selected.kind === 'image') {
+      pickCanvasVisual().then((v) => {
+        const cur = useCanvas.getState().doc!;
+        if (v?.kind === 'image') useCanvas.getState().commit(updateElement(cur, selected.id, { uri: v.uri, aspect: v.aspect }));
+        else if (v) toast('사진만 교체할 수 있어요.');
+      });
     }
     if (c === 'edit') {
       if (selected.kind === 'text') setTextModal({ id: selected.id, text: selected.text });
