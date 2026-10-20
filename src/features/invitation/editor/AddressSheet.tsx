@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Txt } from '../../../components/Txt';
-import { colors, spacing } from '../../../theme';
+import { appColumn, colors, spacing } from '../../../theme';
 
 export interface AddressSearchProps {
   visible: boolean;
@@ -32,7 +32,7 @@ export function AddressSheet({ onClose, children }: { onClose: () => void; child
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  wrap: { flex: 1, backgroundColor: colors.canvas },
+  wrap: { ...appColumn, flex: 1, backgroundColor: colors.canvas },
   head: {
     height: 56,
     flexDirection: 'row',

@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Txt } from '../../components/Txt';
-import { colors, radius, spacing } from '../../theme';
+import { appColumn, colors, radius, spacing } from '../../theme';
 import type { Invitation } from '../invitation/model';
 import { screenStatus } from '../invitation/status';
 
@@ -64,7 +64,7 @@ export function MoreSheet({
 
 const styles = StyleSheet.create({
   dim: { flex: 1, backgroundColor: colors.dim, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: colors.canvas, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+  sheet: { ...appColumn, backgroundColor: colors.canvas, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
   inner: { padding: spacing.xl, gap: spacing.sm },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   item: { paddingVertical: spacing.md, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.xs },

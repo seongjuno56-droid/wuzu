@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing } from '../theme';
+import { appColumn, colors, radius, spacing } from '../theme';
 import { Button } from './Button';
 import { Txt } from './Txt';
 
@@ -61,6 +61,7 @@ export function SelectSheet<T extends string | number>({ visible, title, options
 const styles = StyleSheet.create({
   dim: { flex: 1, backgroundColor: colors.dim, justifyContent: 'flex-end' },
   sheet: {
+    ...appColumn,
     backgroundColor: colors.canvas,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,

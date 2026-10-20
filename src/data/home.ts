@@ -16,13 +16,3 @@ export const BANNERS: Banner[] = [
   { id: 'b3', title: '사진과 문구만 넣으면\n10분 만에 완성', body: '수정은 횟수 제한 없이', bg: '#FFF4D9', fg: '#4F3705', art: 'alarm' },
 ];
 
-export interface Notice {
-  id: string;
-  title: string;
-  date: string;
-}
-
-export const NOTICES: Notice[] = [
-  { id: 'n1', title: 'wuzu 서비스 오픈 안내', date: '2026.10.01' },
-  { id: 'n2', title: '개인정보 처리방침 개정 안내', date: '2026.09.20' },
-];

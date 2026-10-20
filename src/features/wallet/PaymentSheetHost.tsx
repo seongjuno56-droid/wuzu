@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '../../components/Txt';
+import { appColumn } from '../../theme';
 import { usePaymentSheet } from './paymentSheetStore';
 
 const won = (n: number) => `₩${n.toLocaleString('ko-KR')}`;
@@ -97,7 +98,7 @@ export function PaymentSheetHost() {
 
 const styles = StyleSheet.create({
   dim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { padding: 20, gap: 14, backgroundColor: '#FFFFFF' },
+  sheet: { ...appColumn, padding: 20, gap: 14, backgroundColor: '#FFFFFF' },
   apple: { borderTopLeftRadius: 14, borderTopRightRadius: 14 },
   google: { borderTopLeftRadius: 8, borderTopRightRadius: 8 },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

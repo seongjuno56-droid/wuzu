@@ -13,8 +13,9 @@ import { PushConsentModal } from '../../components/home/PushConsentModal';
 import { RecommendedCards } from '../../components/home/RecommendedCards';
 import { Screen } from '../../components/Screen';
 import { Txt } from '../../components/Txt';
-import { NOTICES } from '../../data/home';
+import { noticeList } from '../../data/notices';
 import { useMyInvitations } from '../../features/invitation/useMyInvitations';
+import { formatDate } from '../../lib/format';
 import { useSession } from '../../store/session';
 import { colors, radius, shadow, spacing } from '../../theme';
 
@@ -26,8 +27,10 @@ export default function Home() {
   const needsOnboarding = useSession((s) => s.needsOnboarding);
   const [info, setInfo] = useState<string | null>(null);
   const { list: invitations } = useMyInvitations();
-  // 공지사항: 비회원은 로그인 먼저 (회원용 공지 페이지는 마이페이지 > 우쥬 정보에 들어갈 예정)
-  const openNotice = () => (user ? setInfo('공지사항은 곧 마이페이지 > 우쥬 정보에서 볼 수 있어요.') : router.push('/auth/login'));
+  // 공지사항·알림: 비회원은 로그인 먼저, 회원은 WUZU 정보 공지사항·알림 모달 (마이페이지와 같은 데이터)
+  const needLogin = (go: () => void) => (user ? go() : router.push('/auth/login'));
+  const openNotices = () => needLogin(() => router.push('/about/notices'));
+  const notices = noticeList().slice(0, 3);
 
   const header = (
     <View style={styles.header}>
@@ -36,7 +39,7 @@ export default function Home() {
         <Pressable
           hitSlop={10}
           style={styles.iconButton}
-          onPress={() => setInfo('알림 기능은 준비 중이에요.')}
+          onPress={() => needLogin(() => router.push('/notifications'))}
           accessibilityRole="button"
           accessibilityLabel="알림"
         >
@@ -79,24 +82,24 @@ export default function Home() {
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Txt variant="title">공지사항</Txt>
-            <Pressable onPress={openNotice} hitSlop={8}>
+            <Pressable onPress={openNotices} hitSlop={8}>
               <Txt variant="caption" color={colors.muted}>
                 전체보기
               </Txt>
             </Pressable>
           </View>
           <View style={[styles.list, shadow]}>
-            {NOTICES.map((n, i) => (
+            {notices.map((n, i) => (
               <Pressable
                 key={n.id}
                 style={({ pressed }) => [styles.listRow, i > 0 && styles.listDivider, pressed && styles.pressed]}
-                onPress={openNotice}
+                onPress={() => needLogin(() => router.push(`/about/notices/${n.id}`))}
               >
                 <Txt style={styles.flex} numberOfLines={1}>
                   {n.title}
                 </Txt>
                 <Txt variant="tiny" color={colors.faint}>
-                  {n.date}
+                  {formatDate(n.date)}
                 </Txt>
               </Pressable>
             ))}
@@ -107,7 +110,11 @@ export default function Home() {
       <HomeFooter
         loggedIn={!!user}
         onAuthPress={() => (user ? logout() : router.push('/auth/login'))}
-        onLinkPress={(label) => setInfo(`${label} 페이지는 준비 중이에요.`)}
+        onLinkPress={(label) =>
+          label === '구매 복원'
+            ? setInfo('복원할 구매 내역이 없어요.')
+            : router.push(label === '개인정보 처리방침' ? '/about/privacy' : '/about/terms')
+        }
       />
 
       <PushConsentModal

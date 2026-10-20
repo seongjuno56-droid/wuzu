@@ -80,6 +80,7 @@ export default function MyPage() {
       <View style={styles.footer}>
         <HomeFooter
           loggedIn
+          showAuth={false}
           onAuthPress={signOut}
           onLinkPress={(label) => (LINK_ROUTES[label] ? router.push(LINK_ROUTES[label]) : toast('복원할 구매 내역이 없어요.'))}
         />

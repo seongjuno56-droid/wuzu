@@ -13,15 +13,17 @@ interface Props {
   loggedIn: boolean;
   onAuthPress: () => void;
   onLinkPress: (label: string) => void;
+  /** 로그인/로그아웃 칩 표시 (마이페이지는 메뉴 줄에 로그아웃이 있어 숨긴다) */
+  showAuth?: boolean;
 }
 
 /** 푸터: 24px 칩 + '사업자 정보' 토글 */
-export function HomeFooter({ loggedIn, onAuthPress, onLinkPress }: Props) {
+export function HomeFooter({ loggedIn, onAuthPress, onLinkPress, showAuth = true }: Props) {
   const [open, setOpen] = useState(false);
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <Button variant="chip" label={loggedIn ? '로그아웃' : '로그인'} onPress={onAuthPress} />
+        {showAuth && <Button variant="chip" label={loggedIn ? '로그아웃' : '로그인'} onPress={onAuthPress} />}
         <Pressable
           style={styles.toggle}
           onPress={() => setOpen((o) => !o)}

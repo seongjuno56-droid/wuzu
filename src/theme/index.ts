@@ -106,3 +106,9 @@ export const shadow = Platform.select({
 
 /** 웹에서 폰 폭으로 보이도록 하는 최대 너비 (화해 웹의 560px 컬럼) */
 export const MAX_APP_WIDTH = 560;
+
+/**
+ * 모달(RN Modal)은 웹에서 앱 프레임 밖, 브라우저 전체에 그려진다.
+ * 시트·전체 화면 모달 본문에 이 스타일을 주어 앱 영역 폭(가운데 560px) 안에 두고, 어두운 배경만 전체를 덮는다.
+ */
+export const appColumn = { width: '100%', maxWidth: MAX_APP_WIDTH, alignSelf: 'center' } as const;
