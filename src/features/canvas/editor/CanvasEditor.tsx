@@ -24,6 +24,8 @@ import {
   updateElement,
 } from '../model';
 import { pickCanvasVideo, pickCanvasVisual } from '../media';
+import { PASTE_MESSAGE, PasteResult, readClipboard } from '../paste';
+import { useWebCanvasKeys } from '../useWebCanvasKeys';
 import { CanvasSlide } from '../render/CanvasSlide';
 import type { CanvasDoc, CanvasElement } from '../types';
 import { CanvasToolbar, ToolKey } from './CanvasToolbar';
@@ -66,10 +68,6 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!doc) return null;
-  const slide = fitSlide(box.width - 32, box.height - 32);
-  const selected = doc.elements.find((e) => e.id === selectedId) ?? null;
-
   /** 한도 검사 후 추가하고 선택 */
   // 비동기(앨범 선택 등) 뒤에도 최신 문서에 더하도록 스토어에서 직접 읽는다
   const add = (el: CanvasElement) => {
@@ -94,6 +92,29 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
     align: 'center' as const,
   };
 
+  /** 붙여넣기 결과를 요소로 (텍스트·사진·GIF) */
+  const applyPaste = (r: PasteResult) => {
+    if (r.kind === 'empty' || r.kind === 'unsupported' || r.kind === 'tooLarge') return toast(PASTE_MESSAGE[r.kind]);
+    if (r.kind === 'text') return add({ ...textBase, id: newElementId(), kind: 'text', text: r.text });
+    const base = { id: newElementId(), x: 0.5, y: 0.5, w: 0.6, rotation: 0, uri: r.uri, aspect: r.aspect };
+    add(r.kind === 'gif' ? { ...base, kind: 'gif' } : { ...base, kind: 'image', shape: 'rect' });
+  };
+
+  // 웹: Delete 삭제, Ctrl+Z / Ctrl+Shift+Z, Ctrl+V 붙여넣기
+  useWebCanvasKeys({
+    onDelete: () => {
+      const st = useCanvas.getState();
+      if (st.doc && st.selectedId) st.commit(removeElement(st.doc, st.selectedId));
+    },
+    onUndo: () => useCanvas.getState().undo(),
+    onRedo: () => useCanvas.getState().redo(),
+    onPaste: (r) => applyPaste(r),
+  });
+
+  if (!doc) return null;
+  const slide = fitSlide(box.width - 32, box.height - 32);
+  const selected = doc.elements.find((e) => e.id === selectedId) ?? null;
+
   const pickBackgroundPhoto = () =>
     pickCanvasVisual().then((v) => {
       if (!v) return;
@@ -104,6 +125,9 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
 
   const handleTool = (t: ToolKey) => {
     switch (t) {
+      case 'paste':
+        readClipboard().then(applyPaste);
+        break;
       case 'pen':
         setTool('pen');
         break;
