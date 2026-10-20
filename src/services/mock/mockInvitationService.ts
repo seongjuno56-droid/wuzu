@@ -1,4 +1,5 @@
 import { Invitation, isValidInvitationName, validateGuestbookEntry } from '../../features/invitation/model';
+import { screenStatus } from '../../features/invitation/status';
 import { GuestbookEntry, GuestbookInput, InvitationService, KeyValueStorage, RemoveGuestbookAuth } from '../types';
 import { createInvitationStore, StoredEntry } from './invitationStore';
 
@@ -30,8 +31,24 @@ export function createMockInvitationService(opts: {
     async save(invitation) {
       await wait();
       const db = await load();
-      const saved: Invitation = { ...invitation, updatedAt: now().toISOString() };
       const idx = db.invitations.findIndex((i) => i.id === invitation.id);
+      const stored = idx >= 0 ? db.invitations[idx] : null;
+      // 활성화 중인 초대장의 내용 변경은 레터를 쓰는 수정(지갑 spend)으로만
+      if (stored && screenStatus(stored, now()) === 'active') throw new Error('PAID_EDIT_REQUIRED');
+      // 번호·작성자·제작일·활성화 기간·제재·방명록 확인 시각은 서버(저장본) 값을 지킨다 — 낡은 편집본이 덮어쓰지 않게
+      const saved: Invitation = stored
+        ? {
+            ...invitation,
+            number: stored.number,
+            ownerId: stored.ownerId,
+            createdAt: stored.createdAt,
+            activatedAt: stored.activatedAt,
+            expiresAt: stored.expiresAt,
+            banned: stored.banned,
+            guestbookSeenAt: stored.guestbookSeenAt,
+            updatedAt: now().toISOString(),
+          }
+        : { ...invitation, updatedAt: now().toISOString() };
       if (idx >= 0) db.invitations[idx] = saved;
       else db.invitations.push(saved);
       await save(db);

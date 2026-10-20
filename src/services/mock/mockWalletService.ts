@@ -33,6 +33,14 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
     number: newInvitationNumber(),
     createdAt: now().toISOString(),
   });
+  /** 알림은 부가 기능 — 기록이 실패해도 이미 끝난 차감·충전을 실패로 돌리지 않는다(재시도 시 이중 결제 방지) */
+  const notify = async (n: Parameters<typeof notifications.add>[0]) => {
+    try {
+      await notifications.add(n);
+    } catch {
+      // 알림만 빠진다
+    }
+  };
   const targetId = (order: SpendOrder) => (order.kind === 'edit' ? order.invitation.id : order.invitationId);
 
   return {
@@ -79,7 +87,7 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
       await invitations.save(invDb);
       await save(db);
       // 구매 알림의 번호는 이력No 가 아니라 초대장No
-      await notifications.add(purchaseNotification({ ...record, number: saved.number }));
+      await notify(purchaseNotification({ ...record, number: saved.number }));
       return { ok: true, invitation: saved, balance: db.balances[userId] };
     },
 
@@ -105,7 +113,7 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
       });
       db.ledger.push(record);
       await save(db);
-      await notifications.add(purchaseNotification(record));
+      await notify(purchaseNotification(record));
       return db.balances[userId];
     },
   };

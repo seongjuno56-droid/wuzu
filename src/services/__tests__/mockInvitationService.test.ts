@@ -97,3 +97,34 @@ describe('guestbook', () => {
     expect(second?.number).toBe(first?.number);
   });
 });
+
+describe('서버가 가진 값 보호', () => {
+  // 활성화·확인 시각은 지갑·방명록 경로가 저장소에 직접 쓰는 값이라, 테스트도 저장소에 직접 넣는다
+  const withStored = async (patch: Record<string, unknown>) => {
+    const storage = memoryStorage();
+    const s = createMockInvitationService({ delayMs: 0, storage });
+    const saved = await s.save({ ...make('a'), status: 'final' });
+    const db = JSON.parse((await storage.getItem('wuzu.mock.invitations.v1'))!);
+    db.invitations[0] = { ...db.invitations[0], ...patch };
+    await storage.setItem('wuzu.mock.invitations.v1', JSON.stringify(db));
+    return { s, saved };
+  };
+
+  it('저장할 때 번호·활성화 기간·제재·방명록 확인 시각은 저장본 값을 지킨다', async () => {
+    const past = { activatedAt: '2026-01-01T00:00:00.000Z', expiresAt: '2026-01-02T00:00:00.000Z', guestbookSeenAt: '2026-01-01T00:00:00.000Z' };
+    const { s, saved } = await withStored(past);
+    // 낡은 편집본(활성화 전 사본)으로 무료 저장 — 기한만료 상태라 무료 저장 가능
+    const r = await s.save({ ...saved, name: '낡은 편집본', number: '99999999999', banned: false });
+    expect(r.name).toBe('낡은 편집본');
+    expect(r.number).toBe(saved.number);
+    expect(r.activatedAt).toBe(past.activatedAt);
+    expect(r.expiresAt).toBe(past.expiresAt);
+    expect(r.guestbookSeenAt).toBe(past.guestbookSeenAt);
+  });
+
+  it('활성화 중인 초대장은 무료 저장을 거부한다(수정은 레터 사용)', async () => {
+    const { s, saved } = await withStored({ activatedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString() });
+    await expect(s.save({ ...saved, name: '무료로 바꿈' })).rejects.toThrow('PAID_EDIT_REQUIRED');
+    expect((await s.get('a'))?.name).not.toBe('무료로 바꿈');
+  });
+});

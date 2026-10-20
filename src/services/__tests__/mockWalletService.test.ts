@@ -118,3 +118,23 @@ describe('지갑', () => {
     expect(await wallet.history('u1', { kind: 'spend' })).toEqual([]);
   });
 });
+
+describe('알림 기록 실패 격리', () => {
+  it('알림 저장이 실패해도 구매·충전은 성공으로 끝난다(이중 결제 방지)', async () => {
+    const base = memoryStorage();
+    // 알림 저장소만 쓰기에 실패하는 저장소
+    const flaky: KeyValueStorage = {
+      getItem: (k) => base.getItem(k),
+      setItem: async (k, v) => {
+        if (k === 'wuzu.mock.notifications.v1') throw new Error('DISK_FULL');
+        return base.setItem(k, v);
+      },
+    };
+    const inv = createMockInvitationService({ delayMs: 0, storage: flaky, now: () => NOW });
+    const w = createMockWalletService({ delayMs: 0, storage: flaky, now: () => NOW });
+    await inv.save(final('a'));
+    const r = await w.spend('u1', { kind: 'activate', invitationId: 'a', extendDays: 0 });
+    expect(r.ok).toBe(true);
+    await expect(w.charge('u1', 'letters_10')).resolves.toBe(160);
+  });
+});

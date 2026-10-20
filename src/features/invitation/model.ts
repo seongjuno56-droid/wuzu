@@ -272,6 +272,9 @@ export function createInvitation(args: {
   };
 }
 
+/** 저장 종류 → 저장 상태: 임시저장은 언제나 작성중으로 내린다 (최종저장본을 고치다 임시저장해도 미완성 내용이 활성화되지 않게) */
+export const savedStatus = (kind: 'draft' | 'final'): InvitationStatus => kind;
+
 /** 예전 저장본 보정: 'active' → 'final', 번호가 없으면 생성. changed 면 저장해야 번호가 고정된다 */
 export function normalizeInvitation(inv: Invitation): { invitation: Invitation; changed: boolean } {
   const raw = inv as Omit<Invitation, 'status' | 'number'> & { status: string; number?: string };

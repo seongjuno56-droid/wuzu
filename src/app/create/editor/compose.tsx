@@ -12,7 +12,7 @@ import { EditPayModal } from '../../../features/invitation/editor/EditPayModal';
 import { SavedModal, SaveNameModal } from '../../../features/invitation/editor/SaveModals';
 import { SectionSheet, SectionTabBar } from '../../../features/invitation/editor/SectionSheet';
 import { useLeaveGuard } from '../../../features/invitation/editor/useLeaveGuard';
-import { canFinalize, SectionKey, sectionTabs } from '../../../features/invitation/model';
+import { canFinalize, savedStatus, SectionKey, sectionTabs } from '../../../features/invitation/model';
 import { screenStatus } from '../../../features/invitation/status';
 import { useDraft } from '../../../features/invitation/useDraft';
 import { InvitationView } from '../../../features/invitation/view/InvitationView';
@@ -82,13 +82,21 @@ export default function EditorCompose() {
       const result = await invitationService.save({
         ...draft,
         name,
-        status: saveKind === 'final' ? 'final' : draft.status,
+        status: savedStatus(saveKind ?? 'draft'),
       });
       markSaved(result);
       setSaveKind(null);
       setSaved(true);
-    } catch {
-      toast('저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } catch (e) {
+      if (e instanceof Error && e.message === 'PAID_EDIT_REQUIRED') {
+        // 그사이 활성화된 초대장 — 최신 저장본을 기준으로 '수정(레터)' 모드로 바꾼다. 편집 내용은 그대로
+        setSaveKind(null);
+        const latest = await invitationService.get(draft.id);
+        if (latest) useEditor.getState().setOrigin(latest);
+        toast('활성화된 초대장이에요. [수정]으로 레터를 사용해 저장해 주세요.');
+      } else {
+        toast('저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      }
     } finally {
       setSaving(false);
     }

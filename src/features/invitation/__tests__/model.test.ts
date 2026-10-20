@@ -1,4 +1,5 @@
 import {
+  savedStatus,
   canFinalize,
   createInvitation,
   ddayParts,
@@ -214,5 +215,12 @@ describe('초대장 번호·이름·보정', () => {
     expect(invitation.number).toMatch(/^\d{11}$/);
     expect(changed).toBe(true);
     expect(normalizeInvitation(invitation).changed).toBe(false);
+  });
+});
+
+describe('저장 종류 → 저장 상태', () => {
+  it('임시저장은 언제나 작성중(draft)으로 — 최종저장본을 임시저장해도 미완성 초대장이 활성화되지 않게', () => {
+    expect(savedStatus('draft')).toBe('draft');
+    expect(savedStatus('final')).toBe('final');
   });
 });

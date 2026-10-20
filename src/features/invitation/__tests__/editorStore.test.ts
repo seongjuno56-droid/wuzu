@@ -64,4 +64,14 @@ describe('editor store', () => {
     start();
     expect(useEditor.getState().origin).toBeNull();
   });
+  it('저장본 갱신(setOrigin): 편집 중 내용은 두고 기준 저장본만 바꾼다', () => {
+    const saved = { ...createInvitation({ id: 's', ownerId: 'u1', themeId: 'wedding', templateId: 'wedding-1' }), status: 'final' as const };
+    useEditor.getState().load(saved);
+    useEditor.getState().patch('greeting', { content: '편집 중' });
+    const latest = { ...saved, expiresAt: '2099-01-01T00:00:00.000Z' };
+    useEditor.getState().setOrigin(latest);
+    expect(useEditor.getState().origin?.expiresAt).toBe('2099-01-01T00:00:00.000Z');
+    expect(useEditor.getState().draft?.content.greeting.content).toBe('편집 중');
+    expect(useEditor.getState().dirty).toBe(true);
+  });
 });

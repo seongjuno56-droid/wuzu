@@ -19,6 +19,8 @@ interface EditorState {
   origin: Invitation | null;
   start: (args: { ownerId: string; themeId: string; templateId: string; today?: Date }) => void;
   load: (invitation: Invitation) => void;
+  /** 서버의 최신 저장본으로 기준만 바꾼다 (편집 중 내용은 그대로) — 다른 곳에서 활성화된 경우 등 */
+  setOrigin: (invitation: Invitation) => void;
   reset: () => void;
   setEnabled: (key: OptionalSection, value: boolean) => void;
   setOrder: (order: ReorderablePage[]) => void;
@@ -39,6 +41,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
     set({ draft: createInvitation({ id: newId(), ownerId, themeId, templateId, today }), dirty: false, origin: null }),
 
   load: (invitation) => set({ draft: invitation, dirty: false, origin: invitation }),
+
+  setOrigin: (invitation) => set({ origin: invitation }),
 
   reset: () => set({ draft: null, dirty: false, origin: null }),
 

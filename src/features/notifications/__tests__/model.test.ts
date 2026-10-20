@@ -19,7 +19,7 @@ describe('알림 보이기', () => {
 
 describe('알림 만들기', () => {
   it('공지 → [공지] 제목, 상세로 연결', () => {
-    const [first] = noticeNotifications(noticeList(NOW));
+    const [first] = noticeNotifications(noticeList());
     expect(first.title.startsWith('[공지] ')).toBe(true);
     expect(first.link).toMatch(/^\/about\/notices\//);
     expect(first.userId).toBeNull();
@@ -34,5 +34,15 @@ describe('알림 만들기', () => {
     });
     const charge = { ...base, kind: 'charge' as const, invitationId: null, invitationName: null, total: 500, priceWon: 50000 };
     expect(purchaseNotification(charge)).toMatchObject({ title: '[구매] 레터 충전', body: '레터 500 충전 - 50,000원', link: '/wallet?tab=charges' });
+  });
+});
+
+describe('공지 날짜', () => {
+  it('보는 날이 바뀌어도 공지 날짜는 그대로다(매일 새 알림이 되지 않게)', () => {
+    // 날짜가 지금 시각과 무관하게 고정 — 두 번 불러도, 시간이 지나도 같다
+    const first = noticeList().map((n) => n.date);
+    jest.useFakeTimers().setSystemTime(new Date(2026, 9, 25));
+    expect(noticeList().map((n) => n.date)).toEqual(first);
+    jest.useRealTimers();
   });
 });

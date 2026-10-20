@@ -1,4 +1,4 @@
-/** 공지사항 mock (실서버 도입 시 어드민 등록 데이터로 교체). 날짜는 지금 기준 며칠 전 */
+/** 공지사항 mock (실서버 도입 시 어드민 등록 데이터로 교체). 날짜는 고정 기준일에서 며칠 전 — 보는 날에 따라 바뀌지 않는다 */
 export type NoticeCategory = 'service' | 'promotion' | 'update' | 'etc';
 
 export const NOTICE_CATEGORY_LABEL: Record<NoticeCategory, string> = {
@@ -17,6 +17,9 @@ export interface Notice {
   date: string;
 }
 
+/** mock 공지 기준일 (실제 공지는 어드민 등록일) */
+const BASE_DATE = new Date(2026, 9, 19, 10, 0, 0);
+
 const BODY = '안녕하세요. 우쥬입니다.\n\n보다 안정적인 서비스를 위해 서버 점검을 진행합니다.\n점검 시간에는 초대장 제작과 레터 충전이 잠시 중단됩니다.\n\n이용에 불편을 드려 죄송합니다.';
 
 const RAW: { id: string; category: NoticeCategory; title: string; daysAgo: number; body?: string }[] = [
@@ -29,14 +32,14 @@ const RAW: { id: string; category: NoticeCategory; title: string; daysAgo: numbe
 ];
 
 /** 최신순 공지 목록 */
-export function noticeList(now: Date = new Date()): Notice[] {
+export function noticeList(): Notice[] {
   return RAW.map((r) => ({
     id: r.id,
     category: r.category,
     title: r.title,
     body: r.body ?? BODY,
-    date: new Date(now.getTime() - r.daysAgo * 86400000).toISOString(),
+    date: new Date(BASE_DATE.getTime() - r.daysAgo * 86400000).toISOString(),
   }));
 }
 
-export const findNotice = (id: string, now?: Date) => noticeList(now).find((n) => n.id === id) ?? null;
+export const findNotice = (id: string) => noticeList().find((n) => n.id === id) ?? null;

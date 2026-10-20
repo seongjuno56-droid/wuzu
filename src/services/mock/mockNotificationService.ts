@@ -23,7 +23,7 @@ export function createMockNotificationService(opts: { delayMs: number; storage: 
   /** 공지(모든 사용자) + 내 알림, 보관 기간 안, 최신순 */
   const mine = (db: Db, userId: string, now: Date) =>
     visibleNotifications(
-      [...noticeNotifications(noticeList(now)), ...db.items.filter((n) => n.userId === userId)],
+      [...noticeNotifications(noticeList()), ...db.items.filter((n) => n.userId === userId)],
       'all',
       now,
     );
