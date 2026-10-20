@@ -149,6 +149,8 @@ export interface LedgerEntry {
   lines: OrderLine[];
   /** 줄 합계 (부호 포함) */
   total: number;
+  /** 충전 결제 금액(원). 충전 기록에만 */
+  priceWon?: number;
   createdAt: string;
 }
 

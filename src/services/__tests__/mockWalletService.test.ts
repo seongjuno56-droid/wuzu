@@ -95,11 +95,11 @@ describe('지갑', () => {
     expect((await invitations.get('a'))?.name).toBe('고친 이름');
   });
 
-  it('충전 기록은 사용 기록과 따로 볼 수 있다', async () => {
-    await wallet.charge('u1', 'letters_110');
-    expect(await wallet.balance('u1')).toBe(310);
+  it('충전 기록은 사용 기록과 따로 볼 수 있고 결제 금액을 남긴다', async () => {
+    await wallet.charge('u1', 'letters_100');
+    expect(await wallet.balance('u1')).toBe(300);
     const charges = await wallet.history('u1', { kind: 'charge' });
-    expect(charges[0]).toMatchObject({ kind: 'charge', title: '레터 충전', total: 110, invitationId: null });
+    expect(charges[0]).toMatchObject({ kind: 'charge', title: '레터 충전', total: 100, invitationId: null, priceWon: 10000 });
     expect(await wallet.history('u1', { kind: 'spend' })).toEqual([]);
   });
 });

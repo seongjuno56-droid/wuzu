@@ -97,6 +97,7 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
             ...(product.bonus ? [{ label: `보너스 ${product.bonus}`, amount: product.bonus }] : []),
           ],
           total: amount,
+          priceWon: product.price,
         }),
       );
       await save(db);

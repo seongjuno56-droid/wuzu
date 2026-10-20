@@ -22,12 +22,13 @@ export const EDIT_COST = 5;
 /** mock 새 계정 시작 레터 */
 export const SIGNUP_LETTERS = 200;
 
-/** 인앱 충전 상품 (앱스토어 가격 등급 기준 기본안) */
+/** 인앱 충전 상품 (1레터 = 100원, 보너스 없음). 실제 금액은 스토어 콘솔에서 확정 */
 export const LETTER_PRODUCTS: LetterProduct[] = [
-  { id: 'letters_50', letters: 50, bonus: 0, price: 5500 },
-  { id: 'letters_110', letters: 100, bonus: 10, price: 11000 },
-  { id: 'letters_330', letters: 300, bonus: 30, price: 33000 },
-  { id: 'letters_550', letters: 500, bonus: 50, price: 55000 },
+  { id: 'letters_10', letters: 10, bonus: 0, price: 1000 },
+  { id: 'letters_50', letters: 50, bonus: 0, price: 5000 },
+  { id: 'letters_100', letters: 100, bonus: 0, price: 10000 },
+  { id: 'letters_300', letters: 300, bonus: 0, price: 30000 },
+  { id: 'letters_500', letters: 500, bonus: 0, price: 50000 },
 ];
 
 export const LEDGER_TITLE: Record<LedgerKind, string> = {
