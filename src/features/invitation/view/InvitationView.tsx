@@ -1,55 +1,37 @@
-import { Fragment } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { View } from 'react-native';
 
-import type { GuestbookEntry } from '../../../services/types';
-import { Invitation, pageOrder } from '../model';
-import { AccountPage } from './AccountPage';
+import type { ViewMode } from '../../canvas/types';
 import { BgmButton } from './BgmButton';
-import { CeremonyPage } from './CeremonyPage';
-import { CoverSlide } from './CoverSlide';
-import { EndingPage } from './EndingPage';
-import { GalleryPage } from './GalleryPage';
-import { GreetingPage } from './GreetingPage';
-import { GuestbookPage } from './GuestbookPage';
 import { lookFor, LookProvider } from './look';
+import { GuestbookHandlers, ViewInvitation } from './PageContent';
+import { ScrollInvitation } from './ScrollInvitation';
+import { StoryInvitation } from './StoryInvitation';
 
-interface Props {
-  invitation: Pick<Invitation, 'themeId' | 'templateId' | 'content' | 'enabled' | 'order' | 'design'>;
-  guestbook?: GuestbookEntry[];
-  onGuestbookWrite?: () => void;
-  onGuestbookAll?: () => void;
+interface Props extends GuestbookHandlers {
+  invitation: ViewInvitation;
+  /** 없으면 초대장에 저장된 보기 형태 */
+  mode?: ViewMode;
   /** 편집 화면 미리보기에서는 BGM 버튼을 숨긴다 */
   showBgm?: boolean;
 }
 
-/** 초대장 한 장 전체 — 템플릿 미리보기·편집 미리보기·저장본 보기가 같이 쓴다 */
-export function InvitationView({ invitation, guestbook = [], onGuestbookWrite, onGuestbookAll, showBgm = true }: Props) {
-  const { width } = useWindowDimensions();
+/**
+ * 초대장 전체 — 템플릿 미리보기·편집 미리보기·저장본 보기가 같이 쓴다.
+ * 스토리형은 부모가 높이를 정해야 한다 (스크롤 안에 넣지 않는다).
+ */
+export function InvitationView({ invitation, mode, showBgm = true, ...handlers }: Props) {
   const look = lookFor(invitation.themeId, invitation.templateId);
   const { content, enabled } = invitation;
-
+  const story = (mode ?? invitation.viewMode) === 'story';
   return (
     <LookProvider look={look}>
-      <View style={{ backgroundColor: look.bg }}>
+      <View style={story ? { flex: 1 } : undefined}>
+        {story ? (
+          <StoryInvitation invitation={invitation} {...handlers} />
+        ) : (
+          <ScrollInvitation invitation={invitation} {...handlers} />
+        )}
         {showBgm && enabled.bgm && content.bgm.uri && <BgmButton bgm={content.bgm} />}
-        {pageOrder(enabled, invitation.order).map((page) => (
-          <Fragment key={page}>
-            {page === 'cover' && <CoverSlide invitation={invitation} width={Math.min(width, 480)} />}
-            {page === 'greeting' && <GreetingPage content={content} />}
-            {page === 'gallery' && <GalleryPage gallery={content.gallery} />}
-            {page === 'ceremony' && <CeremonyPage ceremony={content.ceremony} />}
-            {page === 'account' && <AccountPage account={content.account} basic={content.basic} />}
-            {page === 'guestbook' && (
-              <GuestbookPage
-                settings={content.guestbook}
-                entries={guestbook}
-                onWrite={onGuestbookWrite}
-                onViewAll={onGuestbookAll}
-              />
-            )}
-            {page === 'ending' && <EndingPage ending={content.ending} />}
-          </Fragment>
-        ))}
       </View>
     </LookProvider>
   );

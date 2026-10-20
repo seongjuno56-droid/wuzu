@@ -9,6 +9,7 @@ import { GuestbookModals, GuestbookView } from '../../features/invitation/Guestb
 import { Invitation } from '../../features/invitation/model';
 import { screenStatus } from '../../features/invitation/status';
 import { InvitationView } from '../../features/invitation/view/InvitationView';
+import { lookFor } from '../../features/invitation/view/look';
 import { GuestbookEntry, invitationService } from '../../services';
 import { useSession } from '../../store/session';
 import { colors, spacing } from '../../theme';
@@ -61,8 +62,17 @@ export default function InvitationScreen() {
     );
   }
 
+  const story = invitation.viewMode === 'story';
+  const look = lookFor(invitation.themeId, invitation.templateId);
+
   return (
-    <Screen header={<Header title={invitation.name || '초대장'} />} background={colors.surface}>
+    <Screen
+      header={<Header title={invitation.name || '초대장'} />}
+      background={look.bg}
+      // 스토리형은 화면 높이를 꽉 채워 넘기고, 스크롤형만 세로 스크롤
+      scroll={!story}
+      contentStyle={story ? { flex: 1 } : undefined}
+    >
       {isOwner && screenStatus(invitation) !== 'active' && (
         <View style={styles.draftBanner}>
           <Txt variant="caption" color={colors.infoInk} align="center">

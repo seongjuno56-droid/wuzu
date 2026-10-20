@@ -40,6 +40,7 @@ export default function TemplateDetail() {
     >
       {themeId === 'wedding' ? (
         <InvitationView
+          mode="scroll"
           invitation={sample}
           guestbook={entries}
           onGuestbookWrite={() => setGuestbook('write')}
@@ -54,7 +55,14 @@ export default function TemplateDetail() {
         entries={entries}
         isOwner={false}
         onAdd={async ({ name, password, content }) => {
-          const entry = { id: `local-${Date.now()}`, invitationId: 'sample', name, content, password, createdAt: new Date().toISOString() };
+          const entry = {
+            id: `local-${Date.now()}`,
+            invitationId: 'sample',
+            name,
+            content,
+            password,
+            createdAt: new Date().toISOString(),
+          };
           setEntries((list) => [entry, ...list]);
         }}
         onRemove={async (entry, password) => {

@@ -68,5 +68,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     overflow: 'hidden',
   },
-  fullBleed: { maxWidth: undefined },
+  // 웹은 undefined 로 덮으면 무시하므로 100% 로 제한을 푼다
+  fullBleed: { maxWidth: '100%' },
 });

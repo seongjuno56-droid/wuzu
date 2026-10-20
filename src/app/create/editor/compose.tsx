@@ -145,7 +145,7 @@ export default function EditorCompose() {
       />
       <View style={styles.flex}>
         <ScrollView style={{ backgroundColor: colors.surface }} contentContainerStyle={styles.preview}>
-          <InvitationView invitation={draft} showBgm={false} />
+          <InvitationView mode="scroll" invitation={draft} showBgm={false} />
         </ScrollView>
         {section && <SectionSheet section={section} onClose={() => setSection(null)} />}
       </View>
