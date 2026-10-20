@@ -181,3 +181,25 @@ export interface PaymentService {
   products(): Promise<LetterProduct[]>;
   purchase(productId: string): Promise<PurchaseResult>;
 }
+
+// ── 알림 ─────────────────────────────────────────────
+
+export interface AppNotification {
+  id: string;
+  /** null = 모든 사용자(공지) */
+  userId: string | null;
+  category: 'notice' | 'purchase';
+  title: string;
+  body: string;
+  /** [바로가기] 이동 경로 */
+  link: string;
+  createdAt: string;
+}
+
+export interface NotificationService {
+  /** 보관 기간(15일) 안의 내 알림 + 공지, 최신순 */
+  list(userId: string, now?: Date): Promise<AppNotification[]>;
+  add(n: Omit<AppNotification, 'id'>): Promise<void>;
+  unreadCount(userId: string, now?: Date): Promise<number>;
+  markAllRead(userId: string, at: string): Promise<void>;
+}

@@ -1,6 +1,7 @@
 import { createInvitation, Invitation } from '../../features/invitation/model';
 import { DAY_MS } from '../../features/wallet/pricing';
 import { createMockInvitationService } from '../mock/mockInvitationService';
+import { createMockNotificationService } from '../mock/mockNotificationService';
 import { createMockWalletService } from '../mock/mockWalletService';
 import { KeyValueStorage } from '../types';
 
@@ -93,6 +94,18 @@ describe('지갑', () => {
     const r = await wallet.spend('u1', { kind: 'edit', invitation: { ...saved, name: '고친 이름' } });
     expect(r.ok && r.balance).toBe(145);
     expect((await invitations.get('a'))?.name).toBe('고친 이름');
+  });
+
+  it('구매·충전하면 구매 알림이 생긴다', async () => {
+    const notes = createMockNotificationService({ delayMs: 0, storage, now: () => now });
+    await invitations.save(final('a'));
+    await wallet.spend('u1', { kind: 'activate', invitationId: 'a', extendDays: 0 });
+    await wallet.charge('u1', 'letters_10');
+    const mine = (await notes.list('u1', NOW)).filter((x) => x.category === 'purchase');
+    expect(mine.map((x) => x.title)).toEqual(['[구매] 레터 충전', `[구매] 초대장No. ${(await invitations.get('a'))!.number}`]);
+    expect(await notes.unreadCount('u1', NOW)).toBeGreaterThanOrEqual(2);
+    await notes.markAllRead('u1', NOW.toISOString());
+    expect(await notes.unreadCount('u1', NOW)).toBe(0);
   });
 
   it('충전 기록은 사용 기록과 따로 볼 수 있고 결제 금액을 남긴다', async () => {

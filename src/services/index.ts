@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { createMockAuthService } from './mock/mockAuthService';
 import { createMockInvitationService } from './mock/mockInvitationService';
+import { createMockNotificationService } from './mock/mockNotificationService';
 import { createMockPaymentService } from './mock/mockPaymentService';
 import { createMockWalletService } from './mock/mockWalletService';
 
@@ -13,3 +14,4 @@ export const authService = createMockAuthService({ delayMs: 400, storage: AsyncS
 export const invitationService = createMockInvitationService({ delayMs: 300, storage: AsyncStorage });
 export const walletService = createMockWalletService({ delayMs: 300, storage: AsyncStorage });
 export const paymentService = createMockPaymentService();
+export const notificationService = createMockNotificationService({ delayMs: 200, storage: AsyncStorage });

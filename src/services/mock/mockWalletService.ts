@@ -1,7 +1,9 @@
 import { applyOrder, LEDGER_TITLE, LETTER_PRODUCTS, orderCost, orderLines, SIGNUP_LETTERS } from '../../features/wallet/pricing';
 import { newInvitationNumber } from '../../features/invitation/model';
 import type { KeyValueStorage, LedgerEntry, SpendOrder, WalletService } from '../types';
+import { purchaseNotification } from '../../features/notifications/model';
 import { createInvitationStore } from './invitationStore';
+import { createMockNotificationService } from './mockNotificationService';
 
 const WALLET_KEY = 'wuzu.mock.wallet.v1';
 
@@ -15,6 +17,7 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
   const now = opts.now ?? (() => new Date());
   const wait = () => new Promise((r) => setTimeout(r, delayMs));
   const invitations = createInvitationStore(storage);
+  const notifications = createMockNotificationService({ delayMs: 0, storage, now });
 
   async function load(): Promise<WalletDb> {
     const raw = await storage.getItem(WALLET_KEY);
@@ -62,19 +65,20 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
       const saved = { ...next, updatedAt: now().toISOString() };
       invDb.invitations[idx] = saved;
       db.balances[userId] = balance - cost;
-      db.ledger.push(
-        entry({
-          userId,
-          invitationId: saved.id,
-          invitationName: saved.name,
-          kind: order.kind,
-          title: LEDGER_TITLE[order.kind],
-          lines: orderLines(order),
-          total: -cost,
-        }),
-      );
+      const record = entry({
+        userId,
+        invitationId: saved.id,
+        invitationName: saved.name,
+        kind: order.kind,
+        title: LEDGER_TITLE[order.kind],
+        lines: orderLines(order),
+        total: -cost,
+      });
+      db.ledger.push(record);
       await invitations.save(invDb);
       await save(db);
+      // 구매 알림의 번호는 이력No 가 아니라 초대장No
+      await notifications.add(purchaseNotification({ ...record, number: saved.number }));
       return { ok: true, invitation: saved, balance: db.balances[userId] };
     },
 
@@ -85,22 +89,22 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
       const db = await load();
       const amount = product.letters + product.bonus;
       db.balances[userId] = balanceOf(db, userId) + amount;
-      db.ledger.push(
-        entry({
-          userId,
-          invitationId: null,
-          invitationName: null,
-          kind: 'charge',
-          title: LEDGER_TITLE.charge,
-          lines: [
-            { label: `레터 ${product.letters}`, amount: product.letters },
-            ...(product.bonus ? [{ label: `보너스 ${product.bonus}`, amount: product.bonus }] : []),
-          ],
-          total: amount,
-          priceWon: product.price,
-        }),
-      );
+      const record = entry({
+        userId,
+        invitationId: null,
+        invitationName: null,
+        kind: 'charge',
+        title: LEDGER_TITLE.charge,
+        lines: [
+          { label: `레터 ${product.letters}`, amount: product.letters },
+          ...(product.bonus ? [{ label: `보너스 ${product.bonus}`, amount: product.bonus }] : []),
+        ],
+        total: amount,
+        priceWon: product.price,
+      });
+      db.ledger.push(record);
       await save(db);
+      await notifications.add(purchaseNotification(record));
       return db.balances[userId];
     },
   };
