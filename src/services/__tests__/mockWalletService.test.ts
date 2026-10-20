@@ -51,6 +51,8 @@ describe('지갑', () => {
     const [entry] = await wallet.history('u1', { invitationId: 'a' });
     expect(entry).toMatchObject({ kind: 'activate', title: '초대장 활성화', total: -80, invitationName: '초대장 a' });
     expect(entry.number).toMatch(/^\d{11}$/);
+    // 사용내역 카드에 보일 초대장No 도 기록에 남긴다
+    expect(entry.invitationNumber).toBe((await invitations.get('a'))!.number);
   });
 
   it('레터가 딱 맞으면 구매되고, 1 모자라면 아무것도 바뀌지 않는다', async () => {

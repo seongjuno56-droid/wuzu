@@ -151,6 +151,8 @@ export interface LedgerEntry {
   total: number;
   /** 충전 결제 금액(원). 충전 기록에만 */
   priceWon?: number;
+  /** 초대장No. 사용 기록에만 */
+  invitationNumber?: string;
   createdAt: string;
 }
 

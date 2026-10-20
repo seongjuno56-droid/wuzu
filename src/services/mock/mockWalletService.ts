@@ -69,6 +69,7 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
         userId,
         invitationId: saved.id,
         invitationName: saved.name,
+        invitationNumber: saved.number,
         kind: order.kind,
         title: LEDGER_TITLE[order.kind],
         lines: orderLines(order),
