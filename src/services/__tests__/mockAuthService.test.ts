@@ -1,4 +1,5 @@
 import { CODE_TTL_MS, MAX_SEND, MOCK_CODE, createMockAuthService } from '../mock/mockAuthService';
+import { SEED_PASSWORD } from '../mock/seed';
 import { KeyValueStorage } from '../types';
 
 function memoryStorage(): KeyValueStorage {
@@ -136,5 +137,40 @@ describe('password reset codes', () => {
     await svc.resetPassword('test@wuzu.kr', 'newpass12!');
     expect((await svc.login('test@wuzu.kr', PW)).ok).toBe(false);
     expect((await svc.login('test@wuzu.kr', 'newpass12!')).ok).toBe(true);
+  });
+});
+
+describe('계정 관리', () => {
+  it('회원정보 수정: 이름·생년월일·성별과 수정일 저장', async () => {
+    const r = await svc.login('test@wuzu.kr', SEED_PASSWORD);
+    if (!r.ok) throw new Error('로그인 실패');
+    const u = await svc.updateAccount(r.user.id, { name: '새이름', birth: undefined, gender: 'female' });
+    expect(u.name).toBe('새이름');
+    expect(u.birth).toBeUndefined();
+    expect(u.gender).toBe('female');
+    expect(u.profileUpdatedAt).toBeDefined();
+  });
+  it('마케팅 동의 변경과 수정일', async () => {
+    const r = await svc.login('test@wuzu.kr', SEED_PASSWORD);
+    if (!r.ok) throw new Error('로그인 실패');
+    const u = await svc.setMarketing(r.user.id, false);
+    expect(u.marketingAgreed).toBe(false);
+    expect(u.marketingUpdatedAt).toBeDefined();
+  });
+  it('탈퇴 신청 후 로그인하면 철회 안내(30일 기한)', async () => {
+    const r = await svc.login('test@wuzu.kr', SEED_PASSWORD);
+    if (!r.ok) throw new Error('로그인 실패');
+    await svc.requestWithdraw(r.user.id);
+    const again = await svc.login('test@wuzu.kr', SEED_PASSWORD);
+    expect(again.ok).toBe(false);
+    if (again.ok || again.reason !== 'withdrawing') throw new Error('철회 안내가 아님');
+    const days = (Date.parse(again.cancelDeadline) - Date.parse(again.requestedAt)) / 86400000;
+    expect(days).toBe(30);
+  });
+  it('간편 가입은 ka_ 아이디를 받고, 예전 계정은 이메일을 아이디로 쓴다', async () => {
+    const u = await svc.signup({ name: '카카오친구', provider: 'kakao', providerKey: 'k1', marketingAgreed: false });
+    expect(u.loginId).toMatch(/^ka_[a-z0-9]{8}$/);
+    const r = await svc.login('test@wuzu.kr', SEED_PASSWORD);
+    expect(r.ok && r.user.loginId).toBe('test@wuzu.kr');
   });
 });

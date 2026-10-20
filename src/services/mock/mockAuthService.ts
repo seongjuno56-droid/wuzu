@@ -1,3 +1,4 @@
+import { socialLoginId } from '../../features/account/rules';
 import { normalizeEmail } from '../../lib/validators';
 import { AuthService, KeyValueStorage, LoginResult, User } from '../types';
 import { MOCK_KAKAO_PROFILE, StoredUser, seedUsers } from './seed';
@@ -42,9 +43,16 @@ export function createMockAuthService(opts: {
 
   async function load(): Promise<Db> {
     const raw = await storage.getItem(DB_KEY);
-    if (raw) return JSON.parse(raw) as Db;
-    const db: Db = { users: seedUsers(), codes: {} };
-    await save(db);
+    const db: Db = raw ? (JSON.parse(raw) as Db) : { users: seedUsers(), codes: {} };
+    // 아이디가 없는 계정 보정: 이메일 가입은 이메일, 간편 로그인은 자동 부여
+    let changed = !raw;
+    for (const u of db.users) {
+      if (!u.loginId) {
+        u.loginId = u.email ?? socialLoginId();
+        changed = true;
+      }
+    }
+    if (changed) await save(db);
     return db;
   }
   async function save(db: Db) {
@@ -81,6 +89,7 @@ export function createMockAuthService(opts: {
       const user: StoredUser = {
         id: `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
         email,
+        loginId: email ?? socialLoginId(),
         password: input.password,
         providerKey: input.providerKey,
         name: input.name,
@@ -148,6 +157,40 @@ export function createMockAuthService(opts: {
       user.marketingAgreed = values.marketingAgreed;
       await save(db);
       return toPublic(user);
+    },
+
+    async updateAccount(userId, values) {
+      await wait();
+      const db = await load();
+      const user = db.users.find((u) => u.id === userId);
+      if (!user) throw new Error('NOT_FOUND');
+      user.name = values.name;
+      user.birth = values.birth;
+      user.gender = values.gender;
+      user.profileUpdatedAt = new Date().toISOString();
+      await save(db);
+      return toPublic(user);
+    },
+
+    async setMarketing(userId, agreed) {
+      await wait();
+      const db = await load();
+      const user = db.users.find((u) => u.id === userId);
+      if (!user) throw new Error('NOT_FOUND');
+      user.marketingAgreed = agreed;
+      user.marketingUpdatedAt = new Date().toISOString();
+      await save(db);
+      return toPublic(user);
+    },
+
+    async requestWithdraw(userId) {
+      await wait();
+      const db = await load();
+      const user = db.users.find((u) => u.id === userId);
+      if (!user) throw new Error('NOT_FOUND');
+      user.status = 'withdrawing';
+      user.withdrawRequestedAt = new Date().toISOString();
+      await save(db);
     },
 
     async resetPassword(email, newPassword) {

@@ -14,6 +14,12 @@ export interface User {
   provider: Provider;
   marketingAgreed: boolean;
   createdAt: string; // ISO
+  /** 아이디: 이메일 가입은 이메일, 간편 로그인은 자동 부여 (ka_xxxxxxxx) */
+  loginId?: string;
+  /** 회원정보(닉네임·생년월일·성별) 최종 수정 시각 */
+  profileUpdatedAt?: string;
+  /** 마케팅 수신 동의 최종 변경 시각 */
+  marketingUpdatedAt?: string;
   status: AccountStatus;
   withdrawRequestedAt?: string; // ISO
 }
@@ -64,6 +70,11 @@ export interface AuthService {
   resetPassword(email: string, newPassword: string): Promise<void>;
   /** 선택 프로필 저장 (값이 undefined 면 비운다) */
   updateProfile(userId: string, values: Pick<User, 'birth' | 'gender' | 'marketingAgreed'>): Promise<User>;
+  /** 회원정보 수정 (닉네임·생년월일·성별). 값이 undefined 면 비운다 */
+  updateAccount(userId: string, values: { name: string; birth?: string; gender?: Gender }): Promise<User>;
+  setMarketing(userId: string, agreed: boolean): Promise<User>;
+  /** 탈퇴 신청: 30일 안에 다시 로그인하면 철회할 수 있다 */
+  requestWithdraw(userId: string): Promise<void>;
 }
 
 export interface KeyValueStorage {
