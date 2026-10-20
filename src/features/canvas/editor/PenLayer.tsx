@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   wrap: { borderTopWidth: 1, borderTopColor: ui.hairline, backgroundColor: ui.canvas, paddingVertical: spacing.xs, gap: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 4 },
   mode: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  on: { backgroundColor: ui.surface, borderWidth: 1, borderColor: ui.inkSoft },
+  on: { backgroundColor: ui.brandTint, borderWidth: 1, borderColor: ui.brand },
   close: { marginLeft: 'auto', paddingHorizontal: spacing.md, paddingVertical: 6 },
   swatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: ui.hairline },
   swatchOn: { borderWidth: 3, borderColor: ui.infoInk },

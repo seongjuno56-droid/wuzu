@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     borderColor: colors.hairline,
   },
   fixed: { paddingRight: spacing.lg, backgroundColor: colors.surface },
-  active: { borderColor: colors.inkSoft },
+  active: { borderColor: colors.brand },
   handle: { height: '100%', paddingHorizontal: spacing.lg, justifyContent: 'center', cursor: 'grab' } as object,
   actions: { flexDirection: 'row', gap: spacing.sm },
 });

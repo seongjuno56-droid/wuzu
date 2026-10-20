@@ -27,7 +27,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.inkSoft,
+        tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.placeholder,
         tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
         tabBarStyle: { borderTopColor: colors.hairline, borderTopWidth: 1, backgroundColor: colors.canvas, height: 60 },

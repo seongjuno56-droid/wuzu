@@ -45,5 +45,5 @@ const styles = StyleSheet.create({
     marginBottom: -1,
     paddingHorizontal: spacing.sm,
   },
-  active: { borderBottomColor: colors.inkSoft },
+  active: { borderBottomColor: colors.brand },
 });

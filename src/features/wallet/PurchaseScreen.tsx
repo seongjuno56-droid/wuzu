@@ -34,7 +34,7 @@ const NOTICE = {
 function Radio({ on, label, cost, listCost, onPress }: { on: boolean; label: string; cost?: number; listCost?: number; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={styles.radioRow} accessibilityRole="radio" accessibilityState={{ checked: on }}>
-      <Ionicons name={on ? 'radio-button-on' : 'radio-button-off'} size={22} color={on ? colors.inkSoft : colors.placeholder} />
+      <Ionicons name={on ? 'radio-button-on' : 'radio-button-off'} size={22} color={on ? colors.brand : colors.placeholder} />
       <Txt style={styles.flex}>{label}</Txt>
       {cost !== undefined && (
         <View style={styles.costs}>

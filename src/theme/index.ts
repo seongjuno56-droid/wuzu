@@ -23,7 +23,10 @@ export const colors = {
   // 캠페인 포인트 (배너 등 극히 일부)
   mint: '#82E6E6',
   // 로고 전용 — 컨트롤에 칠하지 않는다
+  // 시그니처 그린 — 워드마크·주요 버튼·선택 상태·하단 탭 선택에 쓴다 (상태 배지·오류 색과는 구분)
   brand: '#183A2E',
+  brandPressed: '#0F271E',
+  brandTint: '#E7F0EB',
   // 상태
   danger: '#E03E3E',
   success: '#1F8A5B',
@@ -32,8 +35,8 @@ export const colors = {
   dim: 'rgba(0, 0, 0, 0.5)',
 
   // ── 기존 화면 호환용 별칭 (의미 기준으로 매핑) ──
-  primary: '#3D3D3D', // 다크 블록 버튼
-  primaryPressed: '#111111',
+  primary: '#183A2E', // 주요 버튼 = 시그니처 그린
+  primaryPressed: '#0F271E',
   primarySoft: '#F7F7F7',
   accent: '#111111', // 선택 상태
   accentDeep: '#3750BE',

@@ -71,6 +71,6 @@ const styles = StyleSheet.create({
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.hairline, marginVertical: spacing.sm },
   title: { marginVertical: spacing.md },
   option: { paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.hairline },
-  optionOn: { backgroundColor: colors.inkSoft, borderRadius: radius.xs },
+  optionOn: { backgroundColor: colors.brand, borderRadius: radius.xs },
   confirm: { marginTop: spacing.lg },
 });

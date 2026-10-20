@@ -5,7 +5,7 @@ import { colors, radius, spacing } from '../theme';
 import { Txt } from './Txt';
 
 /**
- * primary: 다크 블록(#3d3d3d) / outline: 흰 바탕 + 헤어라인 / tint: 파란 틴트
+ * primary: 시그니처 그린 블록 / outline: 흰 바탕 + 헤어라인 / tint: 옅은 그린 틴트
  * chip: 24px 아웃라인 칩 / kakao·social: 소셜 로그인
  */
 type Variant = 'primary' | 'outline' | 'tint' | 'ghost' | 'kakao' | 'social' | 'chip' | 'secondary' | 'light';
@@ -23,12 +23,12 @@ interface Props {
 }
 
 const palette: Record<Variant, { bg: string; pressed: string; text: string; border?: string }> = {
-  primary: { bg: colors.label, pressed: colors.inkSoft, text: colors.canvas },
+  primary: { bg: colors.brand, pressed: colors.brandPressed, text: colors.canvas },
   outline: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
   social: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
   secondary: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
   light: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
-  tint: { bg: colors.infoTint, pressed: '#DCEBFF', text: colors.infoInk },
+  tint: { bg: colors.brandTint, pressed: '#D6E6DD', text: colors.brand },
   ghost: { bg: 'transparent', pressed: colors.surface, text: colors.label },
   chip: { bg: colors.canvas, pressed: colors.surface, text: colors.label, border: colors.hairline },
   kakao: { bg: colors.kakao, pressed: '#F2D900', text: colors.kakaoText },

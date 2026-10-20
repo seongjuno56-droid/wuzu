@@ -43,7 +43,7 @@ export function DockBar({
                 )}
                 {!done && <View style={styles.dot} />}
               </View>
-              <Txt variant="tiny" color={on ? colors.inkSoft : colors.muted} weight={on ? 'semibold' : 'regular'}>
+              <Txt variant="tiny" color={on ? colors.brand : colors.muted} weight={on ? 'semibold' : 'regular'}>
                 {label}
               </Txt>
             </Pressable>
@@ -76,6 +76,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  on: { borderColor: colors.inkSoft, borderWidth: 2 },
+  on: { borderColor: colors.brand, borderWidth: 2 },
   dot: { position: 'absolute', top: -3, right: -3, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger },
 });

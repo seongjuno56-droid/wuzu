@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.canvas,
   },
-  boxOn: { backgroundColor: colors.inkSoft, borderColor: colors.inkSoft },
+  boxOn: { backgroundColor: colors.brand, borderColor: colors.brand },
   photo: { flex: 1, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.surface },
   photoHandle: {
     position: 'absolute',

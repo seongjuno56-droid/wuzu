@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 4 },
   btn: { width: 52, alignItems: 'center', gap: 2 },
   font: { paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.xs, borderWidth: 1, borderColor: ui.hairline },
-  fontOn: { borderColor: ui.inkSoft },
+  fontOn: { borderColor: ui.brand, backgroundColor: ui.brandTint },
   swatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: ui.hairline },
   swatchOn: { borderWidth: 3, borderColor: ui.infoInk },
 });

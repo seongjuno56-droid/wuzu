@@ -22,7 +22,7 @@ export function LetterBadge() {
       accessibilityRole="button"
       accessibilityLabel={`보유 레터 ${balance ?? ''}, 레터 지갑으로 이동`}
     >
-      <Txt variant="tiny" weight="semibold" color={colors.infoInk}>
+      <Txt variant="tiny" weight="semibold" color={colors.brand}>
         레터 {balance ?? '–'}
       </Txt>
     </Pressable>
@@ -34,6 +34,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: colors.infoTint,
+    backgroundColor: colors.brandTint,
   },
 });

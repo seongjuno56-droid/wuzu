@@ -145,10 +145,10 @@ const styles = StyleSheet.create({
   week: { flexDirection: 'row' },
   cell: { flex: 1, alignItems: 'center', paddingVertical: 2 },
   day: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  dayOn: { backgroundColor: colors.inkSoft },
+  dayOn: { backgroundColor: colors.brand },
   columns: { flexDirection: 'row', gap: spacing.sm, height: 220 },
   column: { flex: 1, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.sm },
   columnContent: { padding: spacing.xs, gap: 2 },
   option: { height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.xs },
-  optionOn: { backgroundColor: colors.inkSoft },
+  optionOn: { backgroundColor: colors.brand },
 });

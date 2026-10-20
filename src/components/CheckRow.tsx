@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boxOn: { backgroundColor: colors.inkSoft, borderColor: colors.inkSoft },
+  boxOn: { backgroundColor: colors.brand, borderColor: colors.brand },
   label: { flex: 1 },
   body: {
     marginLeft: 50,

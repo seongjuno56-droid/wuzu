@@ -45,5 +45,5 @@ const styles = StyleSheet.create({
     borderColor: colors.hairline,
     backgroundColor: colors.canvas,
   },
-  active: { borderColor: colors.inkSoft },
+  active: { borderColor: colors.brand },
 });

@@ -70,7 +70,7 @@ export default function EditorOptions() {
           <Switch
             value={draft.enabled[o.key]}
             onValueChange={(v) => setEnabled(o.key, v)}
-            trackColor={{ false: colors.hairline, true: colors.inkSoft }}
+            trackColor={{ false: colors.hairline, true: colors.brand }}
             thumbColor={colors.canvas}
             // 웹은 켜진 상태 손잡이 색을 따로 지정해야 한다
             {...({ activeThumbColor: colors.canvas } as object)}

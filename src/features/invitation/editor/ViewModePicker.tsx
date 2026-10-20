@@ -79,7 +79,7 @@ export function ViewModeModal({
               accessibilityRole="radio"
               accessibilityState={{ checked: on }}
             >
-              <Ionicons name={o.icon} size={28} color={on ? colors.inkSoft : colors.faint} />
+              <Ionicons name={o.icon} size={28} color={on ? colors.brand : colors.faint} />
               <Txt variant="bodyStrong">{o.label}</Txt>
               <Txt variant="tiny" color={colors.muted} align="center">
                 {o.body}
@@ -116,5 +116,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.hairline,
   },
-  cardOn: { borderColor: colors.inkSoft, backgroundColor: colors.surface },
+  cardOn: { borderColor: colors.brand, backgroundColor: colors.brandTint },
 });
