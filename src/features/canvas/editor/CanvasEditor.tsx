@@ -12,6 +12,7 @@ import type { InvitationContent } from '../../invitation/model';
 import { useCanvas } from '../canvasStore';
 import {
   addElement,
+  strokeFromPoints,
   canAdd,
   duplicateElement,
   fitSlide,
@@ -28,6 +29,7 @@ import type { CanvasDoc, CanvasElement } from '../types';
 import { CanvasToolbar, ToolKey } from './CanvasToolbar';
 import { EditableElement } from './EditableElement';
 import { Guides } from './Guides';
+import { PEN_WIDTHS, PenLayer, PenOptions } from './PenLayer';
 import { PropertyBar, PropertyCommand } from './PropertyBar';
 import { BackgroundPicker, BindPicker, StickerPicker } from './Pickers';
 import { TextEditModal } from './TextEditModal';
@@ -44,13 +46,15 @@ export interface CanvasEditorProps {
 
 /** 캔버스 편집기: 상단 바(취소·되돌리기·다시하기·완료) → 도구 줄 → 슬라이드 → 속성 바 */
 export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpenBasic }: CanvasEditorProps) {
-  const { doc, selectedId, tool, past, future, open, close, select, commit, undo, redo } = useCanvas();
+  const { doc, selectedId, tool, past, future, open, close, select, setTool, commit, undo, redo } = useCanvas();
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [guides, setGuides] = useState({ x: false, y: false });
   const [textModal, setTextModal] = useState<{ id: string | null; text: string } | null>(null);
   const [boundNotice, setBoundNotice] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [picker, setPicker] = useState<'sticker' | 'bind' | 'background' | null>(null);
+  const [penColor, setPenColor] = useState(style.fg);
+  const [penWidth, setPenWidth] = useState(PEN_WIDTHS[1]);
   const colorsList = useMemo(() => palette(style), [style]);
   // 요소를 마지막으로 만진 시각 — 같은 터치의 배경 탭(선택 해제)을 무시하려고
   const touchedAt = useRef(0);
@@ -100,6 +104,9 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
 
   const handleTool = (t: ToolKey) => {
     switch (t) {
+      case 'pen':
+        setTool('pen');
+        break;
       case 'text':
         setTextModal({ id: null, text: '' });
         break;
@@ -207,9 +214,14 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
                 content={content}
                 slideW={slide.width}
                 selected={el.id === selectedId}
-                interactive={tool === 'select'}
+                interactive={tool === 'select' || (tool === 'eraser' && el.kind === 'stroke')}
                 onSelect={() => {
                   touchedAt.current = Date.now();
+                  // 지우개 모드: 누른 선을 바로 지운다
+                  if (tool === 'eraser') {
+                    if (el.kind === 'stroke') commit(removeElement(useCanvas.getState().doc!, el.id));
+                    return;
+                  }
                   select(el.id);
                 }}
                 onCommit={(next) => commit(updateElement(doc, el.id, next))}
@@ -220,11 +232,41 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
                 }}
               />
             )}
-            overlay={<Guides x={guides.x} y={guides.y} slideW={slide.width} slideH={slide.height} />}
+            overlay={
+              <>
+                <Guides x={guides.x} y={guides.y} slideW={slide.width} slideH={slide.height} />
+                {tool === 'pen' && (
+                  <PenLayer
+                    slideW={slide.width}
+                    slideH={slide.height}
+                    color={penColor}
+                    widthPx={(penWidth / 360) * slide.width}
+                    onStroke={(pts) => {
+                      const stroke = strokeFromPoints(pts, slide.width, penColor, (penWidth / 360) * slide.width);
+                      if (stroke) add(stroke);
+                      // 그린 직후 선택 상태로 두지 않는다 (계속 그리기)
+                      select(null);
+                    }}
+                  />
+                )}
+              </>
+            }
           />
         )}
       </Pressable>
 
+      {tool !== 'select' && (
+        <PenOptions
+          colors={colorsList}
+          color={penColor}
+          width={penWidth}
+          tool={tool}
+          onColor={setPenColor}
+          onWidth={setPenWidth}
+          onTool={setTool}
+          onClose={() => setTool('select')}
+        />
+      )}
       {selected && tool === 'select' && (
         <PropertyBar
           el={selected}
