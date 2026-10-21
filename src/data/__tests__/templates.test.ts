@@ -1,4 +1,4 @@
-import { getTemplate, getTemplates, PALETTES, paletteOfTemplate, styleFor, TEMPLATES_PER_THEME } from '../templates';
+import { getTemplate, getTemplates, PALETTES, paletteOfTemplate, palettesFor, styleFor, TEMPLATES_PER_THEME } from '../templates';
 import { THEMES } from '../themes';
 
 describe('templates', () => {
@@ -34,5 +34,36 @@ describe('색 조합 (배경색 고르기)', () => {
   });
   it('템플릿 자기 색 조합을 알려 준다', () => {
     expect(paletteOfTemplate('wedding', 'wedding-2')).toBe('forest');
+  });
+});
+
+describe('돌잔치 템플릿', () => {
+  it('10종 모두 둥근 서체·사진 틀·반짝이를 가진다', () => {
+    const t = getTemplates('dol');
+    expect(t).toHaveLength(10);
+    t.forEach((x) => {
+      expect(x.style.font).toBe('round');
+      expect(['arch', 'circle', 'oval', 'rounded', 'cloud']).toContain(x.style.frame);
+      expect(['star', 'heart', 'dot', 'none']).toContain(x.style.sparkle);
+    });
+  });
+  it('색 조합은 테마별: 돌잔치는 돌잔치 10색', () => {
+    expect(palettesFor('dol').map((p) => p.id)).toEqual([
+      'peach',
+      'mint',
+      'lemon',
+      'skyblue',
+      'lilac',
+      'coral',
+      'cream',
+      'leaf',
+      'rose',
+      'cloud',
+    ]);
+    expect(palettesFor('wedding')).toBe(PALETTES);
+    expect(paletteOfTemplate('dol', 'dol-2')).toBe('mint');
+    expect(styleFor('dol', 'dol-1', 'mint').bg).toBe(palettesFor('dol')[1].bg);
+    // 결혼식 색 id 를 돌잔치에 주면 무시 (템플릿 색)
+    expect(styleFor('dol', 'dol-1', 'forest')).toEqual(styleFor('dol', 'dol-1'));
   });
 });

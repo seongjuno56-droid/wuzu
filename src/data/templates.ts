@@ -3,7 +3,7 @@ import type { ThemeId } from './themes';
 
 export const TEMPLATES_PER_THEME = 10;
 
-export type TemplateFont = 'sans' | 'serif';
+export type TemplateFont = 'sans' | 'serif' | 'round';
 
 export interface TemplateStyle {
   bg: string;
@@ -13,6 +13,10 @@ export interface TemplateStyle {
   font: TemplateFont;
   /** 표지 구성: 날짜 강조 / 이름 강조 / 프레임 */
   cover: 'date' | 'names' | 'frame';
+  /** 돌잔치 표지 사진 틀 */
+  frame?: 'arch' | 'circle' | 'oval' | 'rounded' | 'cloud';
+  /** 돌잔치 표지 반짝이 */
+  sparkle?: 'star' | 'heart' | 'dot' | 'none';
 }
 
 export interface InviteTemplate {
@@ -78,12 +82,43 @@ export const PALETTES: Palette[] = STYLES.map(({ style }, i) => ({
   accent: style.accent,
 }));
 
+/** 돌잔치 전용 10종 — 파스텔·둥근 서체 (설계 3장) */
+const DOL_STYLES: { name: string; style: TemplateStyle }[] = [
+  { name: '피치', style: { bg: '#FFF4EE', fg: '#4A2F2A', sub: '#9A7468', accent: '#F08A6C', font: 'round', cover: 'date', frame: 'arch', sparkle: 'star' } },
+  { name: '민트', style: { bg: '#EEF8F3', fg: '#23443A', sub: '#6E8F84', accent: '#4FB08C', font: 'round', cover: 'date', frame: 'circle', sparkle: 'dot' } },
+  { name: '레몬', style: { bg: '#FFFBE6', fg: '#4A4220', sub: '#8F8457', accent: '#E8B931', font: 'round', cover: 'date', frame: 'rounded', sparkle: 'star' } },
+  { name: '하늘', style: { bg: '#EEF6FD', fg: '#213A52', sub: '#6D869C', accent: '#5B9BD9', font: 'round', cover: 'date', frame: 'cloud', sparkle: 'dot' } },
+  { name: '라일락', style: { bg: '#F5F0FB', fg: '#3A2E4D', sub: '#857A98', accent: '#A487D4', font: 'round', cover: 'date', frame: 'oval', sparkle: 'heart' } },
+  { name: '코랄', style: { bg: '#FFF1F0', fg: '#4D2A28', sub: '#9C716E', accent: '#EE6F67', font: 'round', cover: 'date', frame: 'arch', sparkle: 'heart' } },
+  { name: '크림', style: { bg: '#FBF6EC', fg: '#43392B', sub: '#8E8270', accent: '#C8A06A', font: 'round', cover: 'date', frame: 'rounded', sparkle: 'none' } },
+  { name: '새싹', style: { bg: '#F2F8EA', fg: '#2F4021', sub: '#7A8B6B', accent: '#86B556', font: 'round', cover: 'date', frame: 'circle', sparkle: 'star' } },
+  { name: '로즈', style: { bg: '#FDF0F4', fg: '#4B2634', sub: '#977383', accent: '#E07A9C', font: 'round', cover: 'date', frame: 'oval', sparkle: 'heart' } },
+  { name: '구름', style: { bg: '#F4F6FA', fg: '#2C3446', sub: '#7B8396', accent: '#8C9CC4', font: 'round', cover: 'date', frame: 'cloud', sparkle: 'star' } },
+];
+const DOL_PALETTE_IDS = ['peach', 'mint', 'lemon', 'skyblue', 'lilac', 'coral', 'cream', 'leaf', 'rose', 'cloud'];
+/** 돌잔치 [색상] 칩의 10색 */
+export const DOL_PALETTES: Palette[] = DOL_STYLES.map(({ name, style }, i) => ({
+  id: DOL_PALETTE_IDS[i],
+  name,
+  bg: style.bg,
+  fg: style.fg,
+  sub: style.sub,
+  accent: style.accent,
+}));
+/** 테마별 색 조합 */
+export const palettesFor = (themeId: string): Palette[] => (themeId === 'dol' ? DOL_PALETTES : PALETTES);
+
 const THEME_IDS: ThemeId[] = ['wedding', 'dol', 'meetup', 'corporate'];
 
 const TEMPLATES: Record<ThemeId, InviteTemplate[]> = Object.fromEntries(
   THEME_IDS.map((themeId) => [
     themeId,
-    STYLES.map((s, i) => ({ id: `${themeId}-${i + 1}`, themeId, name: s.name, style: s.style })),
+    (themeId === 'dol' ? DOL_STYLES : STYLES).map((s, i) => ({
+      id: `${themeId}-${i + 1}`,
+      themeId,
+      name: s.name,
+      style: s.style,
+    })),
   ]),
 ) as Record<ThemeId, InviteTemplate[]>;
 
@@ -108,14 +143,15 @@ export const FALLBACK_STYLE: TemplateStyle = {
 /** 템플릿 룩. paletteId 를 주면 색만 그 조합으로 (서체·표지 배치는 템플릿 그대로) */
 export function styleFor(themeId: string, templateId: string, paletteId?: string | null): TemplateStyle {
   const base = getTemplate(themeId, templateId)?.style ?? FALLBACK_STYLE;
-  const p = paletteId ? PALETTES.find((x) => x.id === paletteId) : undefined;
+  const p = paletteId ? palettesFor(themeId).find((x) => x.id === paletteId) : undefined;
   return p ? { ...base, bg: p.bg, fg: p.fg, sub: p.sub, accent: p.accent } : base;
 }
 
 /** 템플릿이 원래 쓰는 색 조합 */
 export function paletteOfTemplate(themeId: string, templateId: string): string | undefined {
   const i = getTemplates(themeId).findIndex((t) => t.id === templateId);
-  return i >= 0 ? PALETTES[i % PALETTES.length].id : undefined;
+  const list = palettesFor(themeId);
+  return i >= 0 ? list[i % list.length].id : undefined;
 }
 
 export const SAMPLE_CONTENT: Record<ThemeId, SampleContent> = {
@@ -171,4 +207,5 @@ export const SAMPLE_CONTENT: Record<ThemeId, SampleContent> = {
 export const templateFontFamily: Record<TemplateFont, [string, string]> = {
   sans: [fonts.regular, fonts.semibold],
   serif: [fonts.serif, fonts.serifBold],
+  round: [fonts.round, fonts.roundBold],
 };

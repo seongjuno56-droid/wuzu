@@ -66,15 +66,19 @@ export const fonts = {
   // 세리프는 초대장 '내용'(템플릿 미리보기)과 로고에만
   serif: 'Hahmlet-Medium',
   serifBold: 'Hahmlet-Bold',
+  // 둥근 서체는 돌잔치 초대장 내용에만 (고운돋움은 굵기가 하나)
+  round: 'GowunDodum-Regular',
+  roundBold: 'GowunDodum-Regular',
 } as const;
 export type FontWeightName = keyof typeof fonts;
 
-// Pretendard, Hahmlet (둘 다 OFL-1.1) — 번들에 포함
+// Pretendard, Hahmlet, Gowun Dodum (모두 OFL-1.1) — 번들에 포함
 export const fontSources = {
   [fonts.regular]: require('../../assets/fonts/Pretendard-Regular.otf'),
   [fonts.semibold]: require('../../assets/fonts/Pretendard-SemiBold.otf'),
   [fonts.serif]: require('@expo-google-fonts/hahmlet/500Medium/Hahmlet_500Medium.ttf'),
   [fonts.serifBold]: require('@expo-google-fonts/hahmlet/700Bold/Hahmlet_700Bold.ttf'),
+  [fonts.round]: require('@expo-google-fonts/gowun-dodum/400Regular/GowunDodum_400Regular.ttf'),
 };
 
 // 앱 밀도 스케일: 최대 20px, 제목만 -0.2px 트래킹

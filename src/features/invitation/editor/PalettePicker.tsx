@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
 import { Txt } from '../../../components/Txt';
-import { PALETTES } from '../../../data/templates';
+import { palettesFor } from '../../../data/templates';
 import { colors, spacing } from '../../../theme';
 
 const SWATCH = 44;
@@ -23,11 +23,14 @@ export function PaletteDot({ bg, accent }: { bg: string; accent: string }) {
  */
 export function PaletteModal({
   visible,
+  themeId,
   value,
   onSelect,
   onClose,
 }: {
   visible: boolean;
+  /** 테마마다 색 조합이 다르다 (돌잔치는 파스텔 10색) */
+  themeId: string;
   /** 지금 조합 id (템플릿 색이면 템플릿의 조합 id) */
   value: string | undefined;
   onSelect: (id: string) => void;
@@ -42,7 +45,7 @@ export function PaletteModal({
       actions={[{ label: '닫기', variant: 'outline', onPress: onClose }]}
     >
       <View style={styles.grid}>
-        {PALETTES.map((p) => {
+        {palettesFor(themeId).map((p) => {
           const on = p.id === value;
           return (
             <Pressable

@@ -275,6 +275,7 @@ export default function EditorCompose() {
       />
       <PaletteModal
         visible={paletteOpen}
+        themeId={draft.themeId}
         value={draft.paletteId ?? paletteOfTemplate(draft.themeId, draft.templateId)}
         onSelect={(id) => {
           // 템플릿 원래 색을 고르면 따로 저장하지 않는다 (템플릿 색을 따름)
