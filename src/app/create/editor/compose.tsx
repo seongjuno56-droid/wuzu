@@ -261,7 +261,7 @@ export default function EditorCompose() {
         actions={[
           { label: '취소', variant: 'outline', onPress: () => setConfirmReset(false) },
           {
-            label: '되돌리기',
+            label: '원래대로',
             onPress: () => {
               if (currentPage) resetDesign(currentPage);
               setConfirmReset(false);

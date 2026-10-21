@@ -1,6 +1,6 @@
 /** 영어 번역 4/4 */
 export const part4: Record<string, string> = {
-  'Language / 언어': 'Language',
+  'Language / 언어': 'Language / 언어', // 어느 언어에서든 찾을 수 있게 둘 다
   '저장이 완료되었습니다.': 'Saved.',
   '저장하지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't save. Please try again shortly.",
   적용: 'Apply',
@@ -156,6 +156,7 @@ export const part4: Record<string, string> = {
   '홍길동 ♥ 김영희': '홍길동 ♥ 김영희',
   홍길동: '홍길동',
   '홍철수 · 이순자의 아들 홍길동': 'Gildong Hong, son of Cheolsu Hong · Sunja Lee',
+  '성민수 · 박지영의 딸 성춘향': 'Chunhyang Seong, daughter of Minsu Seong · Jiyoung Park',
   홍철수: '홍철수',
   화이트: 'White',
   확인: 'OK',

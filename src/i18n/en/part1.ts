@@ -4,6 +4,7 @@ export const part1: Record<string, string> = {
   '· {0}장 이상': '· at least {0}',
   '총 {0}레터 차감': 'Total {0} letters deducted',
   '홈': 'Home',
+  원래대로: 'Reset',
   '원': 'Circle',
   '펜': 'Pen',
   '딸': 'Daughter',

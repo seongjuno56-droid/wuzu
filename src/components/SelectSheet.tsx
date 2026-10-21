@@ -44,7 +44,7 @@ export function SelectSheet<T extends string | number>({ visible, title, options
                   accessibilityRole="radio"
                   accessibilityState={{ checked: on }}
                 >
-                  <Txt weight={on ? 'semibold' : 'regular'} color={on ? colors.canvas : colors.muted} align="center">
+                  <Txt weight={on ? 'semibold' : 'regular'} color={on ? colors.brand : colors.muted} align="center">
                     {o.label}
                   </Txt>
                 </Pressable>
@@ -71,6 +71,7 @@ const styles = StyleSheet.create({
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.hairline, marginVertical: spacing.sm },
   title: { marginVertical: spacing.md },
   option: { paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.hairline },
-  optionOn: { backgroundColor: colors.brand, borderRadius: radius.xs },
+  // 선택은 옅은 그린 — 아래 [선택] 버튼(진한 그린)과 헷갈리지 않게
+  optionOn: { backgroundColor: colors.brandTint, borderRadius: radius.xs },
   confirm: { marginTop: spacing.lg },
 });
