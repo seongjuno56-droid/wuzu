@@ -31,9 +31,16 @@ export function SlideStage({
   const scroller = useRef<ScrollView>(null);
   const root = useRef<View>(null);
   // PC 마우스로 끌어 넘기기 — 끈 뒤의 눌림은 입력 시트를 열지 않는다
-  const justDragged = useMouseSwipe(root, (step) => {
-    const next = Math.max(0, Math.min(pages.length - 1, index + step));
-    if (next !== index) onIndexChange(next);
+  const { justDragged, isDragging } = useMouseSwipe({
+    root,
+    scroller,
+    pageWidth: box.width,
+    count: pages.length,
+    onRelease: (page) => {
+      // 같은 장이면 index 가 그대로라 effect 가 안 돈다 — 직접 제자리로
+      if (page === index) scroller.current?.scrollTo({ x: page * box.width, animated: true });
+      else onIndexChange(page);
+    },
   });
   /** 칩·코드로 옮기는 중인 목표 장 — 지나치는 경계에서 번호를 바꾸지 않는다 */
   const target = useRef<number | null>(null);
@@ -66,6 +73,7 @@ export function SlideStage({
             onScroll={
               Platform.OS === 'web'
                 ? (e) => {
+                    if (isDragging()) return; // 끄는 중엔 놓을 때 정한다
                     const i = settledPageIndex(e.nativeEvent.contentOffset.x, box.width, pages.length);
                     if (i === null) return;
                     if (target.current !== null) {

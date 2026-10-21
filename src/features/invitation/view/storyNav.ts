@@ -33,3 +33,15 @@ export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
   if (Math.abs(dx) < SWIPE_MIN || Math.abs(dy) > Math.abs(dx)) return 0;
   return dx < 0 ? 1 : -1;
 }
+
+/**
+ * 끌다 놓았을 때 붙을 장: 끈 만큼 옮겨진 위치에서 가장 가까운 장.
+ * 다만 짧게(SWIPE_MIN 이상) 끌어도 끈 방향으로 한 장은 넘긴다 — 휙 넘기는 느낌.
+ */
+export function releasePage(startIndex: number, dx: number, dy: number, pageWidth: number, count: number): number {
+  const clamp = (i: number) => Math.max(0, Math.min(count - 1, i));
+  if (pageWidth <= 0) return clamp(startIndex);
+  const nearest = clamp(Math.round(startIndex - dx / pageWidth));
+  const step = swipeStep(dx, dy);
+  return nearest === startIndex && step ? clamp(startIndex + step) : nearest;
+}

@@ -67,7 +67,13 @@ export function StoryInvitation({ invitation, ...handlers }: { invitation: ViewI
 
   // locationX 는 누른 안쪽 요소 기준이라(웹) 쓸 수 없다 — 화면 x 에서 슬라이드 왼쪽 끝을 뺀다
   // PC 마우스로 끌어 넘기기 (터치·트랙패드는 스크롤이 맡는다)
-  const justDragged = useMouseSwipe(root, (step) => go(index + step));
+  const { justDragged, isDragging } = useMouseSwipe({
+    root,
+    scroller,
+    pageWidth: box.width,
+    count: pages.length,
+    onRelease: (page) => go(page),
+  });
 
   const onTap = (e: GestureResponderEvent) => {
     if (justDragged()) return; // 끈 뒤의 눌림은 탭이 아니다
@@ -80,6 +86,7 @@ export function StoryInvitation({ invitation, ...handlers }: { invitation: ViewI
 
   // 웹은 onMomentumScrollEnd 가 없다 — 스크롤이 장 경계에 멈추면 번호를 맞춘다
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (isDragging()) return; // 끄는 중엔 놓을 때 정한다
     const i = settledPageIndex(e.nativeEvent.contentOffset.x, box.width, pages.length);
     if (i === null) return;
     if (target.current !== null) {
