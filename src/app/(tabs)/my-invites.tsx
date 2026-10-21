@@ -12,7 +12,7 @@ import { SelectSheet } from '../../components/SelectSheet';
 import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
 import { useEditor } from '../../features/invitation/editorStore';
-import { Invitation } from '../../features/invitation/model';
+import { formatYear, Invitation } from '../../features/invitation/model';
 import {
   filterInvitations,
   hasNewGuestbook,
@@ -28,6 +28,7 @@ import { MoreAction, MoreSheet } from '../../features/my-invites/MoreSheet';
 import { RenameModal } from '../../features/my-invites/RenameModal';
 import { shareInvitation } from '../../features/my-invites/share';
 import { invitationService } from '../../services';
+import { useLocale } from '../../i18n';
 import { useSession } from '../../store/session';
 import { colors, radius, spacing } from '../../theme';
 
@@ -45,6 +46,7 @@ function FilterButton({ label, onPress }: { label: string; onPress: () => void }
 export default function MyInvites() {
   const user = useSession((s) => s.user);
   const { list, reload } = useMyInvitations();
+  useLocale((s) => s.locale); // 연도 라벨이 언어를 따르도록
   const [filter, setFilter] = useState<InviteFilter>({ year: 'all', status: 'all' });
   const [sheet, setSheet] = useState<'year' | 'status' | null>(null);
   const [more, setMore] = useState<Invitation | null>(null);
@@ -119,7 +121,7 @@ export default function MyInvites() {
       background={colors.surface}
     >
       <View style={styles.filters}>
-        <FilterButton label={filter.year === 'all' ? '제작 연도' : `${filter.year}년`} onPress={() => setSheet('year')} />
+        <FilterButton label={filter.year === 'all' ? '제작 연도' : formatYear(filter.year)} onPress={() => setSheet('year')} />
         <FilterButton label={filter.status === 'all' ? '상태' : STATUS_LABEL[filter.status]} onPress={() => setSheet('status')} />
       </View>
 
@@ -149,7 +151,7 @@ export default function MyInvites() {
       <SelectSheet<number | 'all'>
         visible={sheet === 'year'}
         title="제작 연도"
-        options={[{ value: 'all', label: '전체' }, ...years.map((y) => ({ value: y, label: `${y}년` }))]}
+        options={[{ value: 'all', label: '전체' }, ...years.map((y) => ({ value: y, label: formatYear(y) }))]}
         value={filter.year}
         onClose={() => setSheet(null)}
         onSelect={(year) => {

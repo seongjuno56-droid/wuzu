@@ -2,24 +2,27 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 
+import { useLocale } from '../../../i18n';
 import { radius, spacing } from '../../../theme';
 import {
   CeremonyInfo,
   ddayParts,
-  formatKoreanTime,
+  formatCountdown,
+  formatWeekdayTime,
   monthMatrix,
   parseDate,
-  WEEKDAYS_KO,
+  weekdayNames,
 } from '../model';
 import { IText, Page, PageTitle, useLook } from './look';
 
 function Calendar({ date }: { date: Date }) {
   const look = useLook();
+  useLocale((s) => s.locale); // 요일 머리글이 언어를 따르도록
   const rows = monthMatrix(date.getFullYear(), date.getMonth() + 1);
   return (
     <View style={styles.calendar}>
       <View style={styles.week}>
-        {WEEKDAYS_KO.map((w, i) => (
+        {weekdayNames().map((w, i) => (
           <View key={w} style={styles.day}>
             <IText size={13} tone={i === 0 ? 'accent' : 'sub'}>
               {w}
@@ -72,10 +75,10 @@ function Dday({ target }: { target: Date }) {
       ) : (
         <>
           <IText size={20}>
-            {d.days}일 {d.hours}시간 {d.minutes}분 {d.seconds}초
+            {formatCountdown(d)}
           </IText>
           <IText size={14} tone="sub">
-            결혼식까지 {d.daysLeft}일 남았습니다.
+            {`결혼식까지 ${d.daysLeft}일 남았습니다.`}
           </IText>
         </>
       )}
@@ -90,7 +93,7 @@ function MapCard({ address, venue }: { address: string; venue: string }) {
   return (
     <View style={[styles.map, { borderColor: look.sub + '44' }]}>
       <Ionicons name="location" size={28} color={look.accent} />
-      <IText size={14} tone="sub">
+      <IText size={14} tone="sub" raw={!!address}>
         {address || '주소를 입력하면 여기에 보여요.'}
       </IText>
       <View style={styles.mapLinks}>
@@ -112,6 +115,7 @@ function MapCard({ address, venue }: { address: string; venue: string }) {
 }
 
 export function CeremonyPage({ ceremony }: { ceremony: CeremonyInfo }) {
+  useLocale((s) => s.locale); // 요일·시간 줄이 언어를 따르도록
   const date = parseDate(ceremony.date);
   const [h, m] = ceremony.time.split(':').map(Number);
   const target = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h || 0, m || 0);
@@ -123,15 +127,15 @@ export function CeremonyPage({ ceremony }: { ceremony: CeremonyInfo }) {
         {date.getFullYear()} / {date.getMonth() + 1} / {date.getDate()}
       </IText>
       <IText tone="sub">
-        {WEEKDAYS_KO[date.getDay()]}요일 {formatKoreanTime(ceremony.time)}
+        {formatWeekdayTime(date, ceremony.time)}
       </IText>
       {ceremony.showCalendar && <Calendar date={date} />}
       {ceremony.showDday && <Dday target={target} />}
 
       <View style={styles.venue}>
         <PageTitle>예식 장소</PageTitle>
-        <IText bold>{[ceremony.venue || '예식장 이름', ceremony.hall].filter(Boolean).join(', ')}</IText>
-        {!!address && <IText tone="sub">{address}</IText>}
+        <IText bold raw={!!ceremony.venue}>{[ceremony.venue || '예식장 이름', ceremony.hall].filter(Boolean).join(', ')}</IText>
+        {!!address && <IText tone="sub" raw>{address}</IText>}
       </View>
 
       {ceremony.mapMode === 'use' &&

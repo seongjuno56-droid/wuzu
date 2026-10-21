@@ -29,7 +29,7 @@ export function GreetingPage({ content }: { content: InvitationContent }) {
     <Page>
       <PageTitle>소중한 분들을 초대합니다</PageTitle>
       {greeting.photo && <Image source={{ uri: greeting.photo }} style={styles.photo} resizeMode="cover" />}
-      <IText>{greeting.content || '인사말을 입력하면 여기에 보여요.'}</IText>
+      <IText raw={!!greeting.content}>{greeting.content || '인사말을 입력하면 여기에 보여요.'}</IText>
       {lines.map((l) => (
         <IText key={l} tone="sub">
           {l}

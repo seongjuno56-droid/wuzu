@@ -31,10 +31,12 @@ interface ITextProps {
   align?: TextStyle['textAlign'];
   style?: TextStyle;
   numberOfLines?: number;
+  /** 사용자가 쓴 글(인사말·방명록·예식장 등) — 번역하지 않는다 */
+  raw?: boolean;
 }
 
 /** 초대장 본문 텍스트 — 템플릿 서체·색을 따른다 */
-export function IText({ children, size = 15, bold, tone = 'fg', align = 'center', style, numberOfLines }: ITextProps) {
+export function IText({ children, size = 15, bold, tone = 'fg', align = 'center', style, numberOfLines, raw }: ITextProps) {
   const look = useLook();
   const locale = useLocale((s) => s.locale);
   return (
@@ -51,7 +53,7 @@ export function IText({ children, size = 15, bold, tone = 'fg', align = 'center'
         style,
       ]}
     >
-      {translateChildren(children, locale)}
+      {raw ? children : translateChildren(children, locale)}
     </Text>
   );
 }

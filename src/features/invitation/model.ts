@@ -457,6 +457,57 @@ export function monthMatrix(year: number, month: number): (number | null)[][] {
 
 export const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 export const WEEKDAYS_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEKDAYS_EN_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS_EN = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+// ── 언어별 날짜 서식 (조각 번역 대신 — '일'·'월'이 요일로 번역되는 문제 방지) ──
+
+const isEn = () => currentLocale() === 'en';
+
+/** 달력 머리글 요일 (일요일 시작) */
+export const weekdayNames = () => (isEn() ? WEEKDAYS_EN_SHORT : WEEKDAYS_KO);
+
+/** 2026년 / 2026 */
+export const formatYear = (year: number | string) => (isEn() ? `${year}` : /* i18n-ignore */ `${year}년`);
+
+/** 2026년 5월 / May 2026 */
+export const formatYearMonth = (year: number, month: number) =>
+  isEn() ? `${MONTHS_EN[month - 1]} ${year}` : /* i18n-ignore */ `${year}년 ${month}월`;
+
+/** D-Day: 3일 4시간 5분 6초 / 3d 4h 5m 6s */
+export const formatCountdown = (d: { days: number; hours: number; minutes: number; seconds: number }) =>
+  isEn()
+    ? `${d.days}d ${d.hours}h ${d.minutes}m ${d.seconds}s`
+    : /* i18n-ignore */ `${d.days}일 ${d.hours}시간 ${d.minutes}분 ${d.seconds}초`;
+
+/** 목요일 오후 2시 / Thursday 2 PM */
+export const formatWeekdayTime = (date: Date, time: string) =>
+  isEn()
+    ? `${WEEKDAYS_EN[date.getDay()]} ${formatKoreanTime(time)}`
+    : /* i18n-ignore */ `${WEEKDAYS_KO[date.getDay()]}요일 ${formatKoreanTime(time)}`;
+
+/** 2026년 12월 31일 목요일, 오후 2시 / Thursday, December 31, 2026, 2 PM */
+export function formatDateTimeLine(date: Date, time: string): string {
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  return isEn()
+    ? `${WEEKDAYS_EN[date.getDay()]}, ${MONTHS_EN[m - 1]} ${d}, ${y}, ${formatKoreanTime(time)}`
+    : /* i18n-ignore */ `${y}년 ${m}월 ${d}일 ${WEEKDAYS_KO[date.getDay()]}요일, ${formatKoreanTime(time)}`;
+}
 
 /** 13:00 → 오후 1시, 14:30 → 오후 2시 30분 */
 export function formatKoreanTime(time: string): string {

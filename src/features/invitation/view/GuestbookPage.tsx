@@ -37,10 +37,10 @@ export function GuestbookPage({ settings, entries, onWrite, onViewAll }: Props) 
                 : [styles.line, i > 0 && { borderTopColor: look.sub + '33', borderTopWidth: 1 }]
             }
           >
-            <IText size={12} tone="sub" align="left">
+            <IText size={12} tone="sub" align="left" raw>
               - {e.name} -
             </IText>
-            <IText size={14} align="left" numberOfLines={2}>
+            <IText size={14} align="left" numberOfLines={2} raw>
               {e.content}
             </IText>
           </View>

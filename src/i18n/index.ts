@@ -66,6 +66,11 @@ interface Pattern {
   weight: number;
 }
 
+/** 패턴으로 인정할 최소 고정 글자 수 — 짧은 패턴('{0}분', '{0}의 {1} {2}')은 아무 문장에나 걸려 사용자 글을 뒤섞는다 */
+const MIN_PATTERN_TEXT = 4;
+/** 끼어든 값으로 허용: 숫자·기호(금액·날짜·개수). 그 밖은 사전의 정확한 키(공지 제목 등)일 때만 */
+const SAFE_CAPTURE = /^[\d\s.,:~/()\-+–₩%#]*$/;
+
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function compilePatterns(dict: Record<string, string>): Pattern[] {
@@ -84,7 +89,9 @@ function compilePatterns(dict: Record<string, string>): Pattern[] {
         return escape(p);
       })
       .join('');
-    out.push({ re: new RegExp(`^${body}$`), order, value, weight: key.replace(/\{\d+\}/g, '').length });
+    const weight = key.replace(/\{\d+\}/g, '').trim().length;
+    if (weight < MIN_PATTERN_TEXT) continue;
+    out.push({ re: new RegExp(`^${body}$`), order, value, weight });
   }
   return out.sort((a, b) => b.weight - a.weight);
 }
@@ -99,9 +106,11 @@ function lookup(core: string, locale: Exclude<Locale, 'ko'>, depth: number): str
   for (const p of patterns) {
     const m = p.re.exec(core);
     if (!m) continue;
+    // 끼어든 값이 사용자 글(임의 문장)이면 이 패턴이 아니다 — 숫자·기호이거나 사전의 정확한 키여야 한다
+    if (!m.slice(1).every((c) => SAFE_CAPTURE.test(c) || c.trim() in dict)) continue;
     return p.value.replace(/\{(\d+)\}/g, (_, n: string) => {
       const captured = m[p.order.indexOf(Number(n)) + 1] ?? '';
-      // 끼어든 값(요일·공지 제목 등)도 번역을 시도한다. 사용자 이름처럼 사전에 없으면 그대로
+      // 사전의 정확한 키(공지 제목 등)였으면 그것도 번역
       return depth < 2 ? translateText(captured, locale, depth + 1) : captured;
     });
   }
@@ -119,7 +128,11 @@ function translateText(text: string, locale: Locale, depth = 0): string {
   const core = text.slice(lead.length, text.length - trail.length);
   const found = lookup(core, locale, depth);
   const out = found === null ? text : `${lead}${found}${trail}`;
-  if (depth === 0) cache.set(text, out);
+  if (depth === 0) {
+    // 입력 중인 글처럼 끝없이 쌓이지 않게 상한
+    if (cache.size > 2000) cache.clear();
+    cache.set(text, out);
+  }
   return out;
 }
 

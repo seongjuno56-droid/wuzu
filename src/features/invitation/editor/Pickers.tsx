@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppModal } from '../../../components/AppModal';
 import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
-import { formatKoreanTime, monthMatrix, parseDate, toDateString, WEEKDAYS_KO } from '../model';
+import { formatKoreanTime, formatYearMonth, monthMatrix, parseDate, toDateString, weekdayNames } from '../model';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -45,14 +45,14 @@ export function DatePickerModal(props: { visible: boolean; value: string; onClos
           <Ionicons name="chevron-back" size={20} color={colors.inkSoft} />
         </Pressable>
         <Txt variant="title">
-          {month.y}년 {month.m}월
+          {formatYearMonth(month.y, month.m)}
         </Txt>
         <Pressable onPress={() => shift(1)} hitSlop={10} accessibilityRole="button" accessibilityLabel="다음 달">
           <Ionicons name="chevron-forward" size={20} color={colors.inkSoft} />
         </Pressable>
       </View>
       <View style={styles.week}>
-        {WEEKDAYS_KO.map((w, i) => (
+        {weekdayNames().map((w, i) => (
           <Txt key={w} variant="tiny" color={i === 0 ? colors.danger : colors.muted} style={styles.cell} align="center">
             {w}
           </Txt>

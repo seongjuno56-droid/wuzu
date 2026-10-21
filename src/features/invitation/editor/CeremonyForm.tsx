@@ -10,7 +10,7 @@ import { toast } from '../../../components/Toast';
 import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
-import { formatKoreanTime, LIMITS, parseDate, WEEKDAYS_KO } from '../model';
+import { formatKoreanTime, LIMITS, parseDate, weekdayNames } from '../model';
 import { AddressSearchModal } from './AddressSearchModal';
 import { Check, FormLabel, Hint, PhotoSlots } from './fields';
 import { DatePickerModal, TimePickerModal } from './Pickers';
@@ -100,7 +100,7 @@ export function CeremonyForm({ onDragChange }: { onDragChange?: (dragging: boole
         <PickerField
           label="예식일"
           icon="calendar-outline"
-          value={`${e.date} (${WEEKDAYS_KO[d.getDay()]})`}
+          value={`${e.date} (${weekdayNames()[d.getDay()]})`}
           onPress={() => setModal('date')}
         />
         <PickerField label="예식시간" icon="time-outline" value={formatKoreanTime(e.time)} onPress={() => setModal('time')} />

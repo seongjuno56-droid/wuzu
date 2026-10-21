@@ -3,7 +3,7 @@
  * (설계: docs/superpowers/specs/2026-10-16-canvas-cover-and-view-modes-design.md)
  */
 import { fonts } from '../../theme';
-import { formatKoreanTime, InvitationContent, parseDate, WEEKDAYS_EN, WEEKDAYS_KO } from '../invitation/model';
+import { formatDateTimeLine, formatKoreanTime, InvitationContent, parseDate, WEEKDAYS_EN } from '../invitation/model';
 import type { BindKey, CanvasDoc, CanvasElement, ElementKind, FontKey, StrokeElement } from './types';
 
 // ── 상수 ──────────────────────────────────────────────
@@ -81,7 +81,7 @@ export function resolveBind(bind: BindKey, c: InvitationContent): { text: string
       return { text: WEEKDAYS_EN[d.getDay()], placeholder: false };
     case 'datetime':
       return {
-        text: `${y}년 ${m}월 ${day}일 ${WEEKDAYS_KO[d.getDay()]}요일, ${formatKoreanTime(c.ceremony.time)}`,
+        text: formatDateTimeLine(d, c.ceremony.time),
         placeholder: false,
       };
     case 'time':

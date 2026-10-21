@@ -56,7 +56,7 @@ export function AccountPage({ account, basic }: { account: AccountInfo; basic: B
   return (
     <Page>
       <PageTitle>마음 전하실 곳</PageTitle>
-      {!!account.message && <IText tone="sub">{account.message}</IText>}
+      {!!account.message && <IText tone="sub" raw>{account.message}</IText>}
       <Side
         title="신랑측"
         rows={[

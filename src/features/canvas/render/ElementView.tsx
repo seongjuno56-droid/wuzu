@@ -38,7 +38,10 @@ export function ElementContent({
   if (el.kind === 'text' || el.kind === 'bound') {
     // 연결 텍스트는 지금 언어로(날짜·안내 글자), 직접 쓴 텍스트는 사용자 내용이라 그대로
     const bound = el.kind === 'bound' ? resolveBind(el.bind, content) : null;
-    const resolved = bound ? { ...bound, text: translate(bound.text, locale) } : { text: el.kind === 'text' ? el.text : '', placeholder: false };
+    // 이름·예식장은 사용자 글이라 그대로, 비어 있을 때의 안내 문구만 번역 (날짜는 resolveBind 가 언어별로 만든다)
+    const resolved = bound
+      ? { ...bound, text: bound.placeholder ? translate(bound.text, locale) : bound.text }
+      : { text: el.kind === 'text' ? el.text : '', placeholder: false };
     const fontSize = el.size * slideW;
     return (
       <Text

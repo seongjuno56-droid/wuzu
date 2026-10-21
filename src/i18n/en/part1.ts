@@ -1,5 +1,6 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '결혼식까지 {0}일 남았습니다.': '{0} days until the wedding.',
   '#결혼': '#Wedding',
   '#결혼식 초대장': '#Wedding invitation',
   '#내딸내아들': '#OurLittleOne',
@@ -85,8 +86,6 @@ export const part1: Record<string, string> = {
   '{0}, {1} 드림.': 'With love, {0} & {1}.',
   '{0}{1}레터': '{0}{1} letters',
   '{0}~{1}자로 입력해 주세요.': 'Please enter {0}–{1} characters.',
-  '{0}년 {1}월 {2}일 {3}요일, {4}': '{3}, {1}/{2}/{0}, {4}',
-  '{0}년': '{0}',
   '{0}님,': '{0},',
   '{0}님의 방명록 삭제': "Delete {0}'s guestbook entry",
   '{0}님의 초대장 현황, 나의 초대장으로 이동': "{0}'s invitations, go to My Invitations",
@@ -125,7 +124,6 @@ export const part1: Record<string, string> = {
   '결제에 실패했어요. 잠시 후 다시 시도해 주세요.': 'Payment failed. Please try again shortly.',
   '결혼식 당일이에요': "It's the wedding day",
   '결혼식 청첩장': 'Wedding invitation',
-  결혼식까지: 'Until the wedding',
   '경기도 성남시 분당구 판교로 45': '45 Pangyo-ro, Bundang-gu, Seongnam-si, Gyeonggi-do',
   '계속 꾸미기': 'Keep decorating',
   '계정: 테스트 Apple 계정': 'Account: test Apple account',
@@ -167,7 +165,6 @@ export const part1: Record<string, string> = {
   '그리기 끝': 'Done drawing',
   '그리기 영역': 'Drawing area',
   그리드: 'Grid',
-  금: 'Fri',
   '기간 연장 구매': 'Buy an extension',
   '기간 연장': 'Extend',
   '기본 문구 넣기': 'Use default text',

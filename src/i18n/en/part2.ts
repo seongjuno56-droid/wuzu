@@ -1,6 +1,5 @@
 /** 영어 번역 2/4 */
 export const part2: Record<string, string> = {
-  년: '',
   닉네임: 'Nickname',
   '님 반가워요.': ', nice to see you.',
   '님만의 초대장이': "'s very own invitation —",
@@ -36,7 +35,6 @@ export const part2: Record<string, string> = {
   '등록된 공지사항이 없습니다.': 'No notices yet.',
   '등록된 파일이 없습니다.': 'No file uploaded.',
   디데이: 'D-day',
-  딸: 'Daughter',
   '또는 이메일로 로그인': 'or sign in with email',
   라벤더: 'Lavender',
   '라온 한정식 2층 연회장': 'Raon Korean Restaurant, 2F Banquet Hall',
@@ -77,7 +75,6 @@ export const part2: Record<string, string> = {
   '모임 정보': 'Gathering details',
   '모임 초대장': 'Gathering invitation',
   모임: 'Gathering',
-  목: 'Thu',
   '미니멀 화이트': 'Minimal White',
   미드나잇: 'Midnight',
   '미리보기 불가': 'No preview',
@@ -119,7 +116,6 @@ export const part2: Record<string, string> = {
     'Letters given for free by admins or earned through events cannot be cancelled or refunded.',
   '본 플랫폼의 관리자에 의해 무료 지급 또는, 이벤트를 통해 획득한 레터는 구매 취소 및 환불 대상이 아닙니다.':
     'Letters given for free by admins or earned through events cannot be cancelled or refunded.',
-  분: 'min',
   '불러오지 못한 미디어': "Media couldn't load",
   붙여넣기: 'Paste',
   '붙여넣을 내용이 없어요.': 'Nothing to paste.',
@@ -204,6 +200,5 @@ export const part2: Record<string, string> = {
   '소중한 분들을 초대합니다.': 'You are cordially invited.',
   '소중한 하객분에게 드릴 인사말을 입력합니다.': 'Write a greeting for your guests.',
   '송년회, 신년회, 세미나': 'Year-end parties, new year parties, seminars',
-  수: 'Wed',
   '수신 거부 : 마이페이지': 'To opt out: My Page',
 };

@@ -2,7 +2,7 @@
  * 코드 속 한국어 화면 문구를 모은다 (번역 사전 점검용).
  * - 문자열·템플릿 문자열(정적 부분)·JSX 텍스트 중 한글이 든 것
  * - 템플릿의 ${...} 자리는 {0},{1}… 로 바꾼 패턴 키
- * - import, 주석, 테스트 파일은 제외
+ * - import, 주석, 테스트 파일은 제외. 앞에 i18n-ignore 블록 주석을 단 문자열도 제외(언어별 서식 함수의 한국어 쪽 등)
  * 사용: node scripts/extract-ko.js > out.json  (테스트에서는 extractKoreanKeys() 로 불러 쓴다)
  */
 const fs = require('fs');
@@ -49,6 +49,9 @@ for (const file of files) {
   const rel = path.relative(path.join(__dirname, '..'), file).split(path.sep).join('/');
   (function visit(node) {
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) return;
+    // 같은 줄 앞의 주석은 TS 가 앞 토큰의 trailing 으로 본다 — 둘 다 본다
+    const lead = [...(ts.getLeadingCommentRanges(src, node.getFullStart()) || []), ...(ts.getTrailingCommentRanges(src, node.getFullStart()) || [])];
+    if (lead.some((c) => src.slice(c.pos, c.end).includes('i18n-ignore'))) return;
     const where = `${rel}:${sf.getLineAndCharacterOfPosition(node.getStart()).line + 1}`;
     if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) add(node.text, where);
     else if (ts.isTemplateExpression(node)) {
