@@ -11,8 +11,8 @@ export interface Look extends TemplateStyle {
   bold: string;
 }
 
-export function lookFor(themeId: string, templateId: string): Look {
-  const style = styleFor(themeId, templateId);
+export function lookFor(themeId: string, templateId: string, paletteId?: string | null): Look {
+  const style = styleFor(themeId, templateId, paletteId);
   const [regular, bold] = templateFontFamily[style.font];
   return { ...style, regular, bold };
 }

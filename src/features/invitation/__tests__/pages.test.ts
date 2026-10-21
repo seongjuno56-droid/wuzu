@@ -1,5 +1,5 @@
-import { dockItems, itemDone, PAGE_SECTION } from '../editor/pages';
-import { createInvitation } from '../model';
+import { dockItems, itemDone, moveInDock, movablePages, PAGE_SECTION, slotsMoved } from '../editor/pages';
+import { createInvitation, ReorderablePage } from '../model';
 
 const inv = () => createInvitation({ id: 'i', ownerId: 'u', themeId: 'wedding', templateId: 'wedding-1' });
 
@@ -24,5 +24,33 @@ describe('독바 항목', () => {
     expect(itemDone(i, cover)).toBe(false);
     i.completed.basic = true;
     expect(itemDone(i, cover)).toBe(true);
+  });
+});
+
+describe('독바에서 끌어 순서 바꾸기', () => {
+  const inv = {
+    enabled: { account: true, gallery: true, guestbook: true, ending: true, bgm: false },
+    order: ['gallery', 'ceremony', 'guestbook', 'account'] as ReorderablePage[],
+  };
+  it('옮길 수 있는 장만 고른다 (표지·인사말·엔딩 고정, 꺼진 섹션 제외)', () => {
+    expect(movablePages(inv)).toEqual(['gallery', 'ceremony', 'guestbook', 'account']);
+    expect(movablePages({ ...inv, enabled: { ...inv.enabled, gallery: false } })).toEqual([
+      'ceremony',
+      'guestbook',
+      'account',
+    ]);
+  });
+  it('끈 칸 수만큼 옮기고, 꺼진 섹션은 뒤에 그대로 둔다', () => {
+    // 갤러리를 오른쪽으로 두 칸
+    expect(moveInDock(inv, 'gallery', 2)).toEqual(['ceremony', 'guestbook', 'gallery', 'account']);
+    // 계좌를 왼쪽으로 멀리 → 맨 앞에서 멈춤
+    expect(moveInDock(inv, 'account', -9)).toEqual(['account', 'gallery', 'ceremony', 'guestbook']);
+    const off = { ...inv, enabled: { ...inv.enabled, gallery: false } };
+    expect(moveInDock(off, 'account', -1)).toEqual(['ceremony', 'account', 'guestbook', 'gallery']);
+  });
+  it('끈 거리를 칸 수로 (반 칸 넘게 끌어야 한 칸)', () => {
+    expect(slotsMoved(30, 64)).toBe(0);
+    expect(slotsMoved(40, 64)).toBe(1);
+    expect(slotsMoved(-130, 64)).toBe(-2);
   });
 });

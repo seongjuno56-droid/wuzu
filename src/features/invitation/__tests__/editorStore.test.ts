@@ -82,6 +82,16 @@ describe('editor store', () => {
     expect(useEditor.getState().dirty).toBe(true);
   });
 
+  it('배경 색 조합을 고르고 템플릿 색으로 되돌릴 수 있다', () => {
+    start();
+    expect(useEditor.getState().draft?.paletteId ?? null).toBeNull();
+    useEditor.getState().setPalette('midnight');
+    expect(useEditor.getState().draft?.paletteId).toBe('midnight');
+    expect(useEditor.getState().dirty).toBe(true);
+    useEditor.getState().setPalette(null);
+    expect(useEditor.getState().draft?.paletteId).toBeNull();
+  });
+
   it('직접 꾸미기 → 프리셋 복사본으로 캔버스 시작, 원래대로 → 형식', () => {
     start();
     useEditor.getState().startCanvas('cover');

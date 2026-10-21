@@ -128,6 +128,8 @@ export interface Invitation {
   content: InvitationContent;
   /** 하객 보기 형태 (제작자가 고른다) */
   viewMode: ViewMode;
+  /** 배경 색 조합 (data/templates PALETTES 의 id). 없으면 템플릿 색 */
+  paletteId?: string | null;
   /** 슬라이드별 디자인. 없으면 형식(템플릿 배치) */
   design: Partial<Record<PageKey, SlideDesign>>;
   /** 바텀시트에서 ✓ 확인까지 마친 섹션 */

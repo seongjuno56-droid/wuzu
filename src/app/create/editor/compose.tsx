@@ -9,7 +9,7 @@ import { Button } from '../../../components/Button';
 import { Header } from '../../../components/Header';
 import { toast } from '../../../components/Toast';
 import { Txt } from '../../../components/Txt';
-import { styleFor } from '../../../data/templates';
+import { paletteOfTemplate, styleFor } from '../../../data/templates';
 import { CanvasEditor } from '../../../features/canvas/editor/CanvasEditor';
 import { canvasForEditing } from '../../../features/canvas/preset';
 import type { CanvasDoc } from '../../../features/canvas/types';
@@ -21,6 +21,7 @@ import { SavedModal, SaveNameModal } from '../../../features/invitation/editor/S
 import { SectionSheet } from '../../../features/invitation/editor/SectionSheet';
 import { SlideStage } from '../../../features/invitation/editor/SlideStage';
 import { useLeaveGuard } from '../../../features/invitation/editor/useLeaveGuard';
+import { PaletteDot, PaletteModal } from '../../../features/invitation/editor/PalettePicker';
 import { ViewModeModal } from '../../../features/invitation/editor/ViewModePicker';
 import {
   CANVAS_PAGES,
@@ -49,6 +50,8 @@ export default function EditorCompose() {
   const applyCanvas = useEditor((s) => s.applyCanvas);
   const resetDesign = useEditor((s) => s.resetDesign);
   const setViewMode = useEditor((s) => s.setViewMode);
+  const setPalette = useEditor((s) => s.setPalette);
+  const setOrder = useEditor((s) => s.setOrder);
   const origin = useEditor((s) => s.origin);
   const balance = useWallet((s) => s.balance);
   const [active, setActive] = useState(0);
@@ -57,6 +60,7 @@ export default function EditorCompose() {
   const [canvas, setCanvas] = useState<{ page: PageKey; initial: CanvasDoc } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [saveKind, setSaveKind] = useState<'draft' | 'final' | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -147,7 +151,7 @@ export default function EditorCompose() {
   const openCanvas = () => {
     if (!currentPage) return;
     setSection(null);
-    setCanvas({ page: currentPage, initial: canvasForEditing(design, styleFor(draft.themeId, draft.templateId)) });
+    setCanvas({ page: currentPage, initial: canvasForEditing(design, styleFor(draft.themeId, draft.templateId, draft.paletteId)) });
   };
 
   // 캔버스 편집 중에는 화면 전체를 편집기에 넘긴다
@@ -157,7 +161,7 @@ export default function EditorCompose() {
         <CanvasEditor
           initial={canvas.initial}
           content={draft.content}
-          style={styleFor(draft.themeId, draft.templateId)}
+          style={styleFor(draft.themeId, draft.templateId, draft.paletteId)}
           onDone={(doc) => {
             applyCanvas(canvas.page, doc);
             setCanvas(null);
@@ -207,7 +211,7 @@ export default function EditorCompose() {
           </View>
         }
       />
-      {/* 보기 형태·미리보기 — 헤더가 좁아 무대 위 줄에 둔다 */}
+      {/* 보기 형태·색상·미리보기 — 헤더가 좁아 무대 위 줄에 둔다 */}
       <View style={styles.subBar}>
         <Pressable onPress={() => setSettings(true)} style={styles.subBtn} accessibilityRole="button" accessibilityLabel="보기 형태 설정">
           <Ionicons name={draft.viewMode === 'story' ? 'albums-outline' : 'reorder-four-outline'} size={16} color={colors.label} />
@@ -215,6 +219,12 @@ export default function EditorCompose() {
             {draft.viewMode === 'story' ? '스토리형' : '스크롤형'}
           </Txt>
           <Ionicons name="chevron-down" size={14} color={colors.muted} />
+        </Pressable>
+        <Pressable onPress={() => setPaletteOpen(true)} style={styles.subBtn} accessibilityRole="button" accessibilityLabel="배경 색상">
+          <PaletteDot {...styleFor(draft.themeId, draft.templateId, draft.paletteId)} />
+          <Txt variant="caption" color={colors.label}>
+            색상
+          </Txt>
         </Pressable>
         <Pressable
           onPress={() => router.push('/create/editor/preview')}
@@ -251,7 +261,7 @@ export default function EditorCompose() {
         )}
         {section && <SectionSheet section={section} onClose={() => setSection(null)} />}
       </View>
-      <DockBar items={items} active={active} invitation={draft} onSelect={selectDock} />
+      <DockBar items={items} active={active} invitation={draft} onSelect={selectDock} onReorder={setOrder} />
 
       <AppModal
         visible={confirmReset}
@@ -268,6 +278,16 @@ export default function EditorCompose() {
             },
           },
         ]}
+      />
+      <PaletteModal
+        visible={paletteOpen}
+        value={draft.paletteId ?? paletteOfTemplate(draft.themeId, draft.templateId)}
+        onSelect={(id) => {
+          // 템플릿 원래 색을 고르면 따로 저장하지 않는다 (템플릿 색을 따름)
+          setPalette(id === paletteOfTemplate(draft.themeId, draft.templateId) ? null : id);
+          setPaletteOpen(false);
+        }}
+        onClose={() => setPaletteOpen(false)}
       />
       <ViewModeModal
         visible={settings}

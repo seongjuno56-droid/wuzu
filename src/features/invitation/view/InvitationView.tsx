@@ -20,7 +20,7 @@ interface Props extends GuestbookHandlers {
  * 스토리형은 부모가 높이를 정해야 한다 (스크롤 안에 넣지 않는다).
  */
 export function InvitationView({ invitation, mode, showBgm = true, ...handlers }: Props) {
-  const look = lookFor(invitation.themeId, invitation.templateId);
+  const look = lookFor(invitation.themeId, invitation.templateId, invitation.paletteId);
   const { content, enabled } = invitation;
   const story = (mode ?? invitation.viewMode) === 'story';
   return (

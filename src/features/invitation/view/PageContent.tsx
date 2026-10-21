@@ -9,7 +9,7 @@ import { GuestbookPage } from './GuestbookPage';
 
 export type ViewInvitation = Pick<
   Invitation,
-  'themeId' | 'templateId' | 'content' | 'enabled' | 'order' | 'design' | 'viewMode'
+  'themeId' | 'templateId' | 'paletteId' | 'content' | 'enabled' | 'order' | 'design' | 'viewMode'
 >;
 
 export interface GuestbookHandlers {

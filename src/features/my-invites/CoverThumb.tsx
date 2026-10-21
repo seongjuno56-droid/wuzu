@@ -25,7 +25,7 @@ export function CoverThumb({ invitation, blocked }: { invitation: Invitation; bl
   }
   return (
     <View
-      style={[styles.box, styles.center, { backgroundColor: styleFor(invitation.themeId, invitation.templateId).bg }]}
+      style={[styles.box, styles.center, { backgroundColor: styleFor(invitation.themeId, invitation.templateId, invitation.paletteId).bg }]}
       pointerEvents="none"
     >
       <CoverSlide invitation={invitation} width={SLIDE.width} />

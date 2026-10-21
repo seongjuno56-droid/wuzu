@@ -8,10 +8,10 @@ export function CoverSlide({
   invitation,
   width,
 }: {
-  invitation: Pick<Invitation, 'themeId' | 'templateId' | 'content' | 'design'>;
+  invitation: Pick<Invitation, 'themeId' | 'templateId' | 'paletteId' | 'content' | 'design'>;
   width: number;
 }) {
-  const style = styleFor(invitation.themeId, invitation.templateId);
+  const style = styleFor(invitation.themeId, invitation.templateId, invitation.paletteId);
   const design = invitation.design.cover;
   const doc = design?.mode === 'canvas' ? design.canvas : coverPreset(style);
   return <CanvasSlide doc={doc} content={invitation.content} templateBg={style.bg} width={width} />;

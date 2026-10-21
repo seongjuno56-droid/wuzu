@@ -31,6 +31,11 @@ export default function EditorOptions() {
   const setEnabled = useEditor((s) => s.setEnabled);
   if (!draft) return <Redirect href="/create" />;
 
+  // 순서는 정보 입력 화면 하단 독바에서 꾹 눌러 끌어 바꾼다 (따로 순서 화면 없음).
+  // 수정 모드는 설정으로 올 때 쌓아 둔 compose 로 돌아가고(중복 방지), 새로 만들 때는 compose 를 새로 연다
+  const toCompose = () =>
+    useEditor.getState().origin ? router.dismissTo('/create/editor/compose') : router.push('/create/editor/compose');
+
   return (
     <Screen
       header={<Header title="입력항목 선택" />}
@@ -38,7 +43,7 @@ export default function EditorOptions() {
       contentStyle={styles.content}
       footer={
         <BottomCTA>
-          <Button label="다음" onPress={() => router.push('/create/editor/order')} />
+          <Button label="정보 입력" onPress={toCompose} />
         </BottomCTA>
       }
     >

@@ -32,6 +32,8 @@ interface EditorState {
   /** 바텀시트 ✓: 유효하면 완료 처리 후 true */
   confirm: (key: SectionKey) => boolean;
   setViewMode: (mode: ViewMode) => void;
+  /** 배경 색 조합 (null 이면 템플릿 색) */
+  setPalette: (paletteId: string | null) => void;
   /** [직접 꾸미기]: 템플릿 프리셋 복사본으로 캔버스 시작 */
   startCanvas: (page: PageKey) => void;
   /** 캔버스 편집기 [완료] */
@@ -83,12 +85,14 @@ export const useEditor = create<EditorState>()((set, get) => ({
     return true;
   },
 
+  setPalette: (paletteId) => set((s) => (s.draft ? { draft: { ...s.draft, paletteId }, dirty: true } : s)),
+
   setViewMode: (mode) => set((s) => (s.draft ? { draft: { ...s.draft, viewMode: mode }, dirty: true } : s)),
 
   startCanvas: (page) =>
     set((s) => {
       if (!s.draft) return s;
-      const preset = coverPreset(styleFor(s.draft.themeId, s.draft.templateId));
+      const preset = coverPreset(styleFor(s.draft.themeId, s.draft.templateId, s.draft.paletteId));
       // 프리셋 원본이 바뀌지 않도록 깊은 복사
       const canvas = JSON.parse(JSON.stringify(preset)) as CanvasDoc;
       return { draft: { ...s.draft, design: { ...s.draft.design, [page]: { mode: 'canvas', canvas } } }, dirty: true };

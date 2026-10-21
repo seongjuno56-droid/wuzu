@@ -14,7 +14,7 @@ export default function EditorPreview() {
   return (
     <Screen
       header={<Header title="미리보기" />}
-      background={lookFor(draft.themeId, draft.templateId).bg}
+      background={lookFor(draft.themeId, draft.templateId, draft.paletteId).bg}
       scroll={!story}
       contentStyle={story ? { flex: 1 } : undefined}
     >

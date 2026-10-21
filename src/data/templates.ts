@@ -48,6 +48,36 @@ const STYLES: { name: string; style: TemplateStyle }[] = [
   { name: '샴페인', style: { bg: '#F5EEDC', fg: '#3A3324', sub: '#8A7F63', accent: '#A88B4A', font: 'serif', cover: 'date' } },
 ];
 
+/** 배경색 고르기: 템플릿 10종의 색 조합 (STYLES 와 같은 순서). 글자·포인트 색이 함께 바뀌어 어떤 배경에서도 읽힌다 */
+export interface Palette {
+  id: string;
+  name: string;
+  bg: string;
+  fg: string;
+  sub: string;
+  accent: string;
+}
+const PALETTE_NAMES: [string, string][] = [
+  ['ivory', '아이보리'],
+  ['forest', '포레스트'],
+  ['white', '화이트'],
+  ['blush', '블러쉬'],
+  ['midnight', '미드나잇'],
+  ['sage', '세이지'],
+  ['lavender', '라벤더'],
+  ['terracotta', '테라코타'],
+  ['sky', '스카이'],
+  ['champagne', '샴페인'],
+];
+export const PALETTES: Palette[] = STYLES.map(({ style }, i) => ({
+  id: PALETTE_NAMES[i][0],
+  name: PALETTE_NAMES[i][1],
+  bg: style.bg,
+  fg: style.fg,
+  sub: style.sub,
+  accent: style.accent,
+}));
+
 const THEME_IDS: ThemeId[] = ['wedding', 'dol', 'meetup', 'corporate'];
 
 const TEMPLATES: Record<ThemeId, InviteTemplate[]> = Object.fromEntries(
@@ -75,8 +105,17 @@ export const FALLBACK_STYLE: TemplateStyle = {
   cover: 'date',
 };
 
-export function styleFor(themeId: string, templateId: string): TemplateStyle {
-  return getTemplate(themeId, templateId)?.style ?? FALLBACK_STYLE;
+/** 템플릿 룩. paletteId 를 주면 색만 그 조합으로 (서체·표지 배치는 템플릿 그대로) */
+export function styleFor(themeId: string, templateId: string, paletteId?: string | null): TemplateStyle {
+  const base = getTemplate(themeId, templateId)?.style ?? FALLBACK_STYLE;
+  const p = paletteId ? PALETTES.find((x) => x.id === paletteId) : undefined;
+  return p ? { ...base, bg: p.bg, fg: p.fg, sub: p.sub, accent: p.accent } : base;
+}
+
+/** 템플릿이 원래 쓰는 색 조합 */
+export function paletteOfTemplate(themeId: string, templateId: string): string | undefined {
+  const i = getTemplates(themeId).findIndex((t) => t.id === templateId);
+  return i >= 0 ? PALETTES[i % PALETTES.length].id : undefined;
 }
 
 export const SAMPLE_CONTENT: Record<ThemeId, SampleContent> = {

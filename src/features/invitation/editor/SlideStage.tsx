@@ -26,7 +26,7 @@ export function SlideStage({
   /** 슬라이드를 누르면 입력 시트 열기 */
   onEdit: (page: PageKey) => void;
 }) {
-  const look = lookFor(invitation.themeId, invitation.templateId);
+  const look = lookFor(invitation.themeId, invitation.templateId, invitation.paletteId);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const scroller = useRef<ScrollView>(null);
   const root = useRef<View>(null);

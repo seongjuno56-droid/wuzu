@@ -63,7 +63,7 @@ export default function InvitationScreen() {
   }
 
   const story = invitation.viewMode === 'story';
-  const look = lookFor(invitation.themeId, invitation.templateId);
+  const look = lookFor(invitation.themeId, invitation.templateId, invitation.paletteId);
 
   return (
     <Screen
