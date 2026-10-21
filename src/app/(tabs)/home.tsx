@@ -50,17 +50,6 @@ export default function Home() {
           </Pressable>
         </View>
       </View>
-      <Pressable
-        style={styles.search}
-        onPress={() => router.navigate('/create')}
-        accessibilityRole="search"
-        accessibilityLabel="초대장 템플릿 찾기"
-      >
-        <Ionicons name="search" size={18} color={colors.placeholder} />
-        <Txt variant="caption" color={colors.placeholder}>
-          청첩장, 돌잔치, 모임 템플릿 찾기
-        </Txt>
-      </Pressable>
     </View>
   );
 
@@ -139,21 +128,11 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: colors.canvas,
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.hairline,
   },
   topBar: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconButton: { padding: 10, marginRight: -10 },
-  search: {
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surface,
-  },
   column: { padding: spacing.lg, gap: spacing.xxl },
   section: { gap: spacing.md },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
