@@ -1,7 +1,7 @@
 import { Asset } from 'expo-asset';
 
 import type { GuestbookEntry } from '../../services/types';
-import { createInvitation, Invitation } from './model';
+import { asWedding, createInvitation, Invitation } from './model';
 
 // 예시 사진: AI 로 만든 실사풍 웨딩 사진 (실존 인물 아님). 화면이 문자열 주소를 받으므로 번들 자산을 주소로 바꾼다
 const uri = (mod: number) => Asset.fromModule(mod).uri;
@@ -21,7 +21,7 @@ const SAMPLE_PHOTOS = {
 /** 템플릿 미리보기에 채워 넣는 예시 초대장 (설계 시안의 문구 기준) */
 export function sampleInvitation(templateId: string, today: Date = new Date()): Invitation {
   const inv = createInvitation({ id: 'sample', ownerId: '', themeId: 'wedding', templateId, today });
-  const c = inv.content;
+  const c = asWedding(inv.content);
   c.basic = {
     groom: { name: '홍길동', title: '아들', deceased: false },
     groomFather: { name: '홍철수', title: '아버지', deceased: false },

@@ -28,7 +28,8 @@ interface EditorState {
   reset: () => void;
   setEnabled: (key: OptionalSection, value: boolean) => void;
   setOrder: (order: ReorderablePage[]) => void;
-  patch: <K extends SectionKey>(key: K, values: Partial<InvitationContent[K]>) => void;
+  /** 섹션 값 일부 바꾸기 — 값의 모양은 테마·섹션마다 다르다 */
+  patch: (key: SectionKey, values: object) => void;
   /** 바텀시트 ✓: 유효하면 완료 처리 후 true */
   confirm: (key: SectionKey) => boolean;
   setViewMode: (mode: ViewMode) => void;
@@ -71,7 +72,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
   patch: (key, values) =>
     set((s) => {
       if (!s.draft) return s;
-      const content = { ...s.draft.content, [key]: { ...s.draft.content[key], ...values } };
+      const prev = (s.draft.content as unknown as Record<string, object>)[key];
+      const content = { ...s.draft.content, [key]: { ...prev, ...values } } as InvitationContent;
       // 완료했던 섹션이 다시 규칙에 어긋나면 완료 표시를 푼다
       const stillValid = validateSection(key, content).length === 0;
       const completed = s.draft.completed[key] && !stillValid ? { ...s.draft.completed, [key]: false } : s.draft.completed;

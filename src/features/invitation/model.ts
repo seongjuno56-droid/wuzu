@@ -9,15 +9,35 @@ import type { SlideDesign, ViewMode } from '../canvas/types';
 // ── 타입 ──────────────────────────────────────────────
 
 /** 하단 탭바 / 바텀시트 단위 */
-export type SectionKey = 'basic' | 'ceremony' | 'greeting' | 'account' | 'gallery' | 'guestbook' | 'ending' | 'bgm';
+export type SectionKey =
+  | 'basic'
+  | 'ceremony'
+  | 'greeting'
+  | 'account'
+  | 'gallery'
+  | 'guestbook'
+  | 'ending'
+  | 'bgm'
+  // 돌잔치 전용
+  | 'profile'
+  | 'timeline';
 /** Step3 에서 켜고 끌 수 있는 항목 */
-export type OptionalSection = 'account' | 'gallery' | 'guestbook' | 'ending' | 'bgm';
+export type OptionalSection = 'account' | 'gallery' | 'guestbook' | 'ending' | 'bgm' | 'profile' | 'timeline';
 /** 초대장 화면에 그려지는 페이지 */
-export type PageKey = 'cover' | 'greeting' | 'gallery' | 'ceremony' | 'guestbook' | 'account' | 'ending';
+export type PageKey =
+  | 'cover'
+  | 'greeting'
+  | 'gallery'
+  | 'ceremony'
+  | 'guestbook'
+  | 'account'
+  | 'ending'
+  | 'profile'
+  | 'timeline';
 /** Step4 에서 드래그로 순서를 바꿀 수 있는 페이지 */
-export type ReorderablePage = 'gallery' | 'ceremony' | 'guestbook' | 'account';
+export type ReorderablePage = 'gallery' | 'ceremony' | 'guestbook' | 'account' | 'profile' | 'timeline';
 
-export type EnabledSections = Record<OptionalSection, boolean>;
+export type EnabledSections = Partial<Record<OptionalSection, boolean>>;
 
 export interface Person {
   name: string;
@@ -93,7 +113,9 @@ export interface BgmInfo {
   muteColor: 'black' | 'white';
 }
 
-export interface InvitationContent {
+/** 결혼식 콘텐츠. 옛 저장본은 theme 필드가 없다 */
+export interface WeddingContent {
+  theme?: 'wedding';
   basic: BasicInfo;
   ceremony: CeremonyInfo;
   greeting: GreetingInfo;
@@ -102,6 +124,75 @@ export interface InvitationContent {
   guestbook: GuestbookSettings;
   ending: EndingInfo;
   bgm: BgmInfo;
+}
+
+// ── 돌잔치 (설계: docs/superpowers/specs/2026-10-22-dol-corporate-meetup-themes-design.md 3장) ──
+
+export interface Guardian {
+  id: string;
+  /** 아빠·엄마·할머니 등 직접 입력 */
+  relation: string;
+  name: string;
+}
+
+export interface DolBasic {
+  childName: string;
+  /** 부르는 이름 (비우면 성 뺀 이름) */
+  nickname: string;
+  birthDate: string; // YYYY-MM-DD
+  /** 표지 사진 */
+  photo: string | null;
+  guardians: Guardian[];
+}
+
+export interface DolProfile {
+  photo: string | null;
+  intro: string;
+  hashtags: string[];
+}
+
+export interface TimelineItem {
+  id: string;
+  photo: string | null;
+  date: string; // YYYY-MM-DD 또는 
+  title: string;
+  text: string;
+  /** 사용자가 고쳤는지 — 고친 항목은 미리 채우기가 덮어쓰지 않는다 */
+  edited: boolean;
+}
+
+export interface DolTimeline {
+  items: TimelineItem[];
+}
+
+export interface DolAccount {
+  message: string;
+  /** 보호자 id → 계좌 */
+  accounts: Record<string, BankAccount>;
+}
+
+export interface DolContent {
+  theme: 'dol';
+  basic: DolBasic;
+  ceremony: CeremonyInfo;
+  greeting: GreetingInfo;
+  profile: DolProfile;
+  timeline: DolTimeline;
+  account: DolAccount;
+  gallery: GalleryInfo;
+  guestbook: GuestbookSettings;
+  ending: EndingInfo;
+  bgm: BgmInfo;
+}
+
+export type InvitationContent = WeddingContent | DolContent;
+
+export const isDol = (c: InvitationContent): c is DolContent => c.theme === 'dol';
+
+/** 결혼식 전용 부품에서만 쓴다 — 돌잔치가 들어오면 화면 연결이 잘못된 것 */
+export function asWedding(c: InvitationContent): WeddingContent {
+  if (isDol(c)) throw new Error(/* i18n-ignore */ '결혼식 초대장이 아니에요');
+  return c;
 }
 
 /** 저장 상태: 임시저장 / 최종저장. 화면 상태(작성중·비활성화·활성화·기한만료·사용불가)는 status.ts 에서 계산 */
@@ -171,6 +262,8 @@ export const SECTION_LABEL: Record<SectionKey, string> = {
   guestbook: '방명록',
   ending: '엔딩',
   bgm: 'BGM',
+  profile: '아이 프로필',
+  timeline: '성장 이야기',
 };
 
 export const PAGE_LABEL: Record<PageKey, string> = {
@@ -181,6 +274,8 @@ export const PAGE_LABEL: Record<PageKey, string> = {
   guestbook: '방명록',
   account: '계좌번호',
   ending: '엔딩',
+  profile: '아이 프로필',
+  timeline: '성장 이야기',
 };
 
 export const DEFAULT_ORDER: ReorderablePage[] = ['gallery', 'ceremony', 'guestbook', 'account'];
@@ -208,7 +303,7 @@ export const parseDate = (s: string) => {
 const person = (title = ''): Person => ({ name: '', title, deceased: false });
 const account = (): BankAccount => ({ bank: '', number: '' });
 
-export function defaultContent(today: Date = new Date()): InvitationContent {
+export function defaultContent(today: Date = new Date()): WeddingContent {
   const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
   return {
     // 신랑·신부 호칭만 미리 채운다. 부모님 호칭은 입력란 안내 문구로만 보여준다 (짝 검사 대상)
@@ -307,7 +402,7 @@ export function normalizeInvitation(inv: Invitation): { invitation: Invitation; 
 
 /** 실제로 그려질 페이지 순서: 표지·인사말 고정 → 사용 중인 재정렬 페이지 → 엔딩 */
 export function pageOrder(enabled: EnabledSections, order: ReorderablePage[]): PageKey[] {
-  const middle = order.filter((p) => p === 'ceremony' || enabled[p]);
+  const middle = order.filter((p) => p === 'ceremony' || !!enabled[p]);
   return ['cover', 'greeting', ...middle, ...(enabled.ending ? (['ending'] as const) : [])];
 }
 
@@ -334,7 +429,8 @@ const optionalAccount = (a: BankAccount) =>
   filled(a.bank) === filled(a.number) && within(a.bank, LIMITS.bank) && within(a.number, LIMITS.accountNumber);
 
 /** 섹션의 오류 필드 목록 (빈 배열 = 통과) */
-export function validateSection(key: SectionKey, c: InvitationContent): string[] {
+export function validateSection(key: SectionKey, content: InvitationContent): string[] {
+  const c = asWedding(content);
   const errors: string[] = [];
   const check = (ok: boolean, field: string) => !ok && errors.push(field);
 

@@ -1,7 +1,7 @@
 import { Image, StyleSheet } from 'react-native';
 
 import { radius } from '../../../theme';
-import { givenName, InvitationContent, Person } from '../model';
+import { asWedding, givenName, InvitationContent, Person } from '../model';
 import { IText, Page, PageTitle } from './look';
 
 /** "홍철수 · 이순자의 아들 홍길동" — 故人이면 이름 앞에 故 */
@@ -15,7 +15,7 @@ function familyLine(father: Person, mother: Person, child: Person): string | nul
 }
 
 export function GreetingPage({ content }: { content: InvitationContent }) {
-  const { basic, greeting } = content;
+  const { basic, greeting } = asWedding(content);
   const lines = [
     familyLine(basic.groomFather, basic.groomMother, basic.groom),
     familyLine(basic.brideFather, basic.brideMother, basic.bride),

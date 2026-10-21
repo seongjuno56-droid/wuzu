@@ -3,7 +3,7 @@
  * (설계: docs/superpowers/specs/2026-10-16-canvas-cover-and-view-modes-design.md)
  */
 import { fonts } from '../../theme';
-import { formatDateTimeLine, formatKoreanTime, InvitationContent, parseDate, WEEKDAYS_EN } from '../invitation/model';
+import { formatDateTimeLine, formatKoreanTime, InvitationContent, isDol, parseDate, WEEKDAYS_EN } from '../invitation/model';
 import type { BindKey, CanvasDoc, CanvasElement, ElementKind, FontKey, StrokeElement, TextElement } from './types';
 
 // ── 상수 ──────────────────────────────────────────────
@@ -62,8 +62,9 @@ export const newElementId = () => `el-${Date.now().toString(36)}-${Math.random()
 // ── 연결 텍스트 ───────────────────────────────────────
 
 export function resolveBind(bind: BindKey, c: InvitationContent): { text: string; placeholder: boolean } {
-  const groom = c.basic.groom.name.trim();
-  const bride = c.basic.bride.name.trim();
+  // 돌잔치 정보 글자는 Task 6 에서 — 지금은 결혼식 이름만
+  const groom = isDol(c) ? '' : c.basic.groom.name.trim();
+  const bride = isDol(c) ? '' : c.basic.bride.name.trim();
   const d = parseDate(c.ceremony.date);
   const y = d.getFullYear();
   const m = d.getMonth() + 1;

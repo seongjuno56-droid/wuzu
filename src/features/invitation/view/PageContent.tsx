@@ -1,5 +1,5 @@
 import type { GuestbookEntry } from '../../../services/types';
-import type { Invitation, PageKey } from '../model';
+import { asWedding, Invitation, PageKey } from '../model';
 import { AccountPage } from './AccountPage';
 import { CeremonyPage } from './CeremonyPage';
 import { EndingPage } from './EndingPage';
@@ -35,7 +35,7 @@ export function PageContent({
     case 'ceremony':
       return <CeremonyPage ceremony={content.ceremony} />;
     case 'account':
-      return <AccountPage account={content.account} basic={content.basic} />;
+      return <AccountPage account={asWedding(content).account} basic={asWedding(content).basic} />;
     case 'guestbook':
       return (
         <GuestbookPage settings={content.guestbook} entries={guestbook} onWrite={onGuestbookWrite} onViewAll={onGuestbookAll} />

@@ -10,6 +10,8 @@ export const PAGE_SECTION: Record<PageKey, SectionKey> = {
   guestbook: 'guestbook',
   account: 'account',
   ending: 'ending',
+  profile: 'profile',
+  timeline: 'timeline',
 };
 
 export type DockItem =

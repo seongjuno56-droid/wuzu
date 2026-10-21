@@ -7,7 +7,7 @@ import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
 import { pickImages } from '../media';
-import { DEFAULT_ACCOUNT_MESSAGE, LIMITS } from '../model';
+import { asWedding, DEFAULT_ACCOUNT_MESSAGE, LIMITS } from '../model';
 import { AccountFields, Check, FormLabel, Hint, PersonFields } from './fields';
 
 const useContent = () => useEditor((s) => s.draft!.content);
@@ -15,7 +15,7 @@ const usePatch = () => useEditor((s) => s.patch);
 
 /** 기본정보: 신랑측·신부측 (이름·호칭 10자) */
 export function BasicForm() {
-  const b = useContent().basic;
+  const b = asWedding(useContent()).basic;
   const patch = usePatch();
   return (
     <View style={styles.form}>
@@ -80,7 +80,7 @@ export function GreetingForm() {
 
 /** 계좌번호: 안내문(선택), 신랑·신부 필수, 부모님 선택 */
 export function AccountForm() {
-  const a = useContent().account;
+  const a = asWedding(useContent()).account;
   const patch = usePatch();
   return (
     <View style={styles.form}>
