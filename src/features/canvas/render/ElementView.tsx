@@ -105,7 +105,8 @@ export function ElementContent({
   }
   return (
     <View onLayout={onLayout} style={{ width, height }}>
-      {node}
+      {/* 그림은 터치를 받지 않는다 — 웹에서 브라우저의 이미지 끌기가 편집기 끌기를 가로채지 않게 */}
+      <View pointerEvents="none">{node}</View>
     </View>
   );
 }

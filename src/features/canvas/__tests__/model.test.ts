@@ -18,8 +18,11 @@ import {
   strokeFromPoints,
   textForPaste,
   updateElement,
+  finishTextEdit,
+  inRect,
+  tapToSlide,
 } from '../model';
-import type { CanvasDoc, CanvasElement } from '../types';
+import type { CanvasDoc, CanvasElement, TextElement } from '../types';
 
 const content = () => defaultContent(new Date(2026, 11, 24)); // 예식일 = 2026-12-31(목)
 const text = (id: string): CanvasElement => ({
@@ -157,5 +160,50 @@ describe('기타', () => {
   it('붙여넣기 텍스트는 앞뒤 공백 제거 후 100자로 자른다', () => {
     expect(textForPaste('  안녕  ')).toBe('안녕');
     expect(textForPaste('가'.repeat(150))).toHaveLength(100);
+  });
+});
+
+describe('인스타식 편집 규칙', () => {
+  const doc: CanvasDoc = { background: { kind: 'template' }, elements: [] };
+  const text = (id: string, t: string): TextElement => ({
+    id,
+    kind: 'text',
+    text: t,
+    x: 0.5,
+    y: 0.5,
+    w: 0.8,
+    rotation: 0,
+    font: 'sans',
+    color: '#000000',
+    size: 0.05,
+    align: 'center',
+  });
+
+  it('새 글자: 쓴 게 있으면 더하고, 비었으면 아무것도 안 생긴다', () => {
+    expect(finishTextEdit(doc, text('a', ''), true, '  안녕  ').elements).toEqual([text('a', '안녕')]);
+    expect(finishTextEdit(doc, text('a', ''), true, '   ')).toBe(doc);
+  });
+  it('있던 글자: 고치면 바꾸고, 다 지우면 요소를 지운다', () => {
+    const d = addElement(doc, text('a', '전'));
+    expect(finishTextEdit(d, { ...text('a', '전'), color: '#FF0000' }, false, '후').elements[0]).toEqual({
+      ...text('a', '후'),
+      color: '#FF0000',
+    });
+    expect(finishTextEdit(d, text('a', '전'), false, '').elements).toEqual([]);
+  });
+  it('글자 수 한도에서 자른다', () => {
+    const long = 'ㄱ'.repeat(CANVAS_LIMITS.text + 10);
+    const out = finishTextEdit(doc, text('a', ''), true, long).elements[0] as TextElement;
+    expect(out.text).toHaveLength(CANVAS_LIMITS.text);
+  });
+  it('휴지통 판정: 손가락이 휴지통 상자 안이면 true', () => {
+    const trash = { x: 100, y: 500, width: 56, height: 56 };
+    expect(inRect({ x: 128, y: 528 }, trash)).toBe(true);
+    expect(inRect({ x: 90, y: 528 }, trash)).toBe(false);
+    expect(inRect({ x: 128, y: 560 }, null)).toBe(false);
+  });
+  it('슬라이드 안을 누른 위치 → 비율 좌표 (밖이면 가운데)', () => {
+    expect(tapToSlide({ x: 150, y: 400 }, { x: 50, y: 100, width: 200, height: 356 })).toEqual({ x: 0.5, y: 300 / 356 });
+    expect(tapToSlide({ x: 10, y: 10 }, { x: 50, y: 100, width: 200, height: 356 })).toEqual({ x: 0.5, y: 0.5 });
   });
 });

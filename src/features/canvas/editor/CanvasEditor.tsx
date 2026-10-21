@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
 import { Button } from '../../../components/Button';
@@ -15,26 +15,30 @@ import {
   strokeFromPoints,
   canAdd,
   duplicateElement,
+  finishTextEdit,
   fitSlide,
+  inRect,
+  Rect,
   LIMIT_MESSAGE,
   newElementId,
   palette,
   removeElement,
   reorderElement,
+  tapToSlide,
   updateElement,
 } from '../model';
 import { pickCanvasVideo, pickCanvasVisual } from '../media';
 import { PASTE_MESSAGE, PasteResult, readClipboard } from '../paste';
 import { useWebCanvasKeys } from '../useWebCanvasKeys';
 import { CanvasSlide } from '../render/CanvasSlide';
-import type { CanvasDoc, CanvasElement } from '../types';
+import type { CanvasDoc, CanvasElement, TextElement } from '../types';
 import { CanvasToolbar, ToolKey } from './CanvasToolbar';
 import { EditableElement } from './EditableElement';
 import { Guides } from './Guides';
+import { InlineTextEditor } from './InlineTextEditor';
 import { PEN_WIDTHS, PenLayer, PenOptions } from './PenLayer';
 import { PropertyBar, PropertyCommand } from './PropertyBar';
 import { BackgroundPicker, BindPicker, StickerPicker } from './Pickers';
-import { TextEditModal } from './TextEditModal';
 
 export interface CanvasEditorProps {
   initial: CanvasDoc;
@@ -46,12 +50,28 @@ export interface CanvasEditorProps {
   onOpenBasic: () => void;
 }
 
-/** 캔버스 편집기: 상단 바(취소·되돌리기·다시하기·완료) → 도구 줄 → 슬라이드 → 속성 바 */
+/** 아래 속성 바 자리 높이 — 늘 같은 높이를 잡아 둬서 요소를 고를 때 슬라이드 크기가 바뀌지 않는다 */
+const PANEL_H = 148;
+
+/**
+ * 캔버스 편집기 (인스타 스토리식): 상단 바(취소·되돌리기·다시하기·완료) → 도구 줄 → 슬라이드 → 속성 바.
+ * 빈 곳을 누르면 그 자리에 글자, 글자를 누르면 그 자리에서 수정, 요소를 끌면 아래 휴지통이 나타난다.
+ */
 export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpenBasic }: CanvasEditorProps) {
   const { doc, selectedId, tool, past, future, open, close, select, setTool, commit, undo, redo } = useCanvas();
-  const [box, setBox] = useState({ width: 0, height: 0 });
+  // 무대 크기와 편집기 안에서의 세로 위치 (그 자리 입력 막이 편집기 전체를 덮을 때 슬라이드 자리 계산용)
+  const [box, setBox] = useState({ width: 0, height: 0, y: 0 });
   const [guides, setGuides] = useState({ x: false, y: false });
-  const [textModal, setTextModal] = useState<{ id: string | null; text: string } | null>(null);
+  // 그 자리 글자 입력: 새 글자면 isNew (마칠 때 쓴 게 있을 때만 더한다)
+  const [editing, setEditing] = useState<{ el: TextElement; isNew: boolean } | null>(null);
+  // 끄는 중 손가락 위치 — 있으면 휴지통을 보이고 다른 도구를 숨긴다
+  const [dragAt, setDragAt] = useState<{ x: number; y: number } | null>(null);
+  const stageRef = useRef<View>(null);
+  const trashRef = useRef<View>(null);
+  const trashRect = useRef<Rect | null>(null);
+  const [trashBox, setTrashBox] = useState<Rect | null>(null);
+  // 놓는 순간 판정은 렌더를 기다리지 않도록 ref 로
+  const dragRef = useRef<{ x: number; y: number } | null>(null);
   const [boundNotice, setBoundNotice] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [picker, setPicker] = useState<'sticker' | 'bind' | 'background' | null>(null);
@@ -113,6 +133,41 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
 
   if (!doc) return null;
   const slide = fitSlide(box.width - 32, box.height - 32);
+  // 무대 안에서 슬라이드 위치 (가운데 정렬)
+  const slideLeft = (box.width - slide.width) / 2;
+  const slideTop = (box.height - slide.height) / 2;
+  const overTrash = !!dragAt && inRect(dragAt, trashBox);
+
+  /** 글자 입력 시작: 새 글자는 (x,y) 자리에, 있던 글자는 그 자리에서 */
+  // 가로는 글자 상자가 슬라이드 안에 들어오게 맞춘다
+  const startText = (at: { x: number; y: number }) =>
+    setEditing({
+      el: {
+        ...textBase,
+        id: newElementId(),
+        kind: 'text',
+        text: '',
+        x: Math.min(1 - textBase.w / 2, Math.max(textBase.w / 2, at.x)),
+        y: at.y,
+      },
+      isNew: true,
+    });
+
+  /** 빈 곳 누름: 고른 게 있으면 해제, 없으면 그 자리에 새 글자 (인스타 스토리) */
+  const onStagePress = (e: GestureResponderEvent) => {
+    if (Date.now() - touchedAt.current < 300) return; // 요소를 누른 같은 터치
+    if (tool !== 'select') return;
+    if (selectedId) return select(null);
+    const { pageX, pageY } = e.nativeEvent;
+    stageRef.current?.measureInWindow((sx, sy) =>
+      startText(
+        tapToSlide(
+          { x: pageX, y: pageY },
+          { x: sx + slideLeft, y: sy + slideTop, width: slide.width, height: slide.height },
+        ),
+      ),
+    );
+  };
   const selected = doc.elements.find((e) => e.id === selectedId) ?? null;
 
   const pickBackgroundPhoto = () =>
@@ -132,7 +187,8 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
         setTool('pen');
         break;
       case 'text':
-        setTextModal({ id: null, text: '' });
+        select(null);
+        startText({ x: 0.5, y: 0.5 });
         break;
       case 'photo':
       case 'gif': {
@@ -191,20 +247,25 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
     if (c === 'replace' && selected.kind === 'image') {
       pickCanvasVisual().then((v) => {
         const cur = useCanvas.getState().doc!;
-        if (v?.kind === 'image') useCanvas.getState().commit(updateElement(cur, selected.id, { uri: v.uri, aspect: v.aspect }));
+        if (v?.kind === 'image')
+          useCanvas.getState().commit(updateElement(cur, selected.id, { uri: v.uri, aspect: v.aspect }));
         else if (v) toast('사진만 교체할 수 있어요.');
       });
     }
     if (c === 'edit') {
-      if (selected.kind === 'text') setTextModal({ id: selected.id, text: selected.text });
+      if (selected.kind === 'text') setEditing({ el: selected, isNew: false });
       if (selected.kind === 'bound') setBoundNotice(true);
     }
   };
 
   return (
     <View style={styles.flex}>
-      <View style={styles.top}>
-        <Pressable onPress={() => (past.length ? setConfirmCancel(true) : onCancel())} hitSlop={10} accessibilityLabel="꾸미기 취소">
+      <View style={[styles.top, dragAt && styles.ghost]} pointerEvents={dragAt ? 'none' : 'auto'}>
+        <Pressable
+          onPress={() => (past.length ? setConfirmCancel(true) : onCancel())}
+          hitSlop={10}
+          accessibilityLabel="꾸미기 취소"
+        >
           <Ionicons name="close" size={24} color={colors.inkSoft} />
         </Pressable>
         <View style={styles.topMid}>
@@ -217,14 +278,22 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
         </View>
         <Button label="완료" variant="chip" onPress={() => onDone(doc)} />
       </View>
-      <CanvasToolbar onTool={handleTool} active={tool === 'select' ? null : 'pen'} />
+      <View style={dragAt && styles.ghost} pointerEvents={dragAt ? 'none' : 'auto'}>
+        <CanvasToolbar onTool={handleTool} active={tool === 'select' ? null : 'pen'} />
+      </View>
 
       <Pressable
+        ref={stageRef}
         style={[styles.flex, styles.stage]}
-        // 요소를 누른 직후(300ms)의 배경 탭은 같은 터치이므로 무시
-        onPress={() => Date.now() - touchedAt.current > 300 && select(null)}
+        onPress={onStagePress}
         accessible={false}
-        onLayout={(e) => setBox({ width: Math.round(e.nativeEvent.layout.width), height: Math.round(e.nativeEvent.layout.height) })}
+        onLayout={(e) =>
+          setBox({
+            width: Math.round(e.nativeEvent.layout.width),
+            height: Math.round(e.nativeEvent.layout.height),
+            y: Math.round(e.nativeEvent.layout.y),
+          })
+        }
       >
         {box.width > 0 && (
           <CanvasSlide
@@ -250,15 +319,33 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
                 }}
                 onCommit={(next) => commit(updateElement(doc, el.id, next))}
                 onGuides={setGuides}
-                onDoubleTap={() => {
-                  if (el.kind === 'text') setTextModal({ id: el.id, text: el.text });
+                onTap={() => {
+                  if (tool !== 'select') return;
+                  if (el.kind === 'text') setEditing({ el, isNew: false });
                   if (el.kind === 'bound') setBoundNotice(true);
                 }}
+                onDrag={(p) => {
+                  // 끌기 시작에 휴지통 위치를 잰다 (보이기 전이라도 자리는 잡혀 있다)
+                  if (p && !dragAt)
+                    trashRef.current?.measureInWindow(
+                      (x, y, width, height) => {
+                        trashRect.current = { x, y, width, height };
+                        setTrashBox(trashRect.current);
+                      },
+                    );
+                  dragRef.current = p;
+                  setDragAt(p);
+                }}
+                overTrash={() => !!dragRef.current && inRect(dragRef.current, trashRect.current)}
+                onDelete={() => commit(removeElement(useCanvas.getState().doc!, el.id))}
+                hidden={editing?.el.id === el.id}
+                dropping={overTrash && el.id === selectedId}
               />
             )}
             overlay={
               <>
                 <Guides x={guides.x} y={guides.y} slideW={slide.width} slideH={slide.height} />
+                {editing && <View style={StyleSheet.absoluteFill} />}
                 {tool === 'pen' && (
                   <PenLayer
                     slideW={slide.width}
@@ -277,28 +364,46 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
             }
           />
         )}
+        {/* 끄는 동안 아래 가운데 휴지통 — 자리는 늘 잡아 두고(측정용) 끌 때만 보인다 */}
+        <View pointerEvents="none" style={styles.trashWrap}>
+          <View ref={trashRef} style={[styles.trash, !dragAt && styles.invisible, overTrash && styles.trashOn]}>
+            <Ionicons name="trash-outline" size={overTrash ? 28 : 24} color={overTrash ? '#FFFFFF' : colors.inkSoft} />
+          </View>
+        </View>
       </Pressable>
 
-      {tool !== 'select' && (
-        <PenOptions
-          colors={colorsList}
-          color={penColor}
-          width={penWidth}
-          tool={tool}
-          onColor={setPenColor}
-          onWidth={setPenWidth}
-          onTool={setTool}
-          onClose={() => setTool('select')}
-        />
-      )}
-      {selected && tool === 'select' && (
-        <PropertyBar
-          el={selected}
-          colors={colorsList}
-          onChange={(patch) => commit(updateElement(doc, selected.id, patch))}
-          onCommand={handleCommand}
-        />
-      )}
+      <View style={styles.panel}>
+        {tool === 'select' && !selected && (
+          <View style={styles.panelHint}>
+            <Txt variant="caption" color={colors.muted} align="center">
+              빈 곳을 누르면 그 자리에 글자를 쓸 수 있어요.
+            </Txt>
+            <Txt variant="caption" color={colors.muted} align="center">
+              요소는 끌어서 옮기고, 아래 휴지통에 놓으면 지워져요.
+            </Txt>
+          </View>
+        )}
+        {tool !== 'select' && (
+          <PenOptions
+            colors={colorsList}
+            color={penColor}
+            width={penWidth}
+            tool={tool}
+            onColor={setPenColor}
+            onWidth={setPenWidth}
+            onTool={setTool}
+            onClose={() => setTool('select')}
+          />
+        )}
+        {selected && tool === 'select' && (
+          <PropertyBar
+            el={selected}
+            colors={colorsList}
+            onChange={(patch) => commit(updateElement(doc, selected.id, patch))}
+            onCommand={handleCommand}
+          />
+        )}
+      </View>
 
       <StickerPicker
         visible={picker === 'sticker'}
@@ -309,7 +414,15 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
         }}
         onPickSymbol={(symbol) => {
           setPicker(null);
-          add({ ...textBase, id: newElementId(), kind: 'text', text: symbol, w: 0.3, size: 40 / 360, color: style.accent });
+          add({
+            ...textBase,
+            id: newElementId(),
+            kind: 'text',
+            text: symbol,
+            w: 0.3,
+            size: 40 / 360,
+            color: style.accent,
+          });
         }}
       />
       <BindPicker
@@ -330,16 +443,6 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
         onPhoto={() => {
           setPicker(null);
           pickBackgroundPhoto();
-        }}
-      />
-      <TextEditModal
-        visible={!!textModal}
-        initial={textModal?.text ?? ''}
-        onCancel={() => setTextModal(null)}
-        onDone={(text) => {
-          if (textModal?.id) commit(updateElement(doc, textModal.id, { text } as Partial<CanvasElement>));
-          else add({ ...textBase, id: newElementId(), kind: 'text', text });
-          setTextModal(null);
         }}
       />
       <AppModal
@@ -365,12 +468,44 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
         onDismiss={() => setConfirmCancel(false)}
         actions={[
           { label: '계속 꾸미기', variant: 'outline', onPress: () => setConfirmCancel(false) },
-          { label: '나가기', onPress: () => { setConfirmCancel(false); onCancel(); } },
+          {
+            label: '나가기',
+            onPress: () => {
+              setConfirmCancel(false);
+              onCancel();
+            },
+          },
         ]}
       />
-      <Txt variant="tiny" color={colors.faint} align="center" style={styles.hint}>
-        두 손가락으로 크기·회전, 손잡이로도 바꿀 수 있어요.
-      </Txt>
+      {/* 그 자리 글자 입력: 편집기 전체를 덮어 어디를 눌러도 마친다 */}
+      {editing && (
+        <InlineTextEditor
+          el={editing.el}
+          slide={{ left: slideLeft, top: box.y + slideTop, width: slide.width }}
+          chromeHeight={box.y}
+          colors={colorsList}
+          onDone={(el, text) => {
+            const cur = useCanvas.getState().doc!;
+            if (editing.isNew) {
+              const err = canAdd(cur, 'text');
+              if (err && text.trim()) toast(LIMIT_MESSAGE[err]);
+              else {
+                const next = finishTextEdit(cur, el, true, text);
+                if (next !== cur) {
+                  commit(next);
+                  select(el.id);
+                }
+              }
+            } else {
+              const next = finishTextEdit(cur, el, false, text);
+              const before = cur.elements.find((x) => x.id === el.id);
+              const after = next.elements.find((x) => x.id === el.id);
+              if (JSON.stringify(before) !== JSON.stringify(after)) commit(next);
+            }
+            setEditing(null);
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -389,5 +524,26 @@ const styles = StyleSheet.create({
   },
   topMid: { flexDirection: 'row', gap: spacing.xl },
   stage: { backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  hint: { paddingVertical: 4, backgroundColor: colors.surface },
+  ghost: { opacity: 0 },
+  invisible: { opacity: 0 },
+  panel: {
+    height: PANEL_H,
+    backgroundColor: colors.canvas,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+    overflow: 'hidden',
+  },
+  panelHint: { padding: spacing.lg, gap: 4 },
+  trashWrap: { position: 'absolute', left: 0, right: 0, bottom: spacing.lg, alignItems: 'center' },
+  trash: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: colors.hairline,
+  },
+  trashOn: { backgroundColor: colors.danger, borderColor: colors.danger, transform: [{ scale: 1.2 }] },
 });

@@ -4,7 +4,7 @@
  */
 import { fonts } from '../../theme';
 import { formatDateTimeLine, formatKoreanTime, InvitationContent, parseDate, WEEKDAYS_EN } from '../invitation/model';
-import type { BindKey, CanvasDoc, CanvasElement, ElementKind, FontKey, StrokeElement } from './types';
+import type { BindKey, CanvasDoc, CanvasElement, ElementKind, FontKey, StrokeElement, TextElement } from './types';
 
 // ── 상수 ──────────────────────────────────────────────
 
@@ -234,3 +234,33 @@ export function needsSessionUrl(kind: 'image' | 'gif' | 'video', uri: string, pl
 }
 
 export const textForPaste = (s: string) => s.trim().slice(0, CANVAS_LIMITS.text);
+
+// ── 인스타 스토리식 편집 ───────────────────────────────
+
+/**
+ * 그 자리 글자 입력을 마칠 때: 새 글자는 쓴 게 있을 때만 더하고,
+ * 있던 글자는 바꾸거나(서체·색 포함) 다 지웠으면 요소를 지운다.
+ */
+export function finishTextEdit(doc: CanvasDoc, el: TextElement, isNew: boolean, raw: string): CanvasDoc {
+  const text = raw.trim().slice(0, CANVAS_LIMITS.text);
+  if (isNew) return text ? addElement(doc, { ...el, text }) : doc;
+  if (!text) return removeElement(doc, el.id);
+  return { ...doc, elements: doc.elements.map((e) => (e.id === el.id ? { ...el, text } : e)) };
+}
+
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** 점이 상자 안인가 (휴지통 판정) */
+export const inRect = (p: { x: number; y: number }, r: Rect | null) =>
+  !!r && p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height;
+
+/** 화면에서 누른 점 → 슬라이드 비율 좌표. 슬라이드 밖이면 가운데 */
+export function tapToSlide(p: { x: number; y: number }, slide: Rect): { x: number; y: number } {
+  if (!inRect(p, slide) || slide.width <= 0 || slide.height <= 0) return { x: 0.5, y: 0.5 };
+  return { x: (p.x - slide.x) / slide.width, y: (p.y - slide.y) / slide.height };
+}
