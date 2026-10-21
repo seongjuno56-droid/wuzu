@@ -3,6 +3,10 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// 결혼식 외 테마 정의 등록 (앱은 _layout 에서)
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('./src/features/invitation/registerThemes');
+
 beforeEach(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('./src/i18n').useLocale.setState({ locale: 'ko' });

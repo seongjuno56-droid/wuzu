@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ToastHost } from '../components/Toast';
+import '../features/invitation/registerThemes';
 import { PaymentSheetHost } from '../features/wallet/PaymentSheetHost';
 import { useSession } from '../store/session';
 import { colors, fontSources, MAX_APP_WIDTH } from '../theme';
