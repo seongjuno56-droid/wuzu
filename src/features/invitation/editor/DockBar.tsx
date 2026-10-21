@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 
 import { Txt } from '../../../components/Txt';
@@ -12,8 +12,13 @@ const THUMB_W = 44;
 const ITEM_W = 56;
 /** 한 칸 간격 = 항목 폭 + 사이 간격 */
 const PITCH = ITEM_W + spacing.sm;
-/** 이만큼 꾹 누르면 끌기 시작 — 짧게 누르면 그 장으로 이동 */
+/** 터치: 이만큼 꾹 누르면 끌기 시작 (가로 스크롤과 구분). 짧게 누르면 그 장으로 이동 */
 const LONG_PRESS_MS = 300;
+/** PC 마우스: 누르자마자 이만큼(px) 움직이면 바로 끌기 */
+const MOUSE_DRAG_PX = 6;
+/** 터치 화면이 없는 웹(PC) — 마우스는 스크롤과 헷갈릴 일이 없어 기다리지 않는다 */
+const mouseOnly =
+  Platform.OS === 'web' && typeof window !== 'undefined' && !('ontouchstart' in window) && !navigator.maxTouchPoints;
 
 interface Drag {
   page: ReorderablePage;
@@ -34,9 +39,8 @@ function Movable({
   onDrop: (dx: number) => void;
   children: ReactNode;
 }) {
-  const pan = Gesture.Pan()
-    .runOnJS(true)
-    .activateAfterLongPress(LONG_PRESS_MS)
+  const base = Gesture.Pan().runOnJS(true);
+  const pan = (mouseOnly ? base.minDistance(MOUSE_DRAG_PX) : base.activateAfterLongPress(LONG_PRESS_MS))
     .onStart(() => onStart(page))
     .onUpdate((e) => onMove(e.translationX))
     .onEnd((e) => onDrop(e.translationX))
@@ -48,7 +52,7 @@ function Movable({
 
 /**
  * 하단 독바: 슬라이드 썸네일 + 정보 칩. 미완료는 빨간 점.
- * 갤러리·예식 정보·방명록·계좌 썸네일은 꾹 눌러 끌어 순서를 바꾼다 (표지·인사말·엔딩은 고정).
+ * 갤러리·예식 정보·방명록·계좌 썸네일은 끌어 순서를 바꾼다 — 터치는 꾹 눌러서, PC 마우스는 바로 (표지·인사말·엔딩은 고정).
  */
 export function DockBar({
   items,
@@ -113,7 +117,7 @@ export function DockBar({
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
               accessibilityLabel={`${label} ${done ? '작성 완료' : '작성 필요'}`}
-              accessibilityHint={page ? '꾹 눌러 끌면 순서를 바꿀 수 있어요' : undefined}
+              accessibilityHint={page ? (mouseOnly ? '끌어서 순서를 바꿀 수 있어요' : '꾹 눌러 끌면 순서를 바꿀 수 있어요') : undefined}
             >
               <View style={[item.kind === 'page' ? styles.thumb : styles.chip, on && styles.on]}>
                 {item.kind === 'info' && (
