@@ -24,3 +24,12 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   if (!el) return false;
   return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || !!el.isContentEditable;
 }
+
+/** 이만큼(px) 이상 가로로 끌면 넘김 — 그보다 짧으면 탭으로 본다 */
+export const SWIPE_MIN = 40;
+
+/** 마우스로 끈 거리(dx·dy)로 넘길 방향: 왼쪽으로 끌면 다음 장(1), 오른쪽이면 이전 장(-1) */
+export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
+  if (Math.abs(dx) < SWIPE_MIN || Math.abs(dy) > Math.abs(dx)) return 0;
+  return dx < 0 ? 1 : -1;
+}

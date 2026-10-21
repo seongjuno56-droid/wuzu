@@ -18,6 +18,7 @@ import { FormSlide } from './FormSlide';
 import { useLook } from './look';
 import { GuestbookHandlers, PageContent, ViewInvitation } from './PageContent';
 import { isTypingTarget, settledPageIndex, tapSide } from './storyNav';
+import { useMouseSwipe } from './useMouseSwipe';
 
 /** 이 폭 이상(폴드 펼침·태블릿·PC)에서는 좌우 화살표 버튼을 보인다 */
 const WIDE = 600;
@@ -65,7 +66,11 @@ export function StoryInvitation({ invitation, ...handlers }: { invitation: ViewI
   });
 
   // locationX 는 누른 안쪽 요소 기준이라(웹) 쓸 수 없다 — 화면 x 에서 슬라이드 왼쪽 끝을 뺀다
+  // PC 마우스로 끌어 넘기기 (터치·트랙패드는 스크롤이 맡는다)
+  const justDragged = useMouseSwipe(root, (step) => go(index + step));
+
   const onTap = (e: GestureResponderEvent) => {
+    if (justDragged()) return; // 끈 뒤의 눌림은 탭이 아니다
     const pageX = e.nativeEvent.pageX;
     root.current?.measureInWindow((left) => {
       const side = tapSide(pageX - left - (box.width - slide.width) / 2, slide.width);

@@ -1,4 +1,4 @@
-import { settledPageIndex, tapSide } from '../view/storyNav';
+import { settledPageIndex, swipeStep, tapSide } from '../view/storyNav';
 
 describe('스토리 넘김 계산', () => {
   it('스크롤이 장 경계에 멈췄을 때만 장 번호를 준다 (웹은 momentum 끝 이벤트가 없다)', () => {
@@ -13,5 +13,11 @@ describe('스토리 넘김 계산', () => {
     expect(tapSide(50, 300)).toBe(-1);
     expect(tapSide(150, 300)).toBe(0);
     expect(tapSide(250, 300)).toBe(1);
+  });
+  it('마우스로 끈 거리로 넘길 방향 (왼쪽으로 끌면 다음 장)', () => {
+    expect(swipeStep(-80, 5)).toBe(1);
+    expect(swipeStep(90, -3)).toBe(-1);
+    expect(swipeStep(-20, 0)).toBe(0); // 짧게 움직인 건 탭
+    expect(swipeStep(-60, 80)).toBe(0); // 세로로 더 움직이면 스크롤
   });
 });

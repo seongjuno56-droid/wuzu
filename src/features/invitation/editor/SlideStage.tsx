@@ -8,6 +8,7 @@ import { FormSlide } from '../view/FormSlide';
 import { lookFor, LookProvider } from '../view/look';
 import { PageContent } from '../view/PageContent';
 import { settledPageIndex } from '../view/storyNav';
+import { useMouseSwipe } from '../view/useMouseSwipe';
 
 /** Step5 가운데: 현재 슬라이드 하나를 9:16 으로 크게. 좌우로 밀어도 이동 */
 export function SlideStage({
@@ -28,6 +29,12 @@ export function SlideStage({
   const look = lookFor(invitation.themeId, invitation.templateId);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const scroller = useRef<ScrollView>(null);
+  const root = useRef<View>(null);
+  // PC 마우스로 끌어 넘기기 — 끈 뒤의 눌림은 입력 시트를 열지 않는다
+  const justDragged = useMouseSwipe(root, (step) => {
+    const next = Math.max(0, Math.min(pages.length - 1, index + step));
+    if (next !== index) onIndexChange(next);
+  });
   /** 칩·코드로 옮기는 중인 목표 장 — 지나치는 경계에서 번호를 바꾸지 않는다 */
   const target = useRef<number | null>(null);
   // 위아래 여백 16 씩 남기고 맞춘다
@@ -43,6 +50,7 @@ export function SlideStage({
 
   return (
     <View
+      ref={root}
       style={styles.flex}
       onLayout={(e) => setBox({ width: Math.round(e.nativeEvent.layout.width), height: Math.round(e.nativeEvent.layout.height) })}
     >
@@ -72,7 +80,7 @@ export function SlideStage({
           >
             {pages.map((page) => (
               <View key={page} style={[styles.page, { width: box.width, height: box.height }]}>
-                <Pressable onPress={() => onEdit(page)} style={styles.shadow} accessibilityLabel="이 슬라이드 입력하기">
+                <Pressable onPress={() => !justDragged() && onEdit(page)} style={styles.shadow} accessibilityLabel="이 슬라이드 입력하기">
                   {page === 'cover' ? (
                     <CoverSlide invitation={invitation} width={slide.width} />
                   ) : (
