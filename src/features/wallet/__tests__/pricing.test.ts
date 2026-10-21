@@ -1,4 +1,5 @@
-import { createInvitation, Invitation } from '../../invitation/model';
+import { Invitation } from '../../invitation/model';
+import { createInvitation } from '../../invitation/themes';
 import { applyOrder, DAY_MS, orderCost, orderLines } from '../pricing';
 
 const NOW = new Date(2026, 9, 20, 12, 0, 0);

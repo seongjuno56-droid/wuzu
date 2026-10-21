@@ -1,4 +1,5 @@
-import { createInvitation, Invitation } from '../../features/invitation/model';
+import { Invitation } from '../../features/invitation/model';
+import { createInvitation } from '../../features/invitation/themes';
 import { DAY_MS } from '../../features/wallet/pricing';
 import { createMockInvitationService } from '../mock/mockInvitationService';
 import { createMockNotificationService } from '../mock/mockNotificationService';

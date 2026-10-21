@@ -284,8 +284,6 @@ export const DEFAULT_ENABLED: EnabledSections = { account: true, gallery: true, 
 /** [직접 꾸미기]를 열어 둔 페이지 (1차: 표지만) */
 export const CANVAS_PAGES: PageKey[] = ['cover'];
 
-const FIXED_TABS: SectionKey[] = ['basic', 'ceremony', 'greeting'];
-const OPTIONAL_TABS: OptionalSection[] = ['account', 'gallery', 'guestbook', 'ending', 'bgm'];
 
 export const DEFAULT_ACCOUNT_MESSAGE =
   '참석이 어려우신 분들을 위해\n계좌번호를 기재하였습니다.\n너그러운 마음으로 양해 부탁드립니다.';
@@ -354,34 +352,6 @@ export function defaultContent(today: Date = new Date()): WeddingContent {
 export const newInvitationNumber = (random: () => number = Math.random) =>
   String(Math.floor(1e10 + Math.min(random(), 0.9999999999) * 9e10));
 
-export function createInvitation(args: {
-  id: string;
-  ownerId: string;
-  themeId: string;
-  templateId: string;
-  today?: Date;
-  viewMode?: ViewMode;
-}): Invitation {
-  const now = (args.today ?? new Date()).toISOString();
-  return {
-    id: args.id,
-    ownerId: args.ownerId,
-    themeId: args.themeId,
-    templateId: args.templateId,
-    name: '',
-    number: newInvitationNumber(),
-    status: 'draft',
-    enabled: { ...DEFAULT_ENABLED },
-    order: [...DEFAULT_ORDER],
-    content: defaultContent(args.today),
-    viewMode: args.viewMode ?? 'story',
-    design: {},
-    completed: {},
-    createdAt: now,
-    updatedAt: now,
-  };
-}
-
 /** 저장 종류 → 저장 상태: 임시저장은 언제나 작성중으로 내린다 (최종저장본을 고치다 임시저장해도 미완성 내용이 활성화되지 않게) */
 export const savedStatus = (kind: 'draft' | 'final'): InvitationStatus => kind;
 
@@ -404,11 +374,6 @@ export function normalizeInvitation(inv: Invitation): { invitation: Invitation; 
 export function pageOrder(enabled: EnabledSections, order: ReorderablePage[]): PageKey[] {
   const middle = order.filter((p) => p === 'ceremony' || !!enabled[p]);
   return ['cover', 'greeting', ...middle, ...(enabled.ending ? (['ending'] as const) : [])];
-}
-
-/** 하단 탭바: 고정 섹션 + 사용 중인 선택 섹션 (설계 순서) */
-export function sectionTabs(enabled: EnabledSections): SectionKey[] {
-  return [...FIXED_TABS, ...OPTIONAL_TABS.filter((k) => enabled[k])];
 }
 
 // ── 유효성 검사 ───────────────────────────────────────
@@ -489,11 +454,6 @@ export function validateSection(key: SectionKey, content: InvitationContent): st
       break;
   }
   return errors;
-}
-
-/** 최종저장 가능: 사용 중인 모든 탭이 ✓ 확인 완료 */
-export function canFinalize(inv: Invitation): boolean {
-  return sectionTabs(inv.enabled).every((k) => inv.completed[k]);
 }
 
 export function isValidInvitationName(name: string): boolean {

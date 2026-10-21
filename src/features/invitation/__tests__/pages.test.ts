@@ -1,5 +1,6 @@
 import { dockItems, itemDone, moveInDock, movablePages, PAGE_SECTION, slotsMoved } from '../editor/pages';
-import { createInvitation, ReorderablePage } from '../model';
+import { ReorderablePage } from '../model';
+import { createInvitation } from '../themes';
 
 const inv = () => createInvitation({ id: 'i', ownerId: 'u', themeId: 'wedding', templateId: 'wedding-1' });
 

@@ -5,7 +5,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Txt } from '../../../components/Txt';
 import { colors, radius, shadow, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
-import { SECTION_LABEL, SectionKey, validateSection } from '../model';
+import { SectionKey } from '../model';
+import { themeDef, validateFor } from '../themes';
 import { CeremonyForm } from './CeremonyForm';
 import { BgmForm, EndingForm, GalleryForm } from './MediaForms';
 import { AccountForm, BasicForm, GreetingForm, GuestbookForm } from './TextForms';
@@ -15,7 +16,7 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
   const draft = useEditor((s) => s.draft!);
   const confirm = useEditor((s) => s.confirm);
   const [dragging, setDragging] = useState(false);
-  const valid = validateSection(section, draft.content).length === 0;
+  const valid = validateFor(draft, section).length === 0;
 
   const done = () => {
     if (confirm(section)) onClose();
@@ -28,7 +29,7 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
           <Ionicons name="chevron-down" size={24} color={colors.inkSoft} />
         </Pressable>
         <Txt variant="title" align="center" style={styles.flex}>
-          {SECTION_LABEL[section]}
+          {themeDef(draft.themeId).sectionLabel(section)}
         </Txt>
         <Pressable
           onPress={done}

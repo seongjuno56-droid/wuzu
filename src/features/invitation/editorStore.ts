@@ -3,16 +3,8 @@ import { create } from 'zustand';
 import { styleFor } from '../../data/templates';
 import { coverPreset } from '../canvas/preset';
 import type { CanvasDoc, ViewMode } from '../canvas/types';
-import {
-  createInvitation,
-  Invitation,
-  InvitationContent,
-  OptionalSection,
-  PageKey,
-  ReorderablePage,
-  SectionKey,
-  validateSection,
-} from './model';
+import { Invitation, InvitationContent, OptionalSection, PageKey, ReorderablePage, SectionKey } from './model';
+import { createInvitation, themeDef, validateFor } from './themes';
 
 /** 제작 중인 초대장 (Step3~5 공유). 저장은 invitationService 가 담당 */
 interface EditorState {
@@ -75,14 +67,14 @@ export const useEditor = create<EditorState>()((set, get) => ({
       const prev = (s.draft.content as unknown as Record<string, object>)[key];
       const content = { ...s.draft.content, [key]: { ...prev, ...values } } as InvitationContent;
       // 완료했던 섹션이 다시 규칙에 어긋나면 완료 표시를 푼다
-      const stillValid = validateSection(key, content).length === 0;
+      const stillValid = themeDef(s.draft.themeId).validate(key, content).length === 0;
       const completed = s.draft.completed[key] && !stillValid ? { ...s.draft.completed, [key]: false } : s.draft.completed;
       return { draft: { ...s.draft, content, completed }, dirty: true };
     }),
 
   confirm: (key) => {
     const { draft } = get();
-    if (!draft || validateSection(key, draft.content).length) return false;
+    if (!draft || validateFor(draft, key).length) return false;
     set({ draft: { ...draft, completed: { ...draft.completed, [key]: true } }, dirty: true });
     return true;
   },

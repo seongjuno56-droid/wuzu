@@ -1,7 +1,8 @@
 import { Asset } from 'expo-asset';
 
 import type { GuestbookEntry } from '../../services/types';
-import { asWedding, createInvitation, Invitation } from './model';
+import { asWedding, Invitation } from './model';
+import { createInvitation } from './themes';
 
 // 예시 사진: AI 로 만든 실사풍 웨딩 사진 (실존 인물 아님). 화면이 문자열 주소를 받으므로 번들 자산을 주소로 바꾼다
 const uri = (mod: number) => Asset.fromModule(mod).uri;

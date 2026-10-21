@@ -1,21 +1,5 @@
-import {
-  savedStatus,
-  canFinalize,
-  createInvitation,
-  ddayParts,
-  defaultContent,
-  givenName,
-  isValidInvitationName,
-  monthMatrix,
-  newInvitationNumber,
-  normalizeInvitation,
-  pageOrder,
-  sectionTabs,
-  validateGuestbookEntry,
-  validateSection,
-  checkAudioFile,
-  checkImageFile,
-} from '../model';
+import { savedStatus, ddayParts, defaultContent, givenName, isValidInvitationName, monthMatrix, newInvitationNumber, normalizeInvitation, pageOrder, validateGuestbookEntry, validateSection, checkAudioFile, checkImageFile } from '../model';
+import { canFinalize, createInvitation, sectionTabs } from '../themes';
 
 const TODAY = new Date(2026, 9, 15); // 2026-10-15
 
@@ -49,7 +33,9 @@ describe('pageOrder', () => {
 
 describe('sectionTabs', () => {
   it('lists fixed sections then enabled optional ones in design order', () => {
-    expect(sectionTabs({ account: true, gallery: false, guestbook: true, ending: false, bgm: true })).toEqual([
+    expect(
+      sectionTabs({ themeId: 'wedding', enabled: { account: true, gallery: false, guestbook: true, ending: false, bgm: true } }),
+    ).toEqual([
       'basic', 'ceremony', 'greeting', 'account', 'guestbook', 'bgm',
     ]);
   });

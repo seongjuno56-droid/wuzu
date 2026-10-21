@@ -1,4 +1,4 @@
-import { createInvitation } from '../../features/invitation/model';
+import { createInvitation } from '../../features/invitation/themes';
 import { createMockInvitationService } from '../mock/mockInvitationService';
 import { KeyValueStorage } from '../types';
 

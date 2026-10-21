@@ -7,7 +7,8 @@ import {
   screenStatus,
   yearOptions,
 } from '../status';
-import { createInvitation, Invitation } from '../model';
+import { Invitation } from '../model';
+import { createInvitation } from '../themes';
 
 const NOW = new Date(2026, 9, 20, 12, 0, 0);
 const iso = (d: Date) => d.toISOString();

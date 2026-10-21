@@ -7,29 +7,17 @@ import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
 import { Txt } from '../../../components/Txt';
 import { useEditor } from '../../../features/invitation/editorStore';
-import { OptionalSection } from '../../../features/invitation/model';
+import { themeDef } from '../../../features/invitation/themes';
 import { useDraft } from '../../../features/invitation/useDraft';
 import { colors, radius, spacing } from '../../../theme';
-
-const FIXED = [
-  { title: '기본 정보', body: '신랑측, 신부측 정보를 입력합니다.' },
-  { title: '예식 정보', body: '예식장 위치, 예식 진행 시간을 입력합니다.' },
-  { title: '인사말', body: '소중한 하객분에게 드릴 인사말을 입력합니다.' },
-];
-
-const OPTIONAL: { key: OptionalSection; title: string; body: string }[] = [
-  { key: 'account', title: '계좌번호', body: '신랑측, 신부측의 계좌정보를 제공합니다.' },
-  { key: 'gallery', title: '갤러리', body: '웨딩 촬영 등 갤러리 영역을 제공합니다.' },
-  { key: 'guestbook', title: '방명록', body: '방명록 기능을 제공합니다.' },
-  { key: 'ending', title: '엔딩', body: '초대장의 엔딩 페이지를 제공합니다.' },
-  { key: 'bgm', title: 'BGM 설정', body: '초대장 BGM을 설정합니다.' },
-];
 
 /** Step 3. 입력항목 선택 */
 export default function EditorOptions() {
   const draft = useDraft();
   const setEnabled = useEditor((s) => s.setEnabled);
   if (!draft) return <Redirect href="/create" />;
+  // 테마마다 필수·선택 항목과 설명이 다르다
+  const def = themeDef(draft.themeId);
 
   // 순서는 정보 입력 화면 하단 독바에서 꾹 눌러 끌어 바꾼다 (따로 순서 화면 없음).
   // 수정 모드는 설정으로 올 때 쌓아 둔 compose 로 돌아가고(중복 방지), 새로 만들 때는 compose 를 새로 연다
@@ -50,8 +38,8 @@ export default function EditorOptions() {
       <Txt variant="caption" color={colors.muted} style={styles.hint}>
         초대장에서 사용할 항목을 선택해 주세요.
       </Txt>
-      {FIXED.map((f) => (
-        <View key={f.title} style={styles.card}>
+      {def.fixed.map((f) => (
+        <View key={f.key} style={styles.card}>
           <View style={styles.flex}>
             <Txt variant="bodyStrong">{f.title}</Txt>
             <Txt variant="caption" color={colors.muted}>
@@ -64,7 +52,7 @@ export default function EditorOptions() {
         </View>
       ))}
       <View style={styles.divider} />
-      {OPTIONAL.map((o) => (
+      {def.optional.map((o) => (
         <View key={o.key} style={styles.card}>
           <View style={styles.flex}>
             <Txt variant="bodyStrong">{o.title}</Txt>
@@ -73,7 +61,7 @@ export default function EditorOptions() {
             </Txt>
           </View>
           <Switch
-            value={draft.enabled[o.key]}
+            value={!!draft.enabled[o.key]}
             onValueChange={(v) => setEnabled(o.key, v)}
             trackColor={{ false: colors.hairline, true: colors.brand }}
             thumbColor={colors.canvas}

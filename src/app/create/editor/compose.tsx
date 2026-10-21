@@ -23,14 +23,8 @@ import { SlideStage } from '../../../features/invitation/editor/SlideStage';
 import { useLeaveGuard } from '../../../features/invitation/editor/useLeaveGuard';
 import { PaletteDot, PaletteModal } from '../../../features/invitation/editor/PalettePicker';
 import { ViewModeModal } from '../../../features/invitation/editor/ViewModePicker';
-import {
-  CANVAS_PAGES,
-  canFinalize,
-  PageKey,
-  savedStatus,
-  SectionKey,
-  sectionTabs,
-} from '../../../features/invitation/model';
+import { CANVAS_PAGES, PageKey, savedStatus, SectionKey } from '../../../features/invitation/model';
+import { canFinalize, sectionTabs } from '../../../features/invitation/themes';
 import { screenStatus } from '../../../features/invitation/status';
 import { useDraft } from '../../../features/invitation/useDraft';
 import { EDIT_COST } from '../../../features/wallet/pricing';
@@ -79,7 +73,7 @@ export default function EditorCompose() {
   });
 
   if (!draft) return <Redirect href="/create" />;
-  const tabs = sectionTabs(draft.enabled);
+  const tabs = sectionTabs(draft);
   const items = dockItems(draft);
   const pages = items.flatMap((d) => (d.kind === 'page' ? [d.page] : []));
   const current = items[Math.min(active, items.length - 1)];

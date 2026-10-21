@@ -1,5 +1,5 @@
 import { useEditor } from '../editorStore';
-import { createInvitation } from '../model';
+import { createInvitation } from '../themes';
 
 const start = () =>
   useEditor.getState().start({ ownerId: 'u1', themeId: 'wedding', templateId: 'wedding-1', today: new Date(2026, 9, 15) });
