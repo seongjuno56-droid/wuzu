@@ -16,7 +16,7 @@ const sizeOf = (uri: string) =>
     RNImage.getSize(uri, (width, height) => resolve({ width, height }), () => resolve({ width: 1, height: 1 })),
   );
 
-/** 웹 파일(Blob) → 붙여넣기 결과. GIF 는 객체 URL 그대로, 사진은 압축 */
+/** 웹 파일(Blob) → 붙여넣기 결과. GIF 는 객체 URL 그대로, 사진은 JPEG 로 압축 (스크린샷 PNG 는 웹 저장 용량을 넘긴다) */
 async function fromBlob(file: Blob): Promise<PasteResult> {
   if (isGifFile({ mimeType: file.type })) {
     if (checkGif({ size: file.size })) return { kind: 'tooLarge' };
@@ -26,7 +26,7 @@ async function fromBlob(file: Blob): Promise<PasteResult> {
   }
   const raw = URL.createObjectURL(file);
   const { width, height } = await sizeOf(raw);
-  const uri = await storeImage(raw, { width, height, png: file.type === 'image/png' });
+  const uri = await storeImage(raw, { width, height, png: false });
   // 압축본을 따로 만들었으면 원본 객체 URL 은 정리
   if (uri !== raw) URL.revokeObjectURL(raw);
   return { kind: 'image', uri, aspect: height / width };
@@ -53,10 +53,10 @@ export async function readClipboard(): Promise<PasteResult> {
   }
 
   if (await Clipboard.hasImageAsync()) {
-    const img = await Clipboard.getImageAsync({ format: 'png' });
+    const img = await Clipboard.getImageAsync({ format: 'jpeg' });
     if (img) {
       const { width, height } = img.size;
-      const uri = await storeImage(img.data, { width, height, png: true });
+      const uri = await storeImage(img.data, { width, height, png: false });
       return { kind: 'image', uri, aspect: height / width };
     }
   }
