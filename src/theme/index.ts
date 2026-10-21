@@ -22,7 +22,6 @@ export const colors = {
   infoTint: '#EBF5FF',
   // 캠페인 포인트 (배너 등 극히 일부)
   mint: '#82E6E6',
-  // 로고 전용 — 컨트롤에 칠하지 않는다
   // 시그니처 그린 — 워드마크·주요 버튼·선택 상태·하단 탭 선택에 쓴다 (상태 배지·오류 색과는 구분)
   brand: '#183A2E',
   brandPressed: '#0F271E',

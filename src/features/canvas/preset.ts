@@ -1,5 +1,5 @@
 import type { TemplateStyle } from '../../data/templates';
-import type { BindKey, CanvasDoc, CanvasElement, FontKey } from './types';
+import type { BindKey, CanvasDoc, CanvasElement, FontKey, SlideDesign } from './types';
 
 /** 360px 폭 기준 px → 슬라이드 폭 대비 비율 */
 const u = (px: number) => px / 360;
@@ -55,4 +55,13 @@ export function coverPreset(style: TemplateStyle): CanvasDoc {
     });
   }
   return { background: { kind: 'template' }, elements };
+}
+
+/**
+ * [직접 꾸미기]를 열 때 편집기에 넘길 캔버스. 꾸민 적 없으면 프리셋의 깊은 복사본.
+ * 초안에는 [완료] 때만 넣는다 — 취소하면 아무것도 바뀌지 않는다.
+ */
+export function canvasForEditing(design: SlideDesign | undefined, style: TemplateStyle): CanvasDoc {
+  if (design?.mode === 'canvas') return design.canvas;
+  return JSON.parse(JSON.stringify(coverPreset(style))) as CanvasDoc;
 }

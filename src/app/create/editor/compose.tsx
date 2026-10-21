@@ -11,6 +11,8 @@ import { toast } from '../../../components/Toast';
 import { Txt } from '../../../components/Txt';
 import { styleFor } from '../../../data/templates';
 import { CanvasEditor } from '../../../features/canvas/editor/CanvasEditor';
+import { canvasForEditing } from '../../../features/canvas/preset';
+import type { CanvasDoc } from '../../../features/canvas/types';
 import { useEditor } from '../../../features/invitation/editorStore';
 import { DockBar } from '../../../features/invitation/editor/DockBar';
 import { EditPayModal } from '../../../features/invitation/editor/EditPayModal';
@@ -44,7 +46,6 @@ export default function EditorCompose() {
   const draft = useDraft();
   const dirty = useEditor((s) => s.dirty);
   const markSaved = useEditor((s) => s.markSaved);
-  const startCanvas = useEditor((s) => s.startCanvas);
   const applyCanvas = useEditor((s) => s.applyCanvas);
   const resetDesign = useEditor((s) => s.resetDesign);
   const setViewMode = useEditor((s) => s.setViewMode);
@@ -52,7 +53,8 @@ export default function EditorCompose() {
   const balance = useWallet((s) => s.balance);
   const [active, setActive] = useState(0);
   const [section, setSection] = useState<SectionKey | null>(null);
-  const [canvasPage, setCanvasPage] = useState<PageKey | null>(null);
+  // 꾸미는 중인 페이지와 편집기에 넘긴 캔버스 — 초안에는 [완료] 때만 넣는다(취소하면 그대로)
+  const [canvas, setCanvas] = useState<{ page: PageKey; initial: CanvasDoc } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [settings, setSettings] = useState(false);
   const [saveKind, setSaveKind] = useState<'draft' | 'final' | null>(null);
@@ -144,27 +146,25 @@ export default function EditorCompose() {
 
   const openCanvas = () => {
     if (!currentPage) return;
-    if (design?.mode !== 'canvas') startCanvas(currentPage);
     setSection(null);
-    setCanvasPage(currentPage);
+    setCanvas({ page: currentPage, initial: canvasForEditing(design, styleFor(draft.themeId, draft.templateId)) });
   };
 
   // 캔버스 편집 중에는 화면 전체를 편집기에 넘긴다
-  const canvasDesign = canvasPage ? draft.design[canvasPage] : undefined;
-  if (canvasPage && canvasDesign?.mode === 'canvas') {
+  if (canvas) {
     return (
       <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
         <CanvasEditor
-          initial={canvasDesign.canvas}
+          initial={canvas.initial}
           content={draft.content}
           style={styleFor(draft.themeId, draft.templateId)}
           onDone={(doc) => {
-            applyCanvas(canvasPage, doc);
-            setCanvasPage(null);
+            applyCanvas(canvas.page, doc);
+            setCanvas(null);
           }}
-          onCancel={() => setCanvasPage(null)}
+          onCancel={() => setCanvas(null)}
           onOpenBasic={() => {
-            setCanvasPage(null);
+            setCanvas(null);
             setSection('basic');
           }}
         />
