@@ -18,6 +18,14 @@ describe('사용자 글 보호', () => {
     expect(translate('레터 300개가 충전되었어요.', 'en')).toBe('300 letters added.');
     expect(translate('5MB 이하로 업로드해주세요.', 'en')).toBe('Please upload a file of 5MB or less.');
   });
+  it('짧은 패턴은 숫자만 낄 때 번역 (1장·1,000원)', () => {
+    expect(translate('1장', 'en')).toBe('1');
+    expect(translate('12,000원', 'en')).toBe('₩12,000');
+    expect(translate('총장', 'en')).toBe('총장');
+  });
+  it('한 글자 낱말(탭 이름)은 정확히 같을 때만', () => {
+    expect(translate('홈', 'en')).toBe('Home');
+  });
   it('한 글자 단위·요일은 조각으로 번역하지 않는다', () => {
     expect(translate('일', 'en')).toBe('일');
     expect(translate('월', 'en')).toBe('월');

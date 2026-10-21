@@ -1,5 +1,14 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '{0}/{1}장': '{0}/{1}',
+  '· {0}장 이상': '· at least {0}',
+  '총 {0}레터 차감': 'Total {0} letters deducted',
+  '홈': 'Home',
+  '원': 'Circle',
+  '펜': 'Pen',
+  '딸': 'Daughter',
+  '분': 'min',
+  '시': 'h',
   '결혼식까지 {0}일 남았습니다.': '{0} days until the wedding.',
   '#결혼': '#Wedding',
   '#결혼식 초대장': '#Wedding invitation',

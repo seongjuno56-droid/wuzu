@@ -223,7 +223,7 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
         </View>
       ))}
       <Txt weight="semibold" align="right" color={total ? colors.danger : colors.muted}>
-        총 {total}레터 차감
+        {`총 ${total}레터 차감`}
       </Txt>
       <View style={styles.divider} />
       <Txt variant="subtitle" weight="semibold" align="right" color={after < 0 ? colors.danger : colors.infoInk}>

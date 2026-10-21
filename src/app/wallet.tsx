@@ -171,7 +171,7 @@ export default function MyLetters() {
                     {tab === 'charges' ? `+${e.total}` : `- ${-e.total}`}
                   </Txt>
                   {tab === 'charges' && e.priceWon !== undefined && (
-                    <Txt variant="caption">{e.priceWon.toLocaleString('ko-KR')}원</Txt>
+                    <Txt variant="caption">{`${e.priceWon.toLocaleString('ko-KR')}원`}</Txt>
                   )}
                 </View>
               </View>

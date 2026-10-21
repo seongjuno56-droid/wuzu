@@ -200,7 +200,8 @@ export function PhotoSlots(props: {
         </View>
       )}
       <Hint>
-        {photos.length}/{max}장 {minCount ? `· 최소 ${minCount}장` : ''}
+        {`${photos.length}/${max}장`}
+        {minCount ? ` · ${minCount}장 이상` : ''}
       </Hint>
     </View>
   );

@@ -64,9 +64,11 @@ interface Pattern {
   value: string;
   /** 고정 글자 길이 — 길수록 먼저 맞춘다(더 구체적인 패턴 우선) */
   weight: number;
+  /** 짧은 패턴: 끼어든 값이 숫자·기호여야만 */
+  short: boolean;
 }
 
-/** 패턴으로 인정할 최소 고정 글자 수 — 짧은 패턴('{0}분', '{0}의 {1} {2}')은 아무 문장에나 걸려 사용자 글을 뒤섞는다 */
+/** 이보다 고정 글자가 짧은 패턴('{0}장', '{0}의 {1} {2}')은 아무 문장에나 걸리므로 끼어든 값이 숫자·기호일 때만 쓴다 */
 const MIN_PATTERN_TEXT = 4;
 /** 끼어든 값으로 허용: 숫자·기호(금액·날짜·개수). 그 밖은 사전의 정확한 키(공지 제목 등)일 때만 */
 const SAFE_CAPTURE = /^[\d\s.,:~/()\-+–₩%#]*$/;
@@ -90,8 +92,7 @@ function compilePatterns(dict: Record<string, string>): Pattern[] {
       })
       .join('');
     const weight = key.replace(/\{\d+\}/g, '').trim().length;
-    if (weight < MIN_PATTERN_TEXT) continue;
-    out.push({ re: new RegExp(`^${body}$`), order, value, weight });
+    out.push({ re: new RegExp(`^${body}$`), order, value, weight, short: weight < MIN_PATTERN_TEXT });
   }
   return out.sort((a, b) => b.weight - a.weight);
 }
@@ -107,7 +108,9 @@ function lookup(core: string, locale: Exclude<Locale, 'ko'>, depth: number): str
     const m = p.re.exec(core);
     if (!m) continue;
     // 끼어든 값이 사용자 글(임의 문장)이면 이 패턴이 아니다 — 숫자·기호이거나 사전의 정확한 키여야 한다
-    if (!m.slice(1).every((c) => SAFE_CAPTURE.test(c) || c.trim() in dict)) continue;
+    if (!m.slice(1).every((c) => SAFE_CAPTURE.test(c) || (!p.short && c.trim() in dict))) continue;
+    // 짧은 패턴은 빈 값으로 맞으면 안 된다 ('장' 이 '{0}장' 에 걸리지 않게)
+    if (p.short && m.slice(1).some((c) => !c.trim())) continue;
     return p.value.replace(/\{(\d+)\}/g, (_, n: string) => {
       const captured = m[p.order.indexOf(Number(n)) + 1] ?? '';
       // 사전의 정확한 키(공지 제목 등)였으면 그것도 번역

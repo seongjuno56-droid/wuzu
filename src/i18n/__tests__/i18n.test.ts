@@ -29,8 +29,8 @@ describe('번역', () => {
 describe('번역 누락 검사', () => {
   it('코드 속 한국어 화면 문구는 모두 영어 사전에 있다', () => {
     const keys = Object.keys(extractKoreanKeys());
-    // 한 글자 키(요일·단위)는 조각 번역하면 뒤섞이므로 사전에 두지 않는다 — 요일·날짜는 언어별 서식 함수가 맡는다
-    const missing = keys.filter((k) => k.length > 1 && !(k in EN));
+    // 요일·날짜 단위는 언어별 서식 함수가 맡는다(i18n-ignore) — 그 밖엔 한 글자도 빠짐없이
+    const missing = keys.filter((k) => !(k in EN));
     // 빠진 문구가 있으면 src/i18n/en/*.ts 에 더한다
     expect(missing).toEqual([]);
   });

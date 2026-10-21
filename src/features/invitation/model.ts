@@ -455,7 +455,8 @@ export function monthMatrix(year: number, month: number): (number | null)[][] {
   return rows;
 }
 
-export const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
+// 화면에는 weekdayNames() 로 언어에 맞춰 낸다
+export const WEEKDAYS_KO = /* i18n-ignore */ ['일', '월', '화', '수', '목', '금', '토'];
 export const WEEKDAYS_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const WEEKDAYS_EN_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS_EN = [
@@ -519,7 +520,7 @@ export function formatKoreanTime(time: string): string {
   }
   const period = h < 12 ? '오전' : '오후';
   const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${period} ${hour}시${m ? ` ${m}분` : ''}`;
+  return /* i18n-ignore */ `${period} ${hour}시${m ? ` ${m}분` : ''}`;
 }
 
 export function fileExtension(nameOrUri: string): string {
