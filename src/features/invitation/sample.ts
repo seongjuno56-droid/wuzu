@@ -1,5 +1,22 @@
+import { Asset } from 'expo-asset';
+
 import type { GuestbookEntry } from '../../services/types';
 import { createInvitation, Invitation } from './model';
+
+// 예시 사진: AI 로 만든 실사풍 웨딩 사진 (실존 인물 아님). 화면이 문자열 주소를 받으므로 번들 자산을 주소로 바꾼다
+const uri = (mod: number) => Asset.fromModule(mod).uri;
+const SAMPLE_PHOTOS = {
+  greeting: () => uri(require('../../../assets/sample/greeting.jpg')),
+  gallery: () => [
+    uri(require('../../../assets/sample/gallery-1.jpg')),
+    uri(require('../../../assets/sample/gallery-2.jpg')),
+    uri(require('../../../assets/sample/gallery-3.jpg')),
+    uri(require('../../../assets/sample/gallery-4.jpg')),
+    uri(require('../../../assets/sample/gallery-5.jpg')),
+    uri(require('../../../assets/sample/gallery-6.jpg')),
+  ],
+  ending: () => [uri(require('../../../assets/sample/ending.jpg'))],
+};
 
 /** 템플릿 미리보기에 채워 넣는 예시 초대장 (설계 시안의 문구 기준) */
 export function sampleInvitation(templateId: string, today: Date = new Date()): Invitation {
@@ -25,8 +42,10 @@ export function sampleInvitation(templateId: string, today: Date = new Date()): 
   };
   c.account.groom = { bank: '신한은행', number: '969-06-000000' };
   c.account.bride = { bank: '국민은행', number: '110-041-888888' };
+  c.greeting.photo = SAMPLE_PHOTOS.greeting();
+  c.gallery.photos = SAMPLE_PHOTOS.gallery();
+  c.ending.photos = SAMPLE_PHOTOS.ending();
   inv.completed = { basic: true, ceremony: true, greeting: true, account: true, guestbook: true, ending: true };
-  // 갤러리 사진은 예시가 없으므로 미리보기에서는 빈 칸 안내로 보여준다
   inv.enabled = { account: true, gallery: true, guestbook: true, ending: true, bgm: false };
   return inv;
 }
