@@ -86,7 +86,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   startCanvas: (page) =>
     set((s) => {
       if (!s.draft) return s;
-      const preset = coverPreset(styleFor(s.draft.themeId, s.draft.templateId, s.draft.paletteId));
+      const preset = coverPreset(styleFor(s.draft.themeId, s.draft.templateId, s.draft.paletteId), s.draft.themeId);
       // 프리셋 원본이 바뀌지 않도록 깊은 복사
       const canvas = JSON.parse(JSON.stringify(preset)) as CanvasDoc;
       return { draft: { ...s.draft, design: { ...s.draft.design, [page]: { mode: 'canvas', canvas } } }, dirty: true };

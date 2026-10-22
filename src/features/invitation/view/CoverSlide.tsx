@@ -13,6 +13,6 @@ export function CoverSlide({
 }) {
   const style = styleFor(invitation.themeId, invitation.templateId, invitation.paletteId);
   const design = invitation.design.cover;
-  const doc = design?.mode === 'canvas' ? design.canvas : coverPreset(style);
+  const doc = design?.mode === 'canvas' ? design.canvas : coverPreset(style, invitation.themeId);
   return <CanvasSlide doc={doc} content={invitation.content} templateBg={style.bg} width={width} />;
 }

@@ -12,6 +12,7 @@ import type { InvitationContent } from '../../invitation/model';
 import { useCanvas } from '../canvasStore';
 import {
   addElement,
+  bindsFor,
   strokeFromPoints,
   canAdd,
   duplicateElement,
@@ -44,6 +45,8 @@ export interface CanvasEditorProps {
   initial: CanvasDoc;
   content: InvitationContent;
   style: TemplateStyle;
+  /** 정보 글자 목록이 테마마다 다르다 */
+  themeId: string;
   onDone: (doc: CanvasDoc) => void;
   onCancel: () => void;
   /** 연결 텍스트 수정 시 [기본정보 열기] */
@@ -57,7 +60,7 @@ const PANEL_H = 148;
  * 캔버스 편집기 (인스타 스토리식): 상단 바(취소·되돌리기·다시하기·완료) → 도구 줄 → 슬라이드 → 속성 바.
  * 빈 곳을 누르면 그 자리에 글자, 글자를 누르면 그 자리에서 수정, 요소를 끌면 아래 휴지통이 나타난다.
  */
-export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpenBasic }: CanvasEditorProps) {
+export function CanvasEditor({ initial, content, style, themeId, onDone, onCancel, onOpenBasic }: CanvasEditorProps) {
   const { doc, selectedId, tool, past, future, open, close, select, setTool, commit, undo, redo } = useCanvas();
   // 무대 크기와 편집기 안에서의 세로 위치 (그 자리 입력 막이 편집기 전체를 덮을 때 슬라이드 자리 계산용)
   const [box, setBox] = useState({ width: 0, height: 0, y: 0 });
@@ -427,6 +430,7 @@ export function CanvasEditor({ initial, content, style, onDone, onCancel, onOpen
       />
       <BindPicker
         visible={picker === 'bind'}
+        binds={bindsFor(themeId)}
         onClose={() => setPicker(null)}
         onPick={(bind) => {
           setPicker(null);

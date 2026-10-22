@@ -1,5 +1,5 @@
 import type { TemplateStyle } from '../../data/templates';
-import type { BindKey, CanvasDoc, CanvasElement, FontKey, SlideDesign } from './types';
+import type { BindKey, CanvasDoc, CanvasElement, FontKey, PhotoFrame, SlideDesign } from './types';
 
 /** 360px 폭 기준 px → 슬라이드 폭 대비 비율 */
 const u = (px: number) => px / 360;
@@ -8,10 +8,11 @@ const u = (px: number) => px / 360;
  * 템플릿 표지(형식 모드)의 배치. 형식 표지도 이 프리셋을 그대로 그리므로
  * [직접 꾸미기]로 바꿔도 모습이 달라지지 않는다.
  */
-export function coverPreset(style: TemplateStyle): CanvasDoc {
+export function coverPreset(style: TemplateStyle, themeId = 'wedding'): CanvasDoc {
   const serif = style.font === 'serif';
-  const regular: FontKey = serif ? 'serif' : 'sans';
-  const bold: FontKey = serif ? 'serifBold' : 'sansBold';
+  const round = style.font === 'round';
+  const regular: FontKey = round ? 'round' : serif ? 'serif' : 'sans';
+  const bold: FontKey = round ? 'round' : serif ? 'serifBold' : 'sansBold';
 
   const bound = (id: string, bind: BindKey, y: number, px: number, color: string, isBold = false): CanvasElement => ({
     id, kind: 'bound', bind, x: 0.5, y, w: 0.9, rotation: 0, font: isBold ? bold : regular, color, size: u(px), align: 'center',
@@ -24,6 +25,8 @@ export function coverPreset(style: TemplateStyle): CanvasDoc {
     id, kind: 'stroke', x: 0.5, y, w: u(lengthPx), rotation: 0, aspect: 1 / lengthPx,
     points: [0, 0.5, 1, 0.5], color: style.accent, width: u(1),
   });
+
+  if (themeId === 'dol') return dolCover(style, text, bound);
 
   if (style.cover === 'names') {
     return {
@@ -57,11 +60,49 @@ export function coverPreset(style: TemplateStyle): CanvasDoc {
   return { background: { kind: 'template' }, elements };
 }
 
+type Maker = (id: string, value: string, y: number, px: number, color: string, isBold?: boolean) => CanvasElement;
+type BoundMaker = (id: string, bind: BindKey, y: number, px: number, color: string, isBold?: boolean) => CanvasElement;
+
+/** 돌잔치 표지: Happy First BIRTHDAY + 템플릿 사진 틀 + 이름·일시·장소·보호자 (설계 3장) */
+function dolCover(style: TemplateStyle, text: Maker, bound: BoundMaker): CanvasDoc {
+  const frame: PhotoFrame = style.frame ?? 'arch';
+  const sparkle = style.sparkle ?? 'star';
+  const mark = sparkle === 'heart' ? '♥' : sparkle === 'dot' ? '●' : sparkle === 'star' ? '✦' : '';
+  const elements: CanvasElement[] = [
+    text('preset-happy', 'H a p p y', 0.12, 12, style.accent),
+    text('preset-first', 'First BIRTHDAY', 0.17, 26, style.accent, true),
+    {
+      id: 'preset-photo',
+      kind: 'photo',
+      bind: 'coverPhoto',
+      x: 0.5,
+      y: 0.42,
+      w: 0.64,
+      rotation: 0,
+      // 원형은 정사각, 나머지는 세로로 조금 긴 틀
+      aspect: frame === 'circle' ? 1 : 1.25,
+      frame,
+    },
+    bound('preset-name', 'childName', 0.71, 22, style.fg, true),
+    bound('preset-datetime', 'datetime', 0.77, 13, style.sub),
+    bound('preset-venue', 'venue', 0.81, 13, style.sub),
+    bound('preset-guardians', 'guardians', 0.87, 13, style.fg),
+  ];
+  if (mark) {
+    // 이름 양옆 반짝이
+    elements.push(
+      { ...text('preset-mark-l', mark, 0.71, 14, style.accent), x: 0.2, w: 0.1 } as CanvasElement,
+      { ...text('preset-mark-r', mark, 0.71, 14, style.accent), x: 0.8, w: 0.1 } as CanvasElement,
+    );
+  }
+  return { background: { kind: 'template' }, elements };
+}
+
 /**
  * [직접 꾸미기]를 열 때 편집기에 넘길 캔버스. 꾸민 적 없으면 프리셋의 깊은 복사본.
  * 초안에는 [완료] 때만 넣는다 — 취소하면 아무것도 바뀌지 않는다.
  */
-export function canvasForEditing(design: SlideDesign | undefined, style: TemplateStyle): CanvasDoc {
+export function canvasForEditing(design: SlideDesign | undefined, style: TemplateStyle, themeId = 'wedding'): CanvasDoc {
   if (design?.mode === 'canvas') return design.canvas;
-  return JSON.parse(JSON.stringify(coverPreset(style))) as CanvasDoc;
+  return JSON.parse(JSON.stringify(coverPreset(style, themeId))) as CanvasDoc;
 }

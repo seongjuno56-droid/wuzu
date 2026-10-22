@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { ReactNode, useState } from 'react';
 import { LayoutChangeEvent, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -6,8 +7,8 @@ import Svg, { Path } from 'react-native-svg';
 import { ICON_SOURCES, Icon3DName } from '../../../components/brand/Icon3D';
 import { translate, useLocale } from '../../../i18n';
 import type { InvitationContent } from '../../invitation/model';
-import { CANVAS_FONTS, resolveBind, SLIDE_RATIO } from '../model';
-import type { CanvasElement } from '../types';
+import { CANVAS_FONTS, resolveBind, resolvePhoto, SLIDE_RATIO } from '../model';
+import type { CanvasElement, PhotoFrame } from '../types';
 import { BrokenMedia } from './BrokenMedia';
 import { VideoElement } from './VideoElement';
 
@@ -17,6 +18,21 @@ export function elementHeight(el: CanvasElement, slideW: number): number | null 
 }
 
 const SHAPE_RADIUS = { rect: 0, rounded: 0.08, circle: 0.5 } as const;
+
+/** 돌잔치 표지 사진 틀 모양 */
+function frameRadius(frame: PhotoFrame, w: number, h: number) {
+  switch (frame) {
+    case 'arch':
+      return { borderTopLeftRadius: w / 2, borderTopRightRadius: w / 2, borderBottomLeftRadius: 8, borderBottomRightRadius: 8 };
+    case 'circle':
+    case 'oval':
+      return { borderRadius: Math.max(w, h) / 2 };
+    case 'cloud':
+      return { borderRadius: Math.min(w, h) * 0.3 };
+    default:
+      return { borderRadius: Math.min(w, h) * 0.08 };
+  }
+}
 
 /** 요소 종류별 내용 (위치는 ElementView 가 정한다) */
 export function ElementContent({
@@ -74,6 +90,18 @@ export function ElementContent({
         autoplay
         onError={() => setBroken(true)}
       />
+    );
+  } else if (el.kind === 'photo') {
+    const uri = resolvePhoto(content);
+    const shape = { width, height, overflow: 'hidden' as const, ...frameRadius(el.frame, width, height) };
+    node = uri ? (
+      <Image source={{ uri }} style={shape} contentFit="cover" onError={() => setBroken(true)} />
+    ) : (
+      // 표지 사진을 아직 안 넣었으면 빈 틀
+      <View style={[shape, { backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
+        <Ionicons name="image-outline" size={Math.max(18, width * 0.12)} color="rgba(0,0,0,0.35)" />
+        <Text style={{ fontSize: Math.max(11, width * 0.05), color: 'rgba(0,0,0,0.4)' }}>{translate('표지 사진', locale)}</Text>
+      </View>
     );
   } else if (el.kind === 'video') {
     node = <VideoElement uri={el.uri} width={width} height={height} />;

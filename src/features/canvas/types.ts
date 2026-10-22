@@ -2,11 +2,24 @@
 
 export type ViewMode = 'story' | 'scroll';
 
-export type FontKey = 'sans' | 'sansBold' | 'serif' | 'serifBold';
+export type FontKey = 'sans' | 'sansBold' | 'serif' | 'serifBold' | 'round';
 export type TextAlign = 'left' | 'center' | 'right';
 
 /** 폼 값과 연결된 텍스트 — 글자는 그릴 때 폼 값으로 만든다 */
-export type BindKey = 'groomName' | 'brideName' | 'coupleNames' | 'date' | 'weekday' | 'datetime' | 'time' | 'venue';
+export type BindKey =
+  | 'groomName'
+  | 'brideName'
+  | 'coupleNames'
+  | 'date'
+  | 'weekday'
+  | 'datetime'
+  | 'time'
+  | 'venue'
+  // 돌잔치
+  | 'childName'
+  | 'nickname'
+  | 'guardians'
+  | 'firstBirthday';
 
 export type CanvasBackground =
   | { kind: 'template' }
@@ -40,6 +53,10 @@ export type BoundElement = ElementBase & TextLook & { kind: 'bound'; bind: BindK
 export type ImageElement = ElementBase & { kind: 'image'; uri: string; aspect: number; shape: 'rect' | 'rounded' | 'circle' };
 export type GifElement = ElementBase & { kind: 'gif'; uri: string; aspect: number };
 export type VideoElement = ElementBase & { kind: 'video'; uri: string; aspect: number; durationMs: number };
+/** 돌잔치 표지 사진 틀 */
+export type PhotoFrame = 'arch' | 'circle' | 'oval' | 'rounded' | 'cloud';
+/** 폼의 사진(표지 사진)과 연결된 사진 칸 — 사진은 그릴 때 폼 값으로 */
+export type PhotoElement = ElementBase & { kind: 'photo'; bind: 'coverPhoto'; aspect: number; frame: PhotoFrame };
 export type StickerElement = ElementBase & { kind: 'sticker'; icon: string; aspect: number };
 /** points: 상자 대비 0~1 [x0, y0, x1, y1, …] / width: 선 굵기, 슬라이드 폭 대비 */
 export type StrokeElement = ElementBase & { kind: 'stroke'; points: number[]; color: string; width: number; aspect: number };
@@ -51,7 +68,8 @@ export type CanvasElement =
   | GifElement
   | VideoElement
   | StickerElement
-  | StrokeElement;
+  | StrokeElement
+  | PhotoElement;
 
 export type ElementKind = CanvasElement['kind'];
 

@@ -145,7 +145,7 @@ export default function EditorCompose() {
   const openCanvas = () => {
     if (!currentPage) return;
     setSection(null);
-    setCanvas({ page: currentPage, initial: canvasForEditing(design, styleFor(draft.themeId, draft.templateId, draft.paletteId)) });
+    setCanvas({ page: currentPage, initial: canvasForEditing(design, styleFor(draft.themeId, draft.templateId, draft.paletteId), draft.themeId) });
   };
 
   // 캔버스 편집 중에는 화면 전체를 편집기에 넘긴다
@@ -156,6 +156,7 @@ export default function EditorCompose() {
           initial={canvas.initial}
           content={draft.content}
           style={styleFor(draft.themeId, draft.templateId, draft.paletteId)}
+          themeId={draft.themeId}
           onDone={(doc) => {
             applyCanvas(canvas.page, doc);
             setCanvas(null);

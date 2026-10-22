@@ -3,6 +3,7 @@
  * (설계: docs/superpowers/specs/2026-10-16-canvas-cover-and-view-modes-design.md)
  */
 import { fonts } from '../../theme';
+import { nicknameOf, withSubjectSuffix } from '../invitation/dol';
 import { formatDateTimeLine, formatKoreanTime, InvitationContent, isDol, parseDate, WEEKDAYS_EN } from '../invitation/model';
 import type { BindKey, CanvasDoc, CanvasElement, ElementKind, FontKey, StrokeElement, TextElement } from './types';
 
@@ -37,6 +38,7 @@ export const CANVAS_FONTS: Record<FontKey, { label: string; family: string }> = 
   sansBold: { label: '프리텐다드 굵게', family: fonts.semibold },
   serif: { label: '함렛', family: fonts.serif },
   serifBold: { label: '함렛 굵게', family: fonts.serifBold },
+  round: { label: '고운돋움', family: fonts.round },
 };
 
 export const BIND_LABEL: Record<BindKey, string> = {
@@ -48,7 +50,16 @@ export const BIND_LABEL: Record<BindKey, string> = {
   datetime: '예식 일시',
   time: '예식 시간',
   venue: '예식장명',
+  childName: '아이 이름',
+  nickname: '부르는 이름',
+  guardians: '보호자',
+  firstBirthday: '○○이의 첫 생일',
 };
+
+const WEDDING_BINDS: BindKey[] = ['groomName', 'brideName', 'coupleNames', 'date', 'weekday', 'datetime', 'time', 'venue'];
+const DOL_BINDS: BindKey[] = ['childName', 'nickname', 'guardians', 'firstBirthday', 'date', 'weekday', 'datetime', 'time', 'venue'];
+/** [정보 글자] 목록 — 테마별 */
+export const bindsFor = (themeId: string): BindKey[] => (themeId === 'dol' ? DOL_BINDS : WEDDING_BINDS);
 
 export type LimitError = 'elements' | 'gifs' | 'videos';
 export const LIMIT_MESSAGE: Record<LimitError, string> = {
@@ -62,13 +73,49 @@ export const newElementId = () => `el-${Date.now().toString(36)}-${Math.random()
 // ── 연결 텍스트 ───────────────────────────────────────
 
 export function resolveBind(bind: BindKey, c: InvitationContent): { text: string; placeholder: boolean } {
-  // 돌잔치 정보 글자는 Task 6 에서 — 지금은 결혼식 이름만
-  const groom = isDol(c) ? '' : c.basic.groom.name.trim();
-  const bride = isDol(c) ? '' : c.basic.bride.name.trim();
+  // 날짜·시간·장소는 두 테마 공통 (ceremony 필드)
   const d = parseDate(c.ceremony.date);
-  const y = d.getFullYear();
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
+  switch (bind) {
+    case 'date':
+      return { text: `${d.getFullYear()} / ${d.getMonth() + 1} / ${d.getDate()}`, placeholder: false };
+    case 'weekday':
+      return { text: WEEKDAYS_EN[d.getDay()], placeholder: false };
+    case 'datetime':
+      return { text: formatDateTimeLine(d, c.ceremony.time), placeholder: false };
+    case 'time':
+      return { text: formatKoreanTime(c.ceremony.time), placeholder: false };
+    case 'venue': {
+      const venue = c.ceremony.venue.trim();
+      return venue ? { text: venue, placeholder: false } : { text: isDol(c) ? '장소' : '예식장', placeholder: true };
+    }
+  }
+  if (isDol(c)) {
+    const b = c.basic;
+    const name = b.childName.trim();
+    switch (bind) {
+      case 'childName':
+        return name ? { text: name, placeholder: false } : { text: '아이 이름', placeholder: true };
+      case 'nickname':
+        return name || b.nickname.trim() ? { text: nicknameOf(b), placeholder: false } : { text: '아이', placeholder: true };
+      case 'guardians': {
+        const line = b.guardians
+          .filter((g) => g.name.trim())
+          .map((g) => `${g.relation.trim()} ${g.name.trim()}`.trim())
+          .join(' · ');
+        return line ? { text: line, placeholder: false } : { text: '보호자', placeholder: true };
+      }
+      case 'firstBirthday': {
+        const nick = nicknameOf(b);
+        return nick
+          ? { text: /* i18n-ignore */ `${withSubjectSuffix(nick)} 첫 생일`, placeholder: false }
+          : { text: '우리 아이의 첫 생일', placeholder: true };
+      }
+      default:
+        return { text: '', placeholder: true };
+    }
+  }
+  const groom = c.basic.groom.name.trim();
+  const bride = c.basic.bride.name.trim();
   switch (bind) {
     case 'groomName':
       return groom ? { text: groom, placeholder: false } : { text: '신랑', placeholder: true };
@@ -76,23 +123,13 @@ export function resolveBind(bind: BindKey, c: InvitationContent): { text: string
       return bride ? { text: bride, placeholder: false } : { text: '신부', placeholder: true };
     case 'coupleNames':
       return { text: `${groom || '신랑'} ♥ ${bride || '신부'}`, placeholder: !groom || !bride };
-    case 'date':
-      return { text: `${y} / ${m} / ${day}`, placeholder: false };
-    case 'weekday':
-      return { text: WEEKDAYS_EN[d.getDay()], placeholder: false };
-    case 'datetime':
-      return {
-        text: formatDateTimeLine(d, c.ceremony.time),
-        placeholder: false,
-      };
-    case 'time':
-      return { text: formatKoreanTime(c.ceremony.time), placeholder: false };
-    case 'venue': {
-      const venue = c.ceremony.venue.trim();
-      return venue ? { text: venue, placeholder: false } : { text: '예식장', placeholder: true };
-    }
+    default:
+      return { text: '', placeholder: true };
   }
 }
+
+/** 돌잔치 표지 사진 (없으면 null — 빈 틀로 그린다) */
+export const resolvePhoto = (c: InvitationContent): string | null => (isDol(c) ? c.basic.photo : null);
 
 // ── 제한 ──────────────────────────────────────────────
 

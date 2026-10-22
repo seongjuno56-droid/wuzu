@@ -45,17 +45,28 @@ export function StickerPicker({
   );
 }
 
-export function BindPicker({ visible, onPick, onClose }: { visible: boolean; onPick: (b: BindKey) => void; onClose: () => void }) {
+export function BindPicker({
+  visible,
+  binds,
+  onPick,
+  onClose,
+}: {
+  visible: boolean;
+  /** 테마별 정보 글자 목록 (bindsFor) */
+  binds: BindKey[];
+  onPick: (b: BindKey) => void;
+  onClose: () => void;
+}) {
   return (
     <AppModal
       visible={visible}
       title="정보 글자"
-      message="기본정보·예식정보에 쓴 값이 들어가요."
+      message="기본정보·일시에 쓴 값이 들어가요."
       onDismiss={onClose}
       actions={[{ label: '닫기', variant: 'outline', onPress: onClose }]}
     >
       <View style={styles.list}>
-        {(Object.keys(BIND_LABEL) as BindKey[]).map((b) => (
+        {binds.map((b) => (
           <Pressable key={b} onPress={() => onPick(b)} style={styles.row} accessibilityRole="button">
             <Txt>{BIND_LABEL[b]}</Txt>
           </Pressable>

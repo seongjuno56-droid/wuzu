@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Txt } from '../../../components/Txt';
 import { colors as ui, radius, spacing } from '../../../theme';
 import { CANVAS_FONTS } from '../model';
-import type { CanvasElement, FontKey, TextAlign } from '../types';
+import type { CanvasElement, FontKey, PhotoFrame, TextAlign } from '../types';
 
 export type PropertyCommand = 'edit' | 'replace' | 'front' | 'back' | 'duplicate' | 'delete';
 
@@ -12,6 +12,15 @@ const ALIGNS: { value: TextAlign; label: string; icon: keyof typeof Ionicons.gly
   { value: 'left', label: '왼쪽', icon: 'chevron-back-outline' },
   { value: 'center', label: '가운데', icon: 'remove-outline' },
   { value: 'right', label: '오른쪽', icon: 'chevron-forward-outline' },
+];
+
+/** 돌잔치 표지 사진 틀 */
+const FRAMES: { value: PhotoFrame; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 'arch', label: '아치', icon: 'tablet-portrait-outline' },
+  { value: 'circle', label: '원형', icon: 'ellipse-outline' },
+  { value: 'oval', label: '타원', icon: 'egg-outline' },
+  { value: 'rounded', label: '둥근 사각', icon: 'square-outline' },
+  { value: 'cloud', label: '구름', icon: 'cloud-outline' },
 ];
 
 /** 선택한 요소의 속성 바 — 글자: 서체·색·크기·정렬, 사진: 모양·교체, 공통: 순서·복제·삭제 */
@@ -76,6 +85,10 @@ export function PropertyBar({
         {el.kind === 'image' && icon('tablet-portrait-outline', '둥근', () => onChange({ shape: 'rounded' }))}
         {el.kind === 'image' && icon('ellipse-outline', '원', () => onChange({ shape: 'circle' }))}
         {el.kind === 'image' && icon('swap-horizontal-outline', '교체', () => onCommand('replace'))}
+        {el.kind === 'photo' &&
+          FRAMES.map((f) =>
+            icon(f.icon, f.label, () => onChange({ frame: f.value, aspect: f.value === 'circle' ? 1 : 1.25 } as Partial<CanvasElement>)),
+          )}
         {icon('arrow-up-outline', '앞으로', () => onCommand('front'))}
         {icon('arrow-down-outline', '뒤로', () => onCommand('back'))}
         {icon('copy-outline', '복제', () => onCommand('duplicate'))}
