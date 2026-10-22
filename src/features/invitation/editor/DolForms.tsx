@@ -9,7 +9,7 @@ import { colors, radius, spacing } from '../../../theme';
 import { DOL_LIMITS } from '../dol';
 import { useEditor } from '../editorStore';
 import { pickImages } from '../media';
-import { DolContent, LIMITS, TimelineItem } from '../model';
+import { DateRange, DolContent, LIMITS, TimelineItem } from '../model';
 import { AccountFields, FormLabel, Hint } from './fields';
 import { ListEditor } from './ListEditor';
 import { addItem, newItemId, updateItem } from './listOps';
@@ -66,11 +66,13 @@ function DateField({
   value,
   onChange,
   required,
+  range,
 }: {
   label: string;
   value: string;
   onChange: (date: string) => void;
   required?: boolean;
+  range: DateRange;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -89,6 +91,7 @@ function DateField({
         visible={open}
         // 처음 고를 때는 1년 전쯤(돌 무렵 아기) 달력에서 시작
         value={value || '2025-06-01'}
+        range={range}
         onClose={() => setOpen(false)}
         onSelect={(date) => {
           onChange(date);
@@ -123,6 +126,7 @@ export function DolBasicForm() {
       />
       <DateField
         label="태어난 날"
+        range="past"
         required
         value={b.birthDate}
         onChange={(birthDate) => patch('basic', { birthDate })}
@@ -255,7 +259,7 @@ export function DolTimelineForm() {
         onChange={set}
         renderItem={(it) => (
           <View style={styles.form}>
-            <DateField label="날짜" value={it.date} onChange={(date) => edit(it.id, { date })} />
+            <DateField label="날짜" range="any" value={it.date} onChange={(date) => edit(it.id, { date })} />
             <TextField
               label="제목"
               required

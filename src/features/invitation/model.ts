@@ -502,6 +502,12 @@ export function ddayParts(target: Date, now: Date = new Date()): DdayParts {
   };
 }
 
+/** 달력에서 고를 수 있는 범위: 행사일은 오늘부터(future), 태어난 날은 오늘까지(past), 성장 이야기는 아무 날(any) */
+export type DateRange = 'future' | 'past' | 'any';
+
+export const isDateBlocked = (date: string, today: string, range: DateRange = 'future') =>
+  (range === 'future' && date < today) || (range === 'past' && date > today);
+
 /** 달력 행 (일요일 시작). 빈 칸은 null */
 export function monthMatrix(year: number, month: number): (number | null)[][] {
   const first = new Date(year, month - 1, 1).getDay();

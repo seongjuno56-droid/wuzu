@@ -5,13 +5,20 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppModal } from '../../../components/AppModal';
 import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
-import { formatKoreanTime, formatYearMonth, monthMatrix, parseDate, toDateString, weekdayNames } from '../model';
+import { formatKoreanTime, formatYearMonth, monthMatrix, parseDate, toDateString, weekdayNames, DateRange, isDateBlocked } from '../model';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** 달력에서 하루 고르기 (오늘 이전 날짜는 고를 수 없다) */
-export function DatePickerModal(props: { visible: boolean; value: string; onClose: () => void; onSelect: (date: string) => void }) {
-  const { visible, value, onClose, onSelect } = props;
+export function DatePickerModal(props: {
+  visible: boolean;
+  value: string;
+  onClose: () => void;
+  onSelect: (date: string) => void;
+  /** 고를 수 있는 범위 (기본: 오늘부터) */
+  range?: DateRange;
+}) {
+  const { visible, value, onClose, onSelect, range = 'future' } = props;
   const [picked, setPicked] = useState(value);
   const [month, setMonth] = useState(() => {
     const d = parseDate(value);
@@ -63,7 +70,8 @@ export function DatePickerModal(props: { visible: boolean; value: string; onClos
           {row.map((d, i) => {
             if (!d) return <View key={i} style={styles.cell} />;
             const date = `${month.y}-${pad(month.m)}-${pad(d)}`;
-            const past = date < today;
+            // 범위 밖 날짜는 흐리게, 누를 수 없게
+            const past = isDateBlocked(date, today, range);
             const on = date === picked;
             return (
               <Pressable
