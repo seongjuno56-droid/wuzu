@@ -110,8 +110,8 @@ export const part1: Record<string, string> = {
   '#장군감': '#FutureStar',
   '#첫돌': '#FirstBirthday',
   '#표지': '#Cover',
-  "'{0}' 템플릿은 준비 중이에요.\n지금은 결혼식 청첩장을 먼저 만들 수 있어요.":
-    "The '{0}' template is coming soon.\nFor now, you can create a wedding invitation.",
+  "'{0}' 템플릿은 준비 중이에요.\n지금은 결혼식 청첩장과 돌잔치 초대장을 만들 수 있어요.":
+    "The '{0}' template is coming soon.\nFor now, you can create wedding and first birthday invitations.",
   '(New) 방명록': '(New) Guestbook',
   '+ 기간 연장 {0}일': ' + {0}-day extension',
   '+{0}일': '+{0} days',

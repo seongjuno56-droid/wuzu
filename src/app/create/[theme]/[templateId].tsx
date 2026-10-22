@@ -17,7 +17,7 @@ import { SAMPLE_GUESTBOOK, sampleInvitation } from '../../../features/invitation
 import { InvitationView } from '../../../features/invitation/view/InvitationView';
 import type { GuestbookEntry } from '../../../services/types';
 
-/** 템플릿 미리보기 — 결혼식은 실제 초대장과 같은 화면(예시 데이터), 그 외 테마는 표지 샘플 */
+/** 템플릿 미리보기 — 결혼식·돌잔치는 실제 초대장과 같은 화면(예시 데이터), 그 외 테마는 표지 샘플 */
 export default function TemplateDetail() {
   const { theme: themeId, templateId } = useLocalSearchParams<{ theme: string; templateId: string }>();
   const theme = getTheme(themeId);
@@ -25,14 +25,15 @@ export default function TemplateDetail() {
   const { start, canEdit, modal } = useRequireLoginToCreate();
   const [mode, setMode] = useState<ViewMode>('story');
   const [picking, setPicking] = useState(false);
-  const sample = useMemo(() => sampleInvitation(templateId), [templateId]);
+  const sample = useMemo(() => sampleInvitation(themeId, templateId), [themeId, templateId]);
 
   // 미리보기 방명록은 화면 안에서만 동작 (저장하지 않음)
   const [entries, setEntries] = useState<(GuestbookEntry & { password?: string })[]>(SAMPLE_GUESTBOOK);
   const [guestbook, setGuestbook] = useState<GuestbookView>(null);
 
   if (!theme || !template) return <Redirect href="/create" />;
-  const wedding = themeId === 'wedding';
+  // 실제 초대장 화면으로 미리 보는 테마 (그 밖은 표지 샘플)
+  const wedding = themeId === 'wedding' || themeId === 'dol';
 
   return (
     <Screen

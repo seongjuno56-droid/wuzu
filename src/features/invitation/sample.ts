@@ -1,7 +1,8 @@
 import { Asset } from 'expo-asset';
 
 import type { GuestbookEntry } from '../../services/types';
-import { asWedding, Invitation } from './model';
+import { addDays, seedTimeline } from './dol';
+import { asWedding, DolContent, Invitation, toDateString } from './model';
 import { createInvitation } from './themes';
 
 // 예시 사진: AI 로 만든 실사풍 웨딩 사진 (실존 인물 아님). 화면이 문자열 주소를 받으므로 번들 자산을 주소로 바꾼다
@@ -19,8 +20,13 @@ const SAMPLE_PHOTOS = {
   ending: () => [uri(require('../../../assets/sample/ending.jpg'))],
 };
 
-/** 템플릿 미리보기에 채워 넣는 예시 초대장 (설계 시안의 문구 기준) */
-export function sampleInvitation(templateId: string, today: Date = new Date()): Invitation {
+/** 템플릿 미리보기에 채워 넣는 예시 초대장 — 테마별 */
+export function sampleInvitation(themeId: string, templateId: string, today: Date = new Date()): Invitation {
+  return themeId === 'dol' ? dolSample(templateId, today) : weddingSample(templateId, today);
+}
+
+/** 결혼식 예시 (설계 시안의 문구 기준) */
+function weddingSample(templateId: string, today: Date): Invitation {
   const inv = createInvitation({ id: 'sample', ownerId: '', themeId: 'wedding', templateId, today });
   const c = asWedding(inv.content);
   c.basic = {
@@ -48,6 +54,76 @@ export function sampleInvitation(templateId: string, today: Date = new Date()): 
   c.ending.photos = SAMPLE_PHOTOS.ending();
   inv.completed = { basic: true, ceremony: true, greeting: true, account: true, guestbook: true, ending: true };
   inv.enabled = { account: true, gallery: true, guestbook: true, ending: true, bgm: false };
+  return inv;
+}
+
+// 돌잔치 예시 사진: AI 로 만든 실사풍 사진 (실존 인물 아님)
+const DOL_PHOTOS = {
+  cover: () => uri(require('../../../assets/sample/dol/cover.jpg')),
+  profile: () => uri(require('../../../assets/sample/dol/profile.jpg')),
+  born: () => uri(require('../../../assets/sample/dol/born.jpg')),
+  day100: () => uri(require('../../../assets/sample/dol/day100.jpg')),
+  walk: () => uri(require('../../../assets/sample/dol/walk.jpg')),
+  first: () => uri(require('../../../assets/sample/dol/first.jpg')),
+  gallery: () => [
+    uri(require('../../../assets/sample/dol/gallery-1.jpg')),
+    uri(require('../../../assets/sample/dol/gallery-2.jpg')),
+    uri(require('../../../assets/sample/dol/gallery-3.jpg')),
+    uri(require('../../../assets/sample/dol/gallery-4.jpg')),
+  ],
+};
+
+/** 돌잔치 예시 — 비비드바우스 샘플 구성을 참고한 시안이의 첫 생일 (이름·문구는 예시) */
+function dolSample(templateId: string, today: Date): Invitation {
+  const inv = createInvitation({ id: 'sample', ownerId: '', themeId: 'dol', templateId, today });
+  const c = inv.content as DolContent;
+  // 행사일은 일주일 뒤, 태어난 날은 그 1년 전
+  const event = toDateString(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7));
+  const birth = addDays(event, -365);
+  const [dad, mom] = c.basic.guardians;
+  c.basic = {
+    ...c.basic,
+    childName: /* i18n-ignore */ '이시안',
+    birthDate: birth,
+    photo: DOL_PHOTOS.cover(),
+    guardians: [
+      { ...dad, name: /* i18n-ignore */ '이윤종' },
+      { ...mom, name: /* i18n-ignore */ '이다영' },
+    ],
+  };
+  c.ceremony = {
+    ...c.ceremony,
+    date: event,
+    time: '12:00',
+    venue: /* i18n-ignore */ '비비드 파티룸',
+    hall: /* i18n-ignore */ '2층 루프홀',
+    address: /* i18n-ignore */ '경기 성남시 분당구 정자일로 95',
+    zonecode: '13561',
+  };
+  c.profile = {
+    photo: DOL_PHOTOS.profile(),
+    intro: /* i18n-ignore */ '울다 웃다 자다\n그렇게 1년,\n이제 돌이에요.',
+    hashtags: [/* i18n-ignore */ '웃음요정', /* i18n-ignore */ '잠꾸러기'],
+  };
+  const photos = [DOL_PHOTOS.born(), DOL_PHOTOS.day100(), DOL_PHOTOS.walk(), DOL_PHOTOS.first()];
+  c.timeline = {
+    items: seedTimeline([], birth, event).map((it, i) => ({
+      ...it,
+      photo: photos[i],
+      // 첫 걸음마는 날짜를 비워 두는 항목이라 예시에서는 채운다
+      date: it.date || addDays(birth, 300),
+    })),
+  };
+  c.account = {
+    ...c.account,
+    accounts: {
+      [dad.id]: { bank: /* i18n-ignore */ '신한은행', number: '110-123-456789' },
+      [mom.id]: { bank: /* i18n-ignore */ '국민은행', number: '123-45-678901' },
+    },
+  };
+  c.gallery = { ...c.gallery, photos: [...DOL_PHOTOS.gallery(), DOL_PHOTOS.profile(), DOL_PHOTOS.first()] };
+  c.ending = { ...c.ending, photos: [DOL_PHOTOS.walk()] };
+  inv.completed = { basic: true, ceremony: true, greeting: true, profile: true, timeline: true, account: true, guestbook: true, ending: true, gallery: true };
   return inv;
 }
 

@@ -6,12 +6,12 @@ import { useSession } from '../../store/session';
 import type { ViewMode } from '../canvas/types';
 import { useEditor } from '../invitation/editorStore';
 
-/** 지금은 결혼식 초대장만 제작할 수 있다 */
-const EDITABLE_THEMES = ['wedding'];
+/** 지금 제작할 수 있는 테마 (모임·기업 행사는 준비 중) */
+const EDITABLE_THEMES = ['wedding', 'dol'];
 
 /**
  * 템플릿 선택/제작하기:
- * 비로그인 → 로그인, 결혼식 → 편집 시작(Step3), 그 외 테마 → 준비 중 안내
+ * 비로그인 → 로그인, 결혼식·돌잔치 → 편집 시작(Step3), 그 외 테마 → 준비 중 안내
  */
 export function useRequireLoginToCreate() {
   const user = useSession((s) => s.user);
@@ -34,7 +34,7 @@ export function useRequireLoginToCreate() {
     <AppModal
       visible={!!notice}
       title="곧 만들 수 있어요"
-      message={`'${notice}' 템플릿은 준비 중이에요.\n지금은 결혼식 청첩장을 먼저 만들 수 있어요.`}
+      message={`'${notice}' 템플릿은 준비 중이에요.\n지금은 결혼식 청첩장과 돌잔치 초대장을 만들 수 있어요.`}
       onDismiss={() => setNotice(null)}
       actions={[{ label: '확인', onPress: () => setNotice(null) }]}
     />
