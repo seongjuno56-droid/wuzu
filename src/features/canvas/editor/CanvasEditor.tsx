@@ -431,6 +431,7 @@ export function CanvasEditor({ initial, content, style, themeId, onDone, onCance
       <BindPicker
         visible={picker === 'bind'}
         binds={bindsFor(themeId)}
+        themeId={themeId}
         onClose={() => setPicker(null)}
         onPick={(bind) => {
           setPicker(null);

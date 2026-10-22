@@ -1,5 +1,7 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '일시': 'Date & time',
+  '장소명': 'Place name',
   '결혼식 초대장': 'Wedding invitation',
   '#돌잔치 초대장': '#First birthday invitation',
   '- 돌잔치 초대장 -': '- First birthday invitation -',

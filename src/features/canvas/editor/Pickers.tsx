@@ -5,7 +5,7 @@ import { AppModal } from '../../../components/AppModal';
 import { ICON_SOURCES, Icon3DName } from '../../../components/brand/Icon3D';
 import { Txt } from '../../../components/Txt';
 import { colors as ui, radius, spacing } from '../../../theme';
-import { BIND_LABEL } from '../model';
+import { bindLabel } from '../model';
 import type { BindKey, CanvasBackground } from '../types';
 
 /** 장식 글자 — 텍스트 요소로 들어간다 */
@@ -48,12 +48,14 @@ export function StickerPicker({
 export function BindPicker({
   visible,
   binds,
+  themeId,
   onPick,
   onClose,
 }: {
   visible: boolean;
   /** 테마별 정보 글자 목록 (bindsFor) */
   binds: BindKey[];
+  themeId: string;
   onPick: (b: BindKey) => void;
   onClose: () => void;
 }) {
@@ -68,7 +70,7 @@ export function BindPicker({
       <View style={styles.list}>
         {binds.map((b) => (
           <Pressable key={b} onPress={() => onPick(b)} style={styles.row} accessibilityRole="button">
-            <Txt>{BIND_LABEL[b]}</Txt>
+            <Txt>{bindLabel(b, themeId)}</Txt>
           </Pressable>
         ))}
       </View>

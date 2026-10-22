@@ -1,7 +1,7 @@
 import { getTemplates } from '../../../data/templates';
 import { defaultDolContent } from '../../invitation/dol';
 import type { DolContent } from '../../invitation/model';
-import { bindsFor, resolveBind, resolvePhoto } from '../model';
+import { bindLabel, bindsFor, resolveBind, resolvePhoto } from '../model';
 import { coverPreset } from '../preset';
 
 const base = defaultDolContent(new Date(2026, 9, 22));
@@ -46,5 +46,11 @@ describe('돌잔치 표지', () => {
     expect(bindsFor('dol')).toContain('childName');
     expect(bindsFor('dol')).not.toContain('coupleNames');
     expect(bindsFor('wedding')).toContain('coupleNames');
+  });
+  it('정보 글자 이름: 돌잔치는 예식 말을 쓰지 않는다', () => {
+    expect(bindLabel('venue', 'dol')).toBe('장소명');
+    expect(bindLabel('datetime', 'dol')).toBe('일시');
+    expect(bindLabel('venue', 'wedding')).toBe('예식장명');
+    expect(bindLabel('childName', 'dol')).toBe('아이 이름');
   });
 });

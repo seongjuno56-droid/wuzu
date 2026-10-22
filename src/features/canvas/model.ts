@@ -58,6 +58,11 @@ export const BIND_LABEL: Record<BindKey, string> = {
 
 const WEDDING_BINDS: BindKey[] = ['groomName', 'brideName', 'coupleNames', 'date', 'weekday', 'datetime', 'time', 'venue'];
 const DOL_BINDS: BindKey[] = ['childName', 'nickname', 'guardians', 'firstBirthday', 'date', 'weekday', 'datetime', 'time', 'venue'];
+/** 돌잔치는 날짜·장소 이름에 '예식'을 쓰지 않는다 */
+const DOL_BIND_LABEL: Partial<Record<BindKey, string>> = { date: '날짜', datetime: '일시', time: '시간', venue: '장소명' };
+export const bindLabel = (bind: BindKey, themeId: string) =>
+  (themeId === 'dol' ? DOL_BIND_LABEL[bind] : undefined) ?? BIND_LABEL[bind];
+
 /** [정보 글자] 목록 — 테마별 */
 export const bindsFor = (themeId: string): BindKey[] => (themeId === 'dol' ? DOL_BINDS : WEDDING_BINDS);
 
