@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Txt } from '../../components/Txt';
 import { formatDateTime } from '../../lib/format';
 import { colors, radius, spacing } from '../../theme';
+import { invitationKind } from '../../data/themes';
 import type { Invitation } from '../invitation/model';
 import { periodLabel, screenStatus, ScreenStatus, STATUS_LABEL } from '../invitation/status';
 import { ACTIVATION } from '../wallet/pricing';
@@ -98,7 +99,7 @@ export function InviteCard({
             </Txt>
           </View>
           <Txt variant="caption" weight="semibold" color={colors.label}>
-            #결혼식 초대장
+            {`#${invitationKind(invitation.themeId)}`}
           </Txt>
           <Txt variant="title" numberOfLines={2}>
             {invitation.name || '이름 없는 초대장'}

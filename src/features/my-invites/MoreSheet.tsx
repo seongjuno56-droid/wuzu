@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Txt } from '../../components/Txt';
 import { appColumn, colors, radius, spacing } from '../../theme';
+import { invitationKind } from '../../data/themes';
 import type { Invitation } from '../invitation/model';
 import { screenStatus } from '../invitation/status';
 
@@ -45,7 +46,7 @@ export function MoreSheet({
               </Pressable>
             </View>
             <Txt variant="caption" color={colors.muted} align="center">
-              - 결혼식 초대장 -
+              {`- ${invitationKind(invitation.themeId)} -`}
             </Txt>
             <Txt variant="title" align="center">
               {invitation.name}

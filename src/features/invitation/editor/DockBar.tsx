@@ -5,7 +5,8 @@ import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handl
 
 import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
-import { Invitation, PAGE_LABEL, ReorderablePage, SECTION_LABEL } from '../model';
+import { Invitation, ReorderablePage } from '../model';
+import { themeDef } from '../themes';
 import { DockItem, itemDone, movablePages, moveInDock, slotsMoved } from './pages';
 
 const THUMB_W = 44;
@@ -70,6 +71,8 @@ export function DockBar({
 }) {
   const [drag, setDrag] = useState<Drag | null>(null);
   const movable = movablePages(invitation);
+  // 라벨은 테마마다 다르다 (돌잔치: 일시·장소, 마음 전하는 곳)
+  const def = themeDef(invitation.themeId);
 
   // 끄는 장은 범위 안에서 손을 따라가고, 지나친 칸의 장들은 한 칸씩 비켜 준다
   const from = drag ? movable.indexOf(drag.page) : -1;
@@ -102,7 +105,7 @@ export function DockBar({
         {items.map((item, i) => {
           const on = i === active;
           const done = itemDone(invitation, item);
-          const label = item.kind === 'page' ? PAGE_LABEL[item.page] : SECTION_LABEL[item.section];
+          const label = item.kind === 'page' ? def.pageLabel(item.page) : def.sectionLabel(item.section);
           const page = item.kind === 'page' && (movable as string[]).includes(item.page) ? (item.page as ReorderablePage) : null;
           const lifted = !!page && drag?.page === page;
           const cell = (

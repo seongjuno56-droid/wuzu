@@ -1,5 +1,12 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '결혼식 초대장': 'Wedding invitation',
+  '#돌잔치 초대장': '#First birthday invitation',
+  '- 돌잔치 초대장 -': '- First birthday invitation -',
+  '#모임 초대장': '#Gathering invitation',
+  '- 모임 초대장 -': '- Gathering invitation -',
+  '#기업 행사 초대장': '#Corporate event invitation',
+  '- 기업 행사 초대장 -': '- Corporate event invitation -',
   '오늘의 주인공': 'Today\'s star',
   '오늘이 첫 생일이에요': 'Today is the first birthday',
   '오시는 길': 'Directions',

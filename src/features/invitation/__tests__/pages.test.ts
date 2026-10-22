@@ -55,3 +55,23 @@ describe('독바에서 끌어 순서 바꾸기', () => {
     expect(slotsMoved(-130, 64)).toBe(-2);
   });
 });
+
+describe('돌잔치 독바', () => {
+  it('표지·인사말 다음 아이 프로필·성장 이야기, 정보 칩은 기본정보', () => {
+    const inv = createInvitation({ id: 'i', ownerId: 'u', themeId: 'dol', templateId: 'dol-1' });
+    expect(dockItems(inv).map((d) => (d.kind === 'page' ? d.page : `info:${d.section}`))).toEqual([
+      'cover',
+      'greeting',
+      'profile',
+      'timeline',
+      'ceremony',
+      'gallery',
+      'guestbook',
+      'account',
+      'ending',
+      'info:basic',
+    ]);
+    expect(movablePages(inv)).toEqual(['profile', 'timeline', 'ceremony', 'gallery', 'guestbook', 'account']);
+    expect(PAGE_SECTION.profile).toBe('profile');
+  });
+});

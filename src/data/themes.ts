@@ -75,6 +75,12 @@ export const THEMES: InviteTheme[] = [
   },
 ];
 
+/** 나의 초대장 카드의 종류 이름 — 결혼식은 지금처럼 '결혼식 초대장' */
+export function invitationKind(themeId: string): string {
+  if (themeId === 'wedding') return '결혼식 초대장';
+  return getTheme(themeId)?.title ?? '초대장';
+}
+
 export function getTheme(id: string): InviteTheme | undefined {
   return THEMES.find((t) => t.id === id);
 }
