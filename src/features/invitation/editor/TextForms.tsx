@@ -36,6 +36,7 @@ export function BasicForm() {
 /** 인사말: 내용 1~300, 사진 1장, 신랑·신부 이름 삽입 */
 export function GreetingForm() {
   const g = useContent().greeting;
+  const dol = useEditor((s) => s.draft!.themeId === 'dol');
   const patch = usePatch();
   const pick = async () => {
     const [photo] = await pickImages(1);
@@ -71,8 +72,14 @@ export function GreetingForm() {
       </View>
       <View style={styles.group}>
         <FormLabel>추가 옵션 선택</FormLabel>
-        <Check label="신랑, 신부 이름 삽입" value={g.appendNames} onChange={(appendNames) => patch('greeting', { appendNames })} />
-        <Hint>인사말 마지막에 "길동, 춘향 드림."처럼 이름이 들어가요.</Hint>
+        <Check
+          label={dol ? '보호자 이름 삽입' : '신랑, 신부 이름 삽입'}
+          value={g.appendNames}
+          onChange={(appendNames) => patch('greeting', { appendNames })}
+        />
+        <Hint>
+          {dol ? '인사말 마지막에 보호자 이름이 들어가요.' : '인사말 마지막에 "길동, 춘향 드림."처럼 이름이 들어가요.'}
+        </Hint>
       </View>
     </View>
   );

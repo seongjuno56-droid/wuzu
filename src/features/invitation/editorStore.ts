@@ -3,7 +3,8 @@ import { create } from 'zustand';
 import { styleFor } from '../../data/templates';
 import { coverPreset } from '../canvas/preset';
 import type { CanvasDoc, ViewMode } from '../canvas/types';
-import { Invitation, InvitationContent, OptionalSection, PageKey, ReorderablePage, SectionKey } from './model';
+import { seedTimeline } from './dol';
+import { Invitation, InvitationContent, isDol, OptionalSection, PageKey, ReorderablePage, SectionKey } from './model';
 import { createInvitation, themeDef, validateFor } from './themes';
 
 /** 제작 중인 초대장 (Step3~5 공유). 저장은 invitationService 가 담당 */
@@ -65,7 +66,14 @@ export const useEditor = create<EditorState>()((set, get) => ({
     set((s) => {
       if (!s.draft) return s;
       const prev = (s.draft.content as unknown as Record<string, object>)[key];
-      const content = { ...s.draft.content, [key]: { ...prev, ...values } } as InvitationContent;
+      let content = { ...s.draft.content, [key]: { ...prev, ...values } } as InvitationContent;
+      // 돌잔치: 태어난 날·행사일이 바뀌면 성장 이야기 미리 채우기 (사용자가 고친 항목은 그대로)
+      if (isDol(content) && (key === 'basic' || key === 'ceremony')) {
+        content = {
+          ...content,
+          timeline: { items: seedTimeline(content.timeline.items, content.basic.birthDate, content.ceremony.date) },
+        };
+      }
       // 완료했던 섹션이 다시 규칙에 어긋나면 완료 표시를 푼다
       const stillValid = themeDef(s.draft.themeId).validate(key, content).length === 0;
       const completed = s.draft.completed[key] && !stillValid ? { ...s.draft.completed, [key]: false } : s.draft.completed;

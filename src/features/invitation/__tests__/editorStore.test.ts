@@ -1,4 +1,5 @@
 import { useEditor } from '../editorStore';
+import type { DolContent } from '../model';
 import { createInvitation } from '../themes';
 
 const start = () =>
@@ -114,5 +115,15 @@ describe('editor store', () => {
     const before = useEditor.getState().draft?.completed;
     useEditor.getState().startCanvas('cover');
     expect(useEditor.getState().draft?.completed).toEqual(before);
+  });
+
+  it('돌잔치: 태어난 날을 넣으면 성장 이야기 4개가 채워지고, 행사일을 바꾸면 첫 생일 날짜가 따라간다', () => {
+    useEditor.getState().start({ ownerId: 'u', themeId: 'dol', templateId: 'dol-1', today: new Date(2026, 9, 22) });
+    const items = () => (useEditor.getState().draft!.content as DolContent).timeline.items;
+    expect(items()).toEqual([]);
+    useEditor.getState().patch('basic', { birthDate: '2025-04-26' });
+    expect(items().map((i) => i.title)).toEqual(['태어난 날', '100일', '첫 걸음마', '첫 생일']);
+    useEditor.getState().patch('ceremony', { date: '2026-05-02' });
+    expect(items()[3].date).toBe('2026-05-02');
   });
 });

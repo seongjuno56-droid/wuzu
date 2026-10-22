@@ -8,6 +8,7 @@ import { useEditor } from '../editorStore';
 import { SectionKey } from '../model';
 import { themeDef, validateFor } from '../themes';
 import { CeremonyForm } from './CeremonyForm';
+import { DolAccountForm, DolBasicForm, DolProfileForm, DolTimelineForm } from './DolForms';
 import { BgmForm, EndingForm, GalleryForm } from './MediaForms';
 import { AccountForm, BasicForm, GreetingForm, GuestbookForm } from './TextForms';
 
@@ -17,6 +18,8 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
   const confirm = useEditor((s) => s.confirm);
   const [dragging, setDragging] = useState(false);
   const valid = validateFor(draft, section).length === 0;
+  // 돌잔치는 기본 정보·계좌·아이 프로필·성장 이야기 폼이 따로 있다
+  const dol = draft.themeId === 'dol';
 
   const done = () => {
     if (confirm(section)) onClose();
@@ -48,10 +51,12 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
         scrollEnabled={!dragging}
         keyboardShouldPersistTaps="handled"
       >
-        {section === 'basic' && <BasicForm />}
+        {section === 'basic' && (dol ? <DolBasicForm /> : <BasicForm />)}
+        {section === 'profile' && <DolProfileForm />}
+        {section === 'timeline' && <DolTimelineForm />}
         {section === 'ceremony' && <CeremonyForm onDragChange={setDragging} />}
         {section === 'greeting' && <GreetingForm />}
-        {section === 'account' && <AccountForm />}
+        {section === 'account' && (dol ? <DolAccountForm /> : <AccountForm />)}
         {section === 'gallery' && <GalleryForm onDragChange={setDragging} />}
         {section === 'guestbook' && <GuestbookForm />}
         {section === 'ending' && <EndingForm onDragChange={setDragging} />}
