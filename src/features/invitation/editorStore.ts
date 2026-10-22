@@ -4,6 +4,7 @@ import { styleFor } from '../../data/templates';
 import { coverPreset } from '../canvas/preset';
 import type { CanvasDoc, ViewMode } from '../canvas/types';
 import { seedTimeline } from './dol';
+import { isDateString } from './model';
 import { Invitation, InvitationContent, isDol, OptionalSection, PageKey, ReorderablePage, SectionKey } from './model';
 import { createInvitation, themeDef, validateFor } from './themes';
 
@@ -67,16 +68,27 @@ export const useEditor = create<EditorState>()((set, get) => ({
       if (!s.draft) return s;
       const prev = (s.draft.content as unknown as Record<string, object>)[key];
       let content = { ...s.draft.content, [key]: { ...prev, ...values } } as InvitationContent;
-      // 돌잔치: 태어난 날·행사일이 바뀌면 성장 이야기 미리 채우기 (사용자가 고친 항목은 그대로)
-      if (isDol(content) && (key === 'basic' || key === 'ceremony')) {
-        content = {
-          ...content,
-          timeline: { items: seedTimeline(content.timeline.items, content.basic.birthDate, content.ceremony.date) },
-        };
+      // 돌잔치 성장 이야기 미리 채우기 (설계 3장)
+      //  - 비어 있으면: 태어난 날을 처음 넣는 순간에만 4개를 만든다 (다 지운 뒤 다른 칸을 고쳐도 되살리지 않는다)
+      //  - 있으면: 태어난 날·행사일이 바뀔 때 고치지 않은 예시 항목의 날짜만 다시 맞춘다
+      if (isDol(content) && isDol(s.draft.content) && (key === 'basic' || key === 'ceremony')) {
+        const before = s.draft.content;
+        const items = content.timeline.items;
+        const firstBirthDate = !isDateString(before.basic.birthDate) && isDateString(content.basic.birthDate);
+        if (items.length || firstBirthDate) {
+          content = {
+            ...content,
+            timeline: { items: seedTimeline(items, content.basic.birthDate, content.ceremony.date) },
+          };
+        }
       }
-      // 완료했던 섹션이 다시 규칙에 어긋나면 완료 표시를 푼다
-      const stillValid = themeDef(s.draft.themeId).validate(key, content).length === 0;
-      const completed = s.draft.completed[key] && !stillValid ? { ...s.draft.completed, [key]: false } : s.draft.completed;
+      // 완료했던 섹션이 다시 규칙에 어긋나면 완료 표시를 푼다 — 다른 칸을 바꿔 어긋날 수도 있어 완료된 칸을 모두 다시 본다
+      // (예: 계좌를 넣은 보호자를 지움, 행사일을 태어난 날보다 앞으로 옮김)
+      const def = themeDef(s.draft.themeId);
+      const completed = { ...s.draft.completed };
+      for (const k of Object.keys(completed) as SectionKey[]) {
+        if (completed[k] && def.validate(k, content).length) completed[k] = false;
+      }
       return { draft: { ...s.draft, content, completed }, dirty: true };
     }),
 

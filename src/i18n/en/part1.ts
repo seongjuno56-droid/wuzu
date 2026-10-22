@@ -1,5 +1,6 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '태어난 날을 확인해 주세요. 행사일보다 앞이어야 해요.': 'Check the birthday. It must be before the party date.',
   '일시': 'Date & time',
   '장소명': 'Place name',
   '결혼식 초대장': 'Wedding invitation',

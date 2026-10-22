@@ -1,5 +1,6 @@
 import {
   addDays,
+  birthDateProblem,
   bornLine,
   ddayLine,
   defaultDolContent,
@@ -108,5 +109,11 @@ describe('돌잔치', () => {
     expect(treasureLine({ ...b, guardians: [] })).toBe('');
     expect(ddayLine({ ...base, basic: b }, 3)).toBe('시안이의 첫 생일까지 3일');
     expect(formatShortDate('2025-04-26')).toBe('2025년 4월 26일');
+  });
+  it('태어난 날 안내: 날짜를 넣었는데 행사일보다 늦으면 알려 준다', () => {
+    const c = defaultDolContent(today);
+    expect(birthDateProblem(c)).toBe(false); // 아직 안 넣음 — 빨간 테두리만
+    expect(birthDateProblem({ ...c, basic: { ...c.basic, birthDate: '2099-01-01' } })).toBe(true);
+    expect(birthDateProblem({ ...c, basic: { ...c.basic, birthDate: '2025-04-26' } })).toBe(false);
   });
 });

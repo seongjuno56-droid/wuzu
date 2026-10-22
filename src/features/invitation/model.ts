@@ -502,6 +502,9 @@ export function ddayParts(target: Date, now: Date = new Date()): DdayParts {
   };
 }
 
+/** YYYY-MM-DD 모양인지 */
+export const isDateString = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+
 /** 달력에서 고를 수 있는 범위: 행사일은 오늘부터(future), 태어난 날은 오늘까지(past), 성장 이야기는 아무 날(any) */
 export type DateRange = 'future' | 'past' | 'any';
 

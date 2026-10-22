@@ -6,7 +6,7 @@ import { TextArea } from '../../../components/TextArea';
 import { TextField } from '../../../components/TextField';
 import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
-import { DOL_LIMITS } from '../dol';
+import { birthDateProblem, DOL_LIMITS } from '../dol';
 import { useEditor } from '../editorStore';
 import { pickImages } from '../media';
 import { DateRange, DolContent, LIMITS, TimelineItem } from '../model';
@@ -67,12 +67,15 @@ function DateField({
   onChange,
   required,
   range,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (date: string) => void;
   required?: boolean;
   range: DateRange;
+  /** 날짜는 넣었지만 규칙에 어긋날 때 칸 아래 안내 */
+  error?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -80,13 +83,18 @@ function DateField({
       <FormLabel required={required}>{label}</FormLabel>
       <Pressable
         onPress={() => setOpen(true)}
-        style={[styles.dateBox, required && !value && styles.addRequired]}
+        style={[styles.dateBox, ((required && !value) || !!error) && styles.addRequired]}
         accessibilityRole="button"
         accessibilityLabel={label}
       >
         <Txt color={value ? colors.text : colors.placeholder}>{value || '날짜 선택'}</Txt>
         <Ionicons name="calendar-outline" size={18} color={colors.muted} />
       </Pressable>
+      {!!error && (
+        <Txt variant="tiny" color={colors.danger}>
+          {error}
+        </Txt>
+      )}
       <DatePickerModal
         visible={open}
         // 처음 고를 때는 1년 전쯤(돌 무렵 아기) 달력에서 시작
@@ -104,7 +112,8 @@ function DateField({
 
 /** 기본 정보: 아이(이름·부르는 이름·태어난 날·표지 사진) + 보호자 1~4명 */
 export function DolBasicForm() {
-  const b = useDol().basic;
+  const c = useDol();
+  const b = c.basic;
   const patch = usePatch();
   return (
     <View style={styles.form}>
@@ -130,6 +139,7 @@ export function DolBasicForm() {
         required
         value={b.birthDate}
         onChange={(birthDate) => patch('basic', { birthDate })}
+        error={birthDateProblem(c) ? '태어난 날을 확인해 주세요. 행사일보다 앞이어야 해요.' : undefined}
       />
       <PhotoOne label="표지 사진" required uri={b.photo} onChange={(photo) => patch('basic', { photo })} />
       <Txt variant="title" style={styles.side}>

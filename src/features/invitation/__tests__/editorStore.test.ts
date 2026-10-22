@@ -126,4 +126,37 @@ describe('editor store', () => {
     useEditor.getState().patch('ceremony', { date: '2026-05-02' });
     expect(items()[3].date).toBe('2026-05-02');
   });
+
+  it('돌잔치: 다른 칸을 바꿔 규칙에 어긋나게 되면 그 칸의 완료 표시도 푼다', () => {
+    useEditor.getState().start({ ownerId: 'u', themeId: 'dol', templateId: 'dol-1', today: new Date(2026, 9, 22) });
+    const st = () => useEditor.getState();
+    const c = () => st().draft!.content as DolContent;
+    const [dad, mom] = c().basic.guardians;
+    st().patch('basic', {
+      childName: '이시안',
+      birthDate: '2025-10-01',
+      photo: 'p.jpg',
+      guardians: [{ ...dad, name: '아빠' }, { ...mom, name: '엄마' }],
+    });
+    st().patch('account', { accounts: { [dad.id]: { bank: '국민', number: '123' } } });
+    expect(st().confirm('basic')).toBe(true);
+    expect(st().confirm('account')).toBe(true);
+    // 계좌를 넣은 아빠를 지우면 마음 전하는 곳 완료가 풀린다
+    st().patch('basic', { guardians: [{ ...mom, name: '엄마' }] });
+    expect(st().draft!.completed.account).toBe(false);
+    // 행사일을 태어난 날보다 앞으로 옮기면 기본 정보 완료가 풀린다
+    st().patch('ceremony', { date: '2025-01-01' });
+    expect(st().draft!.completed.basic).toBe(false);
+  });
+  it('돌잔치: 성장 이야기를 다 지우면 다른 칸을 고쳐도 예시가 다시 생기지 않는다', () => {
+    useEditor.getState().start({ ownerId: 'u', themeId: 'dol', templateId: 'dol-1', today: new Date(2026, 9, 22) });
+    const st = () => useEditor.getState();
+    const items = () => (st().draft!.content as DolContent).timeline.items;
+    st().patch('basic', { birthDate: '2025-04-26' });
+    expect(items()).toHaveLength(4);
+    st().patch('timeline', { items: [] });
+    st().patch('basic', { childName: '이' });
+    st().patch('ceremony', { venue: '파티룸' });
+    expect(items()).toEqual([]);
+  });
 });
