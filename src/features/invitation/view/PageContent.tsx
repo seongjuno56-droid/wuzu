@@ -1,7 +1,9 @@
 import type { GuestbookEntry } from '../../../services/types';
-import { asWedding, Invitation, PageKey } from '../model';
+import { ddayLine } from '../dol';
+import { asWedding, Invitation, isDol, PageKey } from '../model';
 import { AccountPage } from './AccountPage';
 import { CeremonyPage } from './CeremonyPage';
+import { DolAccountPage, DolProfilePage, DolTimelinePage } from './DolPages';
 import { EndingPage } from './EndingPage';
 import { GalleryPage } from './GalleryPage';
 import { GreetingPage } from './GreetingPage';
@@ -27,6 +29,22 @@ export function PageContent({
   onGuestbookAll,
 }: { page: Exclude<PageKey, 'cover'>; invitation: ViewInvitation } & GuestbookHandlers) {
   const { content } = invitation;
+  if (isDol(content)) {
+    // 돌잔치 전용 장과 돌잔치 문장 (나머지는 결혼식과 같은 부품)
+    if (page === 'profile') return <DolProfilePage content={content} />;
+    if (page === 'timeline') return <DolTimelinePage content={content} />;
+    if (page === 'account') return <DolAccountPage content={content} />;
+    if (page === 'ceremony')
+      return (
+        <CeremonyPage
+          ceremony={content.ceremony}
+          ddayText={(n) => ddayLine(content, n)}
+          todayText="오늘이 첫 생일이에요"
+          placeTitle="오시는 길"
+          venuePlaceholder="장소 이름"
+        />
+      );
+  }
   switch (page) {
     case 'greeting':
       return <GreetingPage content={content} />;

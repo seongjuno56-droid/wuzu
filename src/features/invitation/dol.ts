@@ -3,6 +3,7 @@
  * (설계: docs/superpowers/specs/2026-10-22-dol-corporate-meetup-themes-design.md 3장)
  */
 import { newItemId } from './editor/listOps';
+import { currentLocale } from '../../i18n';
 import {
   BankAccount,
   defaultContent,
@@ -10,6 +11,7 @@ import {
   DolContent,
   Guardian,
   LIMITS,
+  MONTHS_EN,
   PAGE_LABEL,
   PageKey,
   parseDate,
@@ -214,6 +216,34 @@ export function validateDol(key: SectionKey, c: DolContent): string[] {
       });
   }
   return errors;
+}
+
+// ── 하객 화면 문장 ──────────────────────────────────
+
+const isEn = () => currentLocale() === 'en';
+
+/** 2025년 4월 26일에 태어난 / Born on April 26, 2025 */
+export function bornLine(b: DolBasic): string {
+  if (!isDate(b.birthDate)) return '';
+  const d = parseDate(b.birthDate);
+  return isEn()
+    ? `Born on ${MONTHS_EN[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`
+    : /* i18n-ignore */ `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일에 태어난`;
+}
+
+/** 이윤종 · 이다영의 보물 (보호자 이름이 없으면 빈 줄) */
+export function treasureLine(b: DolBasic): string {
+  const names = guardianNames(b);
+  if (!names) return '';
+  return isEn() ? `Treasure of ${names}` : /* i18n-ignore */ `${names}의 보물`;
+}
+
+/** D-day 아래 줄: 시안이의 첫 생일까지 3일 */
+export function ddayLine(c: DolContent, daysLeft: number): string {
+  const nick = nicknameOf(c.basic) || (isEn() ? 'Baby' : '아이');
+  return isEn()
+    ? `${daysLeft} days until ${nick}'s first birthday`
+    : /* i18n-ignore */ `${withSubjectSuffix(nick)} 첫 생일까지 ${daysLeft}일`;
 }
 
 const DOL_SECTION_LABEL: Partial<Record<SectionKey, string>> = { ceremony: '일시·장소', account: '마음 전하는 곳' };

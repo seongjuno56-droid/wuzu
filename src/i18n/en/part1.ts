@@ -1,5 +1,10 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '오늘의 주인공': 'Today\'s star',
+  '오늘이 첫 생일이에요': 'Today is the first birthday',
+  '오시는 길': 'Directions',
+  '장소 이름': 'Place name',
+  '태어난 날을 넣으면 여기에 이야기가 보여요.': 'Add the birthday to see the story here.',
   '#{0} 지우기': 'Remove #{0}',
   '관계': 'Relation',
   '관계는 아빠·엄마·할머니처럼 자유롭게 적어 주세요.': 'Write any relation, like Dad, Mom or Grandma.',

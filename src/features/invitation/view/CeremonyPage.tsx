@@ -58,7 +58,7 @@ function Calendar({ date }: { date: Date }) {
 }
 
 /** D-Day: 1초마다 남은 시간 갱신 */
-function Dday({ target }: { target: Date }) {
+function Dday({ target, ddayText, todayText }: { target: Date } & ThemeTexts) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -71,14 +71,14 @@ function Dday({ target }: { target: Date }) {
         D-Day
       </IText>
       {d.past ? (
-        <IText size={18}>결혼식 당일이에요</IText>
+        <IText size={18}>{todayText ?? '결혼식 당일이에요'}</IText>
       ) : (
         <>
           <IText size={20}>
             {formatCountdown(d)}
           </IText>
           <IText size={14} tone="sub">
-            {`결혼식까지 ${d.daysLeft}일 남았습니다.`}
+            {ddayText ? ddayText(d.daysLeft) : `결혼식까지 ${d.daysLeft}일 남았습니다.`}
           </IText>
         </>
       )}
@@ -114,7 +114,15 @@ function MapCard({ address, venue }: { address: string; venue: string }) {
   );
 }
 
-export function CeremonyPage({ ceremony }: { ceremony: CeremonyInfo }) {
+/** 테마마다 다른 문장 (없으면 결혼식) — 돌잔치: '시안이의 첫 생일까지 3일' 등 */
+export interface ThemeTexts {
+  ddayText?: (daysLeft: number) => string;
+  todayText?: string;
+  placeTitle?: string;
+  venuePlaceholder?: string;
+}
+
+export function CeremonyPage({ ceremony, ...texts }: { ceremony: CeremonyInfo } & ThemeTexts) {
   useLocale((s) => s.locale); // 요일·시간 줄이 언어를 따르도록
   const date = parseDate(ceremony.date);
   const [h, m] = ceremony.time.split(':').map(Number);
@@ -130,11 +138,11 @@ export function CeremonyPage({ ceremony }: { ceremony: CeremonyInfo }) {
         {formatWeekdayTime(date, ceremony.time)}
       </IText>
       {ceremony.showCalendar && <Calendar date={date} />}
-      {ceremony.showDday && <Dday target={target} />}
+      {ceremony.showDday && <Dday target={target} ddayText={texts.ddayText} todayText={texts.todayText} />}
 
       <View style={styles.venue}>
-        <PageTitle>예식 장소</PageTitle>
-        <IText bold raw={!!ceremony.venue}>{[ceremony.venue || '예식장 이름', ceremony.hall].filter(Boolean).join(', ')}</IText>
+        <PageTitle>{texts.placeTitle ?? '예식 장소'}</PageTitle>
+        <IText bold raw={!!ceremony.venue}>{[ceremony.venue || (texts.venuePlaceholder ?? '예식장 이름'), ceremony.hall].filter(Boolean).join(', ')}</IText>
         {!!address && <IText tone="sub" raw>{address}</IText>}
       </View>
 

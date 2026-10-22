@@ -12,7 +12,7 @@ interface Row {
   account: BankAccount;
 }
 
-function AccountRow({ row }: { row: Row }) {
+export function AccountRow({ row }: { row: Row }) {
   const look = useLook();
   const copy = async () => {
     await Clipboard.setStringAsync(`${row.account.bank} ${row.account.number}`);

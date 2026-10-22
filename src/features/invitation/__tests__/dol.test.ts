@@ -1,4 +1,15 @@
-import { addDays, defaultDolContent, guardianNames, nicknameOf, seedTimeline, validateDol } from '../dol';
+import {
+  addDays,
+  bornLine,
+  ddayLine,
+  defaultDolContent,
+  guardianNames,
+  nicknameOf,
+  seedTimeline,
+  treasureLine,
+  validateDol,
+} from '../dol';
+import { formatShortDate } from '../model';
 import type { DolContent } from '../model';
 import '../registerThemes';
 import { createInvitation, sectionTabs, themeDef } from '../themes';
@@ -83,5 +94,19 @@ describe('돌잔치', () => {
     const c = defaultDolContent(today);
     expect(validateDol('greeting', c)).toEqual([]);
     expect(validateDol('ceremony', c)).toEqual(expect.arrayContaining(['venue', 'address']));
+  });
+  it('하객 화면 문장', () => {
+    const base = defaultDolContent(today);
+    const b = {
+      ...base.basic,
+      childName: '이시안',
+      birthDate: '2025-04-26',
+      guardians: base.basic.guardians.map((g, i) => ({ ...g, name: ['이윤종', '이다영'][i] })),
+    };
+    expect(bornLine(b)).toBe('2025년 4월 26일에 태어난');
+    expect(treasureLine(b)).toBe('이윤종 · 이다영의 보물');
+    expect(treasureLine({ ...b, guardians: [] })).toBe('');
+    expect(ddayLine({ ...base, basic: b }, 3)).toBe('시안이의 첫 생일까지 3일');
+    expect(formatShortDate('2025-04-26')).toBe('2025년 4월 26일');
   });
 });

@@ -517,7 +517,7 @@ export function monthMatrix(year: number, month: number): (number | null)[][] {
 export const WEEKDAYS_KO = /* i18n-ignore */ ['일', '월', '화', '수', '목', '금', '토'];
 export const WEEKDAYS_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const WEEKDAYS_EN_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS_EN = [
+export const MONTHS_EN = [
   'January',
   'February',
   'March',
@@ -540,6 +540,14 @@ const isEn = () => currentLocale() === 'en';
 export const weekdayNames = () => (isEn() ? WEEKDAYS_EN_SHORT : WEEKDAYS_KO);
 
 /** 2026년 / 2026 */
+/** 2025년 4월 26일 / Apr 26, 2025 (성장 이야기 날짜) */
+export function formatShortDate(date: string): string {
+  const d = parseDate(date);
+  return isEn()
+    ? `${MONTHS_EN[d.getMonth()].slice(0, 3)} ${d.getDate()}, ${d.getFullYear()}`
+    : /* i18n-ignore */ `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
+
 export const formatYear = (year: number | string) => (isEn() ? `${year}` : /* i18n-ignore */ `${year}년`);
 
 /** 2026년 5월 / May 2026 */
