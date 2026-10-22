@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   LayoutChangeEvent,
@@ -18,12 +18,26 @@ import { TemplatePreview } from '../../../components/TemplatePreview';
 import { Txt } from '../../../components/Txt';
 import { getTemplates, InviteTemplate } from '../../../data/templates';
 import { getTheme } from '../../../data/themes';
+import { fitSlide } from '../../../features/canvas/model';
 import { useRequireLoginToCreate } from '../../../features/create/useRequireLoginToCreate';
+import { sampleInvitation } from '../../../features/invitation/sample';
+import { CoverSlide } from '../../../features/invitation/view/CoverSlide';
 import { colors, radius, shadow, spacing } from '../../../theme';
 
 const CARD_RATIO = 0.72; // 화면 폭 대비 카드 폭
 const CARD_ASPECT = 0.62; // 카드 가로/세로
 const GAP = spacing.md;
+
+/** 돌잔치 템플릿 카드: 예시 초대장의 표지를 카드 안에 맞춰 그린다 */
+function DolCoverCard({ templateId, bg, width, height }: { templateId: string; bg: string; width: number; height: number }) {
+  const sample = useMemo(() => sampleInvitation('dol', templateId), [templateId]);
+  const slide = fitSlide(width, height);
+  return (
+    <View style={{ width, height, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
+      <CoverSlide invitation={sample} width={slide.width} />
+    </View>
+  );
+}
 
 export default function TemplateSelect() {
   const { theme: themeId } = useLocalSearchParams<{ theme: string }>();
@@ -94,7 +108,12 @@ export default function TemplateSelect() {
                   { width: cardWidth, height: cardWidth / CARD_ASPECT, opacity: i === index ? 1 : 0.5 },
                 ]}
               >
-                <TemplatePreview template={item} coverOnly />
+                {themeId === 'dol' ? (
+                  // 돌잔치는 실제 표지(사진 틀·예시 사진)로 보여 준다
+                  <DolCoverCard templateId={item.id} bg={item.style.bg} width={cardWidth} height={cardWidth / CARD_ASPECT} />
+                ) : (
+                  <TemplatePreview template={item} coverOnly />
+                )}
               </Pressable>
             )}
           />
