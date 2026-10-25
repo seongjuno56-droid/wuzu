@@ -105,15 +105,44 @@ export const DOL_PALETTES: Palette[] = DOL_STYLES.map(({ name, style }, i) => ({
   sub: style.sub,
   accent: style.accent,
 }));
+/** 기업 행사 전용 10종 — 차분한 색·고딕 (설계 4장) */
+const CORPORATE_STYLES: { name: string; style: TemplateStyle }[] = [
+  { name: '네이비', style: { bg: '#14213D', fg: '#F5F5F0', sub: '#A9B3C7', accent: '#E0B74F', font: 'sans', cover: 'date' } },
+  { name: '차콜', style: { bg: '#2B2D31', fg: '#F2F2F2', sub: '#A0A3A8', accent: '#E07A3F', font: 'sans', cover: 'frame' } },
+  { name: '화이트 미니멀', style: { bg: '#FFFFFF', fg: '#111827', sub: '#6B7280', accent: '#1D4ED8', font: 'sans', cover: 'date' } },
+  { name: '딥그린', style: { bg: '#0F3B2E', fg: '#F1EFE7', sub: '#A7BDB3', accent: '#C9A75B', font: 'sans', cover: 'frame' } },
+  { name: '버건디', style: { bg: '#5B1A2A', fg: '#F7EDEE', sub: '#CFA9B1', accent: '#E6C07B', font: 'sans', cover: 'date' } },
+  { name: '그레이', style: { bg: '#EEF0F3', fg: '#1F2933', sub: '#6B7684', accent: '#3B5BDB', font: 'sans', cover: 'frame' } },
+  { name: '오션', style: { bg: '#E8F1F8', fg: '#0B2A44', sub: '#5A7488', accent: '#0F6FB8', font: 'sans', cover: 'date' } },
+  { name: '샌드', style: { bg: '#F5F0E6', fg: '#2E2A24', sub: '#7C7364', accent: '#8A6D3B', font: 'sans', cover: 'frame' } },
+  { name: '블랙 골드', style: { bg: '#0B0B0C', fg: '#F4F1EA', sub: '#9C978C', accent: '#C8A24A', font: 'sans', cover: 'date' } },
+  { name: '바이올렛', style: { bg: '#F1EFFB', fg: '#241F45', sub: '#6E6893', accent: '#5B4BC4', font: 'sans', cover: 'frame' } },
+];
+const CORPORATE_PALETTE_IDS = ['navy', 'charcoal', 'white', 'deepgreen', 'burgundy', 'gray', 'ocean', 'sand', 'blackgold', 'violet'];
+/** 기업 [색상] 칩의 10색 */
+export const CORPORATE_PALETTES: Palette[] = CORPORATE_STYLES.map(({ name, style }, i) => ({
+  id: CORPORATE_PALETTE_IDS[i],
+  name,
+  bg: style.bg,
+  fg: style.fg,
+  sub: style.sub,
+  accent: style.accent,
+}));
+
+const THEME_STYLES: Partial<Record<ThemeId, { name: string; style: TemplateStyle }[]>> = {
+  dol: DOL_STYLES,
+  corporate: CORPORATE_STYLES,
+};
+const THEME_PALETTES: Partial<Record<ThemeId, Palette[]>> = { dol: DOL_PALETTES, corporate: CORPORATE_PALETTES };
 /** 테마별 색 조합 */
-export const palettesFor = (themeId: string): Palette[] => (themeId === 'dol' ? DOL_PALETTES : PALETTES);
+export const palettesFor = (themeId: string): Palette[] => THEME_PALETTES[themeId as ThemeId] ?? PALETTES;
 
 const THEME_IDS: ThemeId[] = ['wedding', 'dol', 'meetup', 'corporate'];
 
 const TEMPLATES: Record<ThemeId, InviteTemplate[]> = Object.fromEntries(
   THEME_IDS.map((themeId) => [
     themeId,
-    (themeId === 'dol' ? DOL_STYLES : STYLES).map((s, i) => ({
+    (THEME_STYLES[themeId] ?? STYLES).map((s, i) => ({
       id: `${themeId}-${i + 1}`,
       themeId,
       name: s.name,

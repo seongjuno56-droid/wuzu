@@ -27,6 +27,7 @@ export function coverPreset(style: TemplateStyle, themeId = 'wedding'): CanvasDo
   });
 
   if (themeId === 'dol') return dolCover(style, text, bound);
+  if (themeId === 'corporate') return corporateCover(style, text, bound, rule);
 
   if (style.cover === 'names') {
     return {
@@ -48,16 +49,18 @@ export function coverPreset(style: TemplateStyle, themeId = 'wedding'): CanvasDo
     bound('preset-datetime', 'datetime', 0.56, 14, style.sub),
     bound('preset-venue', 'venue', 0.61, 14, style.sub),
   ];
-  if (style.cover === 'frame') {
-    // 바깥 여백 20px 테두리: 상자 폭 = 1 - 2·(20/360), 높이 = 16/9 - 2·(20/360) (폭 단위)
-    const w = 1 - 2 * u(20);
-    const h = 16 / 9 - 2 * u(20);
-    elements.unshift({
-      id: 'preset-frame', kind: 'stroke', x: 0.5, y: 0.5, w, rotation: 0, aspect: h / w,
-      points: [0, 0, 1, 0, 1, 1, 0, 1, 0, 0], color: style.accent, width: u(1),
-    });
-  }
+  if (style.cover === 'frame') elements.unshift(frameBox(style));
   return { background: { kind: 'template' }, elements };
+}
+
+/** 바깥 여백 20px 테두리: 상자 폭 = 1 - 2·(20/360), 높이 = 16/9 - 2·(20/360) (폭 단위) */
+function frameBox(style: TemplateStyle): CanvasElement {
+  const w = 1 - 2 * u(20);
+  const h = 16 / 9 - 2 * u(20);
+  return {
+    id: 'preset-frame', kind: 'stroke', x: 0.5, y: 0.5, w, rotation: 0, aspect: h / w,
+    points: [0, 0, 1, 0, 1, 1, 0, 1, 0, 0], color: style.accent, width: u(1),
+  };
 }
 
 type Maker = (id: string, value: string, y: number, px: number, color: string, isBold?: boolean) => CanvasElement;
@@ -95,6 +98,23 @@ function dolCover(style: TemplateStyle, text: Maker, bound: BoundMaker): CanvasD
       { ...text('preset-mark-r', mark, 0.71, 14, style.accent), x: 0.8, w: 0.1 } as CanvasElement,
     );
   }
+  return { background: { kind: 'template' }, elements };
+}
+
+type RuleMaker = (id: string, y: number, lengthPx: number) => CanvasElement;
+
+/** 기업 표지: 로고(있을 때만) · INVITATION · 행사명 · 주최 · 줄 · 일시 · 장소. frame 템플릿은 테두리 */
+function corporateCover(style: TemplateStyle, text: Maker, bound: BoundMaker, rule: RuleMaker): CanvasDoc {
+  const elements: CanvasElement[] = [
+    { id: 'preset-logo', kind: 'photo', bind: 'logo', x: 0.5, y: 0.27, w: 0.2, rotation: 0, aspect: 1, frame: 'rounded' },
+    text('preset-label', 'INVITATION', 0.37, 12, style.accent),
+    bound('preset-event', 'eventName', 0.44, 26, style.fg, true),
+    bound('preset-host', 'host', 0.505, 15, style.sub),
+    rule('preset-rule', 0.55, 32),
+    bound('preset-datetime', 'datetime', 0.6, 14, style.sub),
+    bound('preset-venue', 'venue', 0.645, 14, style.sub),
+  ];
+  if (style.cover === 'frame') elements.unshift(frameBox(style));
   return { background: { kind: 'template' }, elements };
 }
 

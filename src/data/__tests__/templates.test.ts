@@ -67,3 +67,25 @@ describe('돌잔치 템플릿', () => {
     expect(styleFor('dol', 'dol-1', 'forest')).toEqual(styleFor('dol', 'dol-1'));
   });
 });
+
+describe('기업 템플릿', () => {
+  it('10종 모두 고딕, 색 조합은 기업 10색', () => {
+    const t = getTemplates('corporate');
+    expect(t).toHaveLength(10);
+    expect(t.every((x) => x.style.font === 'sans')).toBe(true);
+    expect(palettesFor('corporate').map((p) => p.id)).toEqual([
+      'navy',
+      'charcoal',
+      'white',
+      'deepgreen',
+      'burgundy',
+      'gray',
+      'ocean',
+      'sand',
+      'blackgold',
+      'violet',
+    ]);
+    expect(paletteOfTemplate('corporate', 'corporate-1')).toBe('navy');
+    expect(styleFor('corporate', 'corporate-1', 'violet').bg).toBe(palettesFor('corporate')[9].bg);
+  });
+});

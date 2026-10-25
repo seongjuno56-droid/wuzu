@@ -1,5 +1,17 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '네이비': 'Navy',
+  '차콜': 'Charcoal',
+  '화이트 미니멀': 'Minimal White',
+  '딥그린': 'Deep Green',
+  '버건디': 'Burgundy',
+  '그레이': 'Gray',
+  '오션': 'Ocean',
+  '샌드': 'Sand',
+  '블랙 골드': 'Black Gold',
+  '바이올렛': 'Violet',
+  '행사명': 'Event name',
+  '주최': 'Host',
   '이름을 입력해 주세요.': 'Please enter your name.',
   '소속을 입력해 주세요.': 'Please enter your organization.',
   '연락처를 확인해 주세요.': 'Please check your phone number.',
