@@ -74,7 +74,13 @@ export function GreetingForm() {
         <FormLabel>추가 옵션 선택</FormLabel>
         <Check
           label={
-            themeId === 'dol' ? '보호자 이름 삽입' : themeId === 'corporate' ? '초청인 서명 넣기' : '신랑, 신부 이름 삽입'
+            themeId === 'dol'
+              ? '보호자 이름 삽입'
+              : themeId === 'corporate'
+                ? '초청인 서명 넣기'
+                : themeId === 'meetup'
+                  ? '주최 이름 넣기'
+                  : '신랑, 신부 이름 삽입'
           }
           value={g.appendNames}
           onChange={(appendNames) => patch('greeting', { appendNames })}
@@ -84,6 +90,8 @@ export function GreetingForm() {
             ? '인사말 마지막에 보호자 이름이 들어가요.'
             : themeId === 'corporate'
               ? '인사말 마지막에 "대표이사 김우주"처럼 초청인이 들어가요.'
+              : themeId === 'meetup'
+                ? '인사말 마지막에 주최 이름이 들어가요.'
               : '인사말 마지막에 "길동, 춘향 드림."처럼 이름이 들어가요.'}
         </Hint>
       </View>

@@ -19,6 +19,7 @@ import {
 } from './CorporateForms';
 import { DolAccountForm, DolBasicForm, DolProfileForm, DolTimelineForm } from './DolForms';
 import { BgmForm, EndingForm, GalleryForm } from './MediaForms';
+import { MeetupAccountForm, MeetupBasicForm, NoticesForm } from './MeetupForms';
 import { AccountForm, BasicForm, GreetingForm, GuestbookForm } from './TextForms';
 
 /** 섹션 입력 바텀시트: ▼ 닫기 / 제목 / ✓ 확인(유효할 때만) */
@@ -27,9 +28,10 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
   const confirm = useEditor((s) => s.confirm);
   const [dragging, setDragging] = useState(false);
   const valid = validateFor(draft, section).length === 0;
-  // 돌잔치·기업은 기본 정보 등 따로 쓰는 폼이 있다
+  // 돌잔치·기업·모임은 기본 정보 등 따로 쓰는 폼이 있다
   const dol = draft.themeId === 'dol';
   const corp = draft.themeId === 'corporate';
+  const meet = draft.themeId === 'meetup';
 
   const done = () => {
     if (confirm(section)) onClose();
@@ -62,7 +64,15 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
         keyboardShouldPersistTaps="handled"
       >
         {section === 'basic' &&
-          (dol ? <DolBasicForm onDragChange={setDragging} /> : corp ? <CorporateBasicForm /> : <BasicForm />)}
+          (dol ? (
+            <DolBasicForm onDragChange={setDragging} />
+          ) : corp ? (
+            <CorporateBasicForm />
+          ) : meet ? (
+            <MeetupBasicForm />
+          ) : (
+            <BasicForm />
+          ))}
         {section === 'profile' && <DolProfileForm />}
         {section === 'timeline' && <DolTimelineForm onDragChange={setDragging} />}
         {section === 'ceremony' && <CeremonyForm onDragChange={setDragging} />}
@@ -73,7 +83,8 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
         {section === 'rsvp' && <RsvpSettingsForm />}
         {section === 'contact' && <ContactForm />}
         {section === 'greeting' && <GreetingForm />}
-        {section === 'account' && (dol ? <DolAccountForm /> : <AccountForm />)}
+        {section === 'account' && (dol ? <DolAccountForm /> : meet ? <MeetupAccountForm /> : <AccountForm />)}
+        {section === 'notices' && <NoticesForm onDragChange={setDragging} />}
         {section === 'gallery' && <GalleryForm onDragChange={setDragging} />}
         {section === 'guestbook' && <GuestbookForm />}
         {section === 'ending' && <EndingForm onDragChange={setDragging} />}

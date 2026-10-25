@@ -1,5 +1,16 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '예) 03학번 연말 송년회': 'e.g. Class of 2003 year-end party',
+  '예) 김모임 또는 우리 동기 모임': 'e.g. Kim or our class group',
+  '대표 사진': 'Main photo',
+  '넣으면 표지에 들어가요.': 'It will appear on the cover.',
+  '안내 추가': 'Add notice',
+  '회비': 'Fee',
+  '계좌': 'Account',
+  '예) 1인 3만원': 'e.g. $30 per person',
+  '예금주': 'Account holder',
+  '주최 이름 넣기': 'Add host name',
+  '인사말 마지막에 주최 이름이 들어가요.': 'The host name is added at the end of the message.',
   '컨페티': 'Confetti',
   '민트 파티': 'Mint Party',
   '써니': 'Sunny',

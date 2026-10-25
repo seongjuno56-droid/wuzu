@@ -5,10 +5,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { TextArea } from '../../../components/TextArea';
 import { TextField } from '../../../components/TextField';
 import { Txt } from '../../../components/Txt';
+import { useT } from '../../../i18n';
 import { colors, radius, spacing } from '../../../theme';
+import { RsvpField, rsvpFields } from '../../rsvp/rsvp';
 import { CORP_LIMITS, DRESS_CODES, isEmail, isPhone } from '../corporate';
 import { useEditor } from '../editorStore';
-import { CorporateContent, ProgramItem, Speaker } from '../model';
+import { CeremonyInfo, CorporateContent, ProgramItem, RsvpSettings, Speaker } from '../model';
 import { DateField, FormLabel, Hint, PhotoOne } from './fields';
 import { ListEditor } from './ListEditor';
 import { addItem, newItemId, updateItem } from './listOps';
@@ -18,6 +20,16 @@ import { TimePickerModal } from './Pickers';
 
 const useCorp = () => useEditor((s) => s.draft!.content as CorporateContent);
 const usePatch = () => useEditor((s) => s.patch);
+
+/** 참석 응답에서 받는 항목 이름 */
+const FIELD_NAME: Record<RsvpField, string> = {
+  name: '이름',
+  org: '소속',
+  phone: '연락처',
+  attending: '참석 여부',
+  companions: '동반 인원',
+};
+
 type DragProps = { onDragChange?: (dragging: boolean) => void };
 
 /** 기본 정보: 행사명·주최(필수), 로고(선택), 초청인 직함·이름(둘 다 또는 둘 다 비움) */
@@ -117,7 +129,8 @@ export function CorporateOverviewFields() {
 
 /** 프로그램: 시간(선택)·제목(필수)·담당/설명, 최대 12개, ☰ 끌어 순서 */
 export function ProgramForm({ onDragChange }: DragProps) {
-  const items = useCorp().program.items;
+  // 기업 프로그램·모임 일정표가 같이 쓴다
+  const items = useEditor((s) => (s.draft!.content as { program: { items: ProgramItem[] } }).program.items);
   const patch = usePatch();
   const set = (next: ProgramItem[]) => patch('program', { items: next });
   const [timeFor, setTimeFor] = useState<string | null>(null);
@@ -252,7 +265,10 @@ export function DirectionsForm() {
 
 /** 참석 신청: 마감일(선택). 받는 항목은 정해져 있다 */
 export function RsvpSettingsForm() {
-  const c = useCorp();
+  // 기업 참석 신청·모임 참석 여부가 같이 쓴다
+  const c = useEditor((s) => s.draft!.content as { ceremony: CeremonyInfo; rsvp: RsvpSettings });
+  const themeId = useEditor((s) => s.draft!.themeId);
+  const t = useT();
   const patch = usePatch();
   const late = !!c.rsvp.deadline && c.rsvp.deadline > c.ceremony.date;
   return (
@@ -270,7 +286,9 @@ export function RsvpSettingsForm() {
       <View style={styles.group}>
         <FormLabel>받는 항목</FormLabel>
         <Txt variant="caption" color={colors.muted}>
-          이름 · 소속 · 연락처 · 참석 여부
+          {rsvpFields(themeId)
+            .map((f) => t(FIELD_NAME[f]))
+            .join(' · ')}
         </Txt>
       </View>
       <Hint>받은 응답은 나의 초대장의 [참석 응답]에서 보고, 전화로 받은 응답도 직접 넣을 수 있어요.</Hint>
