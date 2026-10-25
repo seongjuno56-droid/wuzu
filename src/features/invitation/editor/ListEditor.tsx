@@ -1,13 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ReactNode, useRef, useState } from 'react';
-import {
-  AccessibilityActionEvent,
-  PanResponder,
-  PanResponderInstance,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { AccessibilityActionEvent, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '../../../components/Txt';
 import { dropIndexByHeights, moveItem } from '../../../lib/sortable';
@@ -20,6 +13,8 @@ interface Drag {
   id: string;
   from: number;
   dy: number;
+  /** 잡는 순간의 카드 높이들 (놓일 자리 계산용) */
+  heights: number[];
 }
 
 /**
@@ -47,56 +42,45 @@ export function ListEditor<T extends { id: string }>({
   const full = items.length >= max;
   const [drag, setDrag] = useState<Drag | null>(null);
   const heights = useRef(new Map<string, number>());
-
-  // 제스처 도중 리렌더돼도 같은 응답자를 쓰도록 id 별로 보관하고, 최신 값은 ref 로 읽는다
+  const dragRef = useRef<Drag | null>(null);
+  // 제스처 처리기는 최신 목록·콜백을 ref 로 읽는다
   const latest = useRef({ items, onChange, onDragChange });
-  latest.current = { items, onChange, onDragChange };
-  const responders = useRef(new Map<string, PanResponderInstance>());
+  useEffect(() => {
+    latest.current = { items, onChange, onDragChange };
+  });
 
-  const target = (from: number, dy: number) =>
-    dropIndexByHeights({
-      heights: latest.current.items.map((i) => heights.current.get(i.id) ?? 0),
-      gap: GAP,
-      from,
-      dy,
-    });
-
-  const responderFor = (id: string) => {
-    let r = responders.current.get(id);
-    if (!r) {
-      const fromIndex = () => latest.current.items.findIndex((i) => i.id === id);
-      const end = () => {
-        setDrag(null);
-        latest.current.onDragChange?.(false);
+  const [handlers] = useState<HandleCallbacks>(() => ({
+    onBegin: (id: string) => {
+      const l = latest.current;
+      const d = {
+        id,
+        from: l.items.findIndex((i) => i.id === id),
+        dy: 0,
+        heights: l.items.map((i) => heights.current.get(i.id) ?? 0),
       };
-      r = PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: () => {
-          latest.current.onDragChange?.(true);
-          setDrag({ id, from: fromIndex(), dy: 0 });
-        },
-        onPanResponderMove: (_, g) => setDrag((d) => (d ? { ...d, dy: g.dy } : d)),
-        onPanResponderRelease: (_, g) => {
-          const from = fromIndex();
-          const to = target(from, g.dy);
-          if (to !== from) latest.current.onChange(moveItem(latest.current.items, from, to));
-          end();
-        },
-        onPanResponderTerminate: end,
-      });
-      responders.current.set(id, r);
-    }
-    return r;
-  };
+      dragRef.current = d;
+      l.onDragChange?.(true);
+      setDrag(d);
+    },
+    onMove: (dy: number) => setDrag((d) => (d ? { ...d, dy } : d)),
+    /** dy 가 null 이면 취소 */
+    onEnd: (dy: number | null) => {
+      const d = dragRef.current;
+      dragRef.current = null;
+      setDrag(null);
+      latest.current.onDragChange?.(false);
+      if (!d || dy === null) return;
+      const to = dropIndexByHeights({ heights: d.heights, gap: GAP, from: d.from, dy });
+      if (to !== d.from) latest.current.onChange(moveItem(latest.current.items, d.from, to));
+    },
+  }));
 
   // 끄는 동안: 끄는 카드는 손가락을 따라가고, 그 사이 카드들은 끄는 카드 높이만큼 비켜 준다
-  const to = drag ? target(drag.from, drag.dy) : -1;
-  const shift = drag ? (heights.current.get(drag.id) ?? 0) + GAP : 0;
-  const offsetOf = (i: number, id: string) => {
+  const to = drag ? dropIndexByHeights({ heights: drag.heights, gap: GAP, from: drag.from, dy: drag.dy }) : -1;
+  const shift = drag ? drag.heights[drag.from] + GAP : 0;
+  const offsetOf = (i: number) => {
     if (!drag) return 0;
-    if (id === drag.id) return drag.dy;
+    if (i === drag.from) return drag.dy;
     if (drag.from < to && i > drag.from && i <= to) return -shift;
     if (drag.from > to && i >= to && i < drag.from) return shift;
     return 0;
@@ -110,44 +94,31 @@ export function ListEditor<T extends { id: string }>({
 
   return (
     <View style={styles.wrap}>
-      {items.map((item, i) => {
-        const dragging = drag?.id === item.id;
-        return (
-          <View
-            key={item.id}
-            onLayout={(e) => heights.current.set(item.id, e.nativeEvent.layout.height)}
-            style={[styles.card, { transform: [{ translateY: offsetOf(i, item.id) }] }, dragging && styles.dragging]}
-          >
-            <View style={styles.head}>
-              <View
-                {...responderFor(item.id).panHandlers}
-                style={styles.handle}
-                accessible
-                accessibilityLabel="순서 바꾸기"
-                accessibilityActions={[
-                  { name: 'up', label: '위로' },
-                  { name: 'down', label: '아래로' },
-                ]}
-                onAccessibilityAction={onA11y(i)}
-              >
-                <Ionicons name="reorder-three" size={20} color={colors.inkSoft} />
-                <Txt variant="caption" weight="semibold" color={colors.muted}>
-                  {String(i + 1)}
-                </Txt>
-              </View>
-              <Pressable
-                onPress={() => onChange(removeItem(items, item.id))}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="삭제"
-              >
-                <Ionicons name="close" size={18} color={colors.inkSoft} />
-              </Pressable>
-            </View>
-            {renderItem(item, i)}
+      {items.map((item, i) => (
+        <View
+          key={item.id}
+          onLayout={(e) => heights.current.set(item.id, e.nativeEvent.layout.height)}
+          style={[styles.card, { transform: [{ translateY: offsetOf(i) }] }, drag?.id === item.id && styles.dragging]}
+        >
+          <View style={styles.head}>
+            <DragHandle id={item.id} handlers={handlers} onAccessibilityAction={onA11y(i)}>
+              <Ionicons name="reorder-three" size={20} color={colors.inkSoft} />
+              <Txt variant="caption" weight="semibold" color={colors.muted}>
+                {String(i + 1)}
+              </Txt>
+            </DragHandle>
+            <Pressable
+              onPress={() => onChange(removeItem(items, item.id))}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="삭제"
+            >
+              <Ionicons name="close" size={18} color={colors.inkSoft} />
+            </Pressable>
           </View>
-        );
-      })}
+          {renderItem(item, i)}
+        </View>
+      ))}
       <Pressable
         onPress={onAdd}
         disabled={full}
@@ -163,6 +134,53 @@ export function ListEditor<T extends { id: string }>({
       <Txt variant="tiny" color={colors.faint}>
         {`최대 ${max}개까지 넣을 수 있어요.`}
       </Txt>
+    </View>
+  );
+}
+
+type HandleCallbacks = {
+  onBegin: (id: string) => void;
+  onMove: (dy: number) => void;
+  /** dy 가 null 이면 취소 */
+  onEnd: (dy: number | null) => void;
+};
+
+/** ☰ 손잡이: 잡는 즉시 끌기 (마우스·터치 같음). handlers 는 목록이 한 번만 만든 안정적인 처리기 */
+function DragHandle({
+  id,
+  handlers,
+  onAccessibilityAction,
+  children,
+}: {
+  id: string;
+  handlers: HandleCallbacks;
+  onAccessibilityAction: (e: AccessibilityActionEvent) => void;
+  children: ReactNode;
+}) {
+  const [responder] = useState(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => handlers.onBegin(id),
+      onPanResponderMove: (_, g) => handlers.onMove(g.dy),
+      onPanResponderRelease: (_, g) => handlers.onEnd(g.dy),
+      onPanResponderTerminate: () => handlers.onEnd(null),
+    }),
+  );
+  return (
+    <View
+      {...responder.panHandlers}
+      style={styles.handle}
+      accessible
+      accessibilityLabel="순서 바꾸기"
+      accessibilityActions={[
+        { name: 'up', label: '위로' },
+        { name: 'down', label: '아래로' },
+      ]}
+      onAccessibilityAction={onAccessibilityAction}
+    >
+      {children}
     </View>
   );
 }
