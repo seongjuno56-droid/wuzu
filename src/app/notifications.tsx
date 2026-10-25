@@ -69,6 +69,8 @@ export default function NotificationsScreen() {
             <View style={styles.icon}>
               {n.category === 'notice' ? (
                 <Ionicons name="notifications-outline" size={26} color={colors.canvas} />
+              ) : n.category === 'rsvp' ? (
+                <Ionicons name="people-outline" size={26} color={colors.canvas} />
               ) : (
                 <Txt variant="title" color={colors.canvas}>
                   ₩

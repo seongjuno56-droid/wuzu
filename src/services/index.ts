@@ -4,6 +4,7 @@ import { createMockAuthService } from './mock/mockAuthService';
 import { createMockInvitationService } from './mock/mockInvitationService';
 import { createMockNotificationService } from './mock/mockNotificationService';
 import { createMockPaymentService } from './mock/mockPaymentService';
+import { createMockRsvpService } from './mock/mockRsvpService';
 import { createMockWalletService } from './mock/mockWalletService';
 
 export * from './types';
@@ -15,3 +16,4 @@ export const invitationService = createMockInvitationService({ delayMs: 300, sto
 export const walletService = createMockWalletService({ delayMs: 300, storage: AsyncStorage });
 export const paymentService = createMockPaymentService();
 export const notificationService = createMockNotificationService({ delayMs: 200, storage: AsyncStorage });
+export const rsvpService = createMockRsvpService({ delayMs: 200, storage: AsyncStorage });

@@ -1,4 +1,5 @@
 import type { Invitation } from '../features/invitation/model';
+import type { RsvpInput, RsvpResponse } from '../features/rsvp/rsvp';
 
 export type Gender = 'male' | 'female' | 'none';
 export type AccountStatus = 'active' | 'withdrawing' | 'banned';
@@ -184,13 +185,38 @@ export interface PaymentService {
   purchase(productId: string): Promise<PurchaseResult>;
 }
 
+// ── 참석 응답 ───────────────────────────────────────
+
+export type RsvpSubmitResult =
+  | { ok: true; response: RsvpResponse; created: boolean }
+  | { ok: false; reason: 'closed' | 'invalid' };
+
+export interface RsvpService {
+  /** 최신순 */
+  list(invitationId: string): Promise<RsvpResponse[]>;
+  get(invitationId: string, id: string): Promise<RsvpResponse | null>;
+  /** 하객 제출. id 가 있고 그 행이 있으면 고친다. 마감·검사는 여기서 막는다 */
+  submit(args: {
+    invitationId: string;
+    themeId: string;
+    deadline: string;
+    input: RsvpInput;
+    id?: string;
+  }): Promise<RsvpSubmitResult>;
+  /** 만든 사람: 명단에 직접 넣기 (마감과 상관없음) */
+  addManual(invitationId: string, themeId: string, input: RsvpInput): Promise<RsvpResponse>;
+  /** 만든 사람: 고치기 (source 는 그대로) */
+  update(invitationId: string, themeId: string, id: string, input: RsvpInput): Promise<RsvpResponse>;
+  remove(invitationId: string, id: string): Promise<void>;
+}
+
 // ── 알림 ─────────────────────────────────────────────
 
 export interface AppNotification {
   id: string;
   /** null = 모든 사용자(공지) */
   userId: string | null;
-  category: 'notice' | 'purchase';
+  category: 'notice' | 'purchase' | 'rsvp';
   title: string;
   body: string;
   /** [바로가기] 이동 경로 */
