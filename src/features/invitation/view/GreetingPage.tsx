@@ -1,8 +1,9 @@
 import { Image, StyleSheet } from 'react-native';
 
 import { radius } from '../../../theme';
+import { inviterLine } from '../corporate';
 import { guardianNames } from '../dol';
-import { asWedding, givenName, InvitationContent, isDol, Person } from '../model';
+import { asWedding, givenName, InvitationContent, isCorporate, isDol, isWedding, Person } from '../model';
 import { IText, Page, PageTitle } from './look';
 
 /** "홍철수 · 이순자의 아들 홍길동" — 故人이면 이름 앞에 故 */
@@ -17,6 +18,11 @@ function familyLine(father: Person, mother: Person, child: Person): string | nul
 
 /** 인사말 아래 이름 줄과 서명 — 테마별 */
 function namesFor(content: InvitationContent): { lines: string[]; signature: string | null } {
+  if (isCorporate(content)) {
+    // 기업: 이름 줄 없이 서명만 — '대표이사 김우주' (초청인이 없으면 주최)
+    const sign = inviterLine(content.basic) || content.basic.host.trim();
+    return { lines: [], signature: content.greeting.appendNames && sign ? sign : null };
+  }
   if (isDol(content)) {
     const b = content.basic;
     // 돌잔치: '아빠 이윤종 · 엄마 이다영' 한 줄, 서명은 '이윤종 · 이다영 드림.'
@@ -45,8 +51,8 @@ function namesFor(content: InvitationContent): { lines: string[]; signature: str
 export function GreetingPage({ content }: { content: InvitationContent }) {
   const { greeting } = content;
   const { lines, signature } = namesFor(content);
-  // 돌잔치 이름 줄은 사용자 글 그대로 (번역하지 않음)
-  const raw = isDol(content);
+  // 결혼식 외 테마의 이름 줄·서명은 사용자 글 그대로 (번역하지 않음)
+  const raw = !isWedding(content);
 
   return (
     <Page>

@@ -1,16 +1,20 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
+import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
 import { GuestbookModals, GuestbookView } from '../../features/invitation/GuestbookModals';
-import { Invitation } from '../../features/invitation/model';
+import { Invitation, isCorporate } from '../../features/invitation/model';
 import { screenStatus } from '../../features/invitation/status';
 import { InvitationView } from '../../features/invitation/view/InvitationView';
 import { lookFor } from '../../features/invitation/view/look';
-import { GuestbookEntry, invitationService } from '../../services';
+import { myRsvp } from '../../features/rsvp/myRsvp';
+import { emptyRsvpInput, isRsvpClosed, RsvpResponse } from '../../features/rsvp/rsvp';
+import { RsvpFormModal } from '../../features/rsvp/RsvpFormModal';
+import { GuestbookEntry, invitationService, notificationService, rsvpService } from '../../services';
 import { useSession } from '../../store/session';
 import { colors, spacing } from '../../theme';
 
@@ -21,6 +25,17 @@ export default function InvitationScreen() {
   const [invitation, setInvitation] = useState<Invitation | null | undefined>(undefined);
   const [entries, setEntries] = useState<GuestbookEntry[]>([]);
   const [guestbook, setGuestbook] = useState<GuestbookView>(null);
+
+  // 참석 신청: 이 기기에서 낸 응답을 기억해 다시 열면 보여 주고 고칠 수 있게
+  const [mine, setMine] = useState<RsvpResponse | null>(null);
+  const [rsvpOpen, setRsvpOpen] = useState(false);
+  const rsvpInitial = useMemo(() => mine ?? emptyRsvpInput(), [mine]);
+  useEffect(() => {
+    myRsvp
+      .get(id)
+      .then((rid) => (rid ? rsvpService.get(id, rid) : null))
+      .then(setMine);
+  }, [id]);
 
   const loadGuestbook = useCallback(async () => setEntries(await invitationService.listGuestbook(id)), [id]);
 
@@ -63,6 +78,14 @@ export default function InvitationScreen() {
   }
 
   const story = invitation.viewMode === 'story';
+  const corp = isCorporate(invitation.content) ? invitation.content : null;
+  const deadline = corp?.rsvp.deadline ?? '';
+  // 만든 사람의 미리보기(활성 전)에서는 신청 버튼을 끈다 — 자기 명단에 시험 응답이 쌓이지 않게
+  const preview = isOwner && screenStatus(invitation) !== 'active';
+  const rsvp =
+    corp && invitation.enabled.rsvp && !preview
+      ? { mine, closed: isRsvpClosed(deadline, new Date()), onOpen: () => setRsvpOpen(true) }
+      : undefined;
   const look = lookFor(invitation.themeId, invitation.templateId, invitation.paletteId);
 
   return (
@@ -87,6 +110,7 @@ export default function InvitationScreen() {
         guestbook={entries}
         onGuestbookWrite={() => setGuestbook('write')}
         onGuestbookAll={() => setGuestbook('all')}
+        rsvp={rsvp}
       />
       <GuestbookModals
         view={guestbook}
@@ -107,6 +131,40 @@ export default function InvitationScreen() {
           return result;
         }}
       />
+      {rsvp && (
+        <RsvpFormModal
+          visible={rsvpOpen}
+          themeId={invitation.themeId}
+          initial={rsvpInitial}
+          title={mine ? '응답 고치기' : '참석 신청'}
+          submitLabel={mine ? '고치기' : '보내기'}
+          onClose={() => setRsvpOpen(false)}
+          onSubmit={async (input) => {
+            const r = await rsvpService.submit({
+              invitationId: invitation.id,
+              themeId: invitation.themeId,
+              deadline,
+              input,
+              id: mine?.id,
+            });
+            if (!r.ok) return r.reason;
+            setMine(r.response);
+            await myRsvp.set(invitation.id, r.response.id);
+            if (r.created) {
+              await notificationService.add({
+                userId: invitation.ownerId,
+                category: 'rsvp',
+                title: '새 참석 응답',
+                body: `${r.response.name}님이 참석 응답을 보냈어요.`,
+                link: `/invitation/${invitation.id}/rsvp`,
+                createdAt: new Date().toISOString(),
+              });
+            }
+            toast('응답을 보냈어요');
+            return 'ok';
+          }}
+        />
+      )}
     </Screen>
   );
 }

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { useLocale } from '../../../i18n';
@@ -87,7 +87,7 @@ function Dday({ target, ddayText, todayText }: { target: Date } & ThemeTexts) {
 }
 
 /** 지도 SDK 키가 없어 주소 카드 + 지도 앱 링크로 대신한다 */
-function MapCard({ address, venue }: { address: string; venue: string }) {
+export function MapCard({ address, venue }: { address: string; venue: string }) {
   const look = useLook();
   const q = encodeURIComponent(address || venue);
   return (
@@ -122,7 +122,18 @@ export interface ThemeTexts {
   venuePlaceholder?: string;
 }
 
-export function CeremonyPage({ ceremony, ...texts }: { ceremony: CeremonyInfo } & ThemeTexts) {
+export function CeremonyPage({
+  ceremony,
+  showMap = true,
+  children,
+  ...texts
+}: {
+  ceremony: CeremonyInfo;
+  /** 기업은 지도를 오시는 길 장에 따로 그린다 */
+  showMap?: boolean;
+  /** 장소 아래·지도 위에 덧붙일 내용 (기업: 대상·드레스코드) */
+  children?: ReactNode;
+} & ThemeTexts) {
   useLocale((s) => s.locale); // 요일·시간 줄이 언어를 따르도록
   const date = parseDate(ceremony.date);
   const [h, m] = ceremony.time.split(':').map(Number);
@@ -145,8 +156,10 @@ export function CeremonyPage({ ceremony, ...texts }: { ceremony: CeremonyInfo } 
         <IText bold raw={!!ceremony.venue}>{[ceremony.venue || (texts.venuePlaceholder ?? '예식장 이름'), ceremony.hall].filter(Boolean).join(', ')}</IText>
         {!!address && <IText tone="sub" raw>{address}</IText>}
       </View>
+      {children}
 
-      {ceremony.mapMode === 'use' &&
+      {showMap &&
+        ceremony.mapMode === 'use' &&
         (ceremony.addressMode === 'search' ? (
           <MapCard address={address} venue={ceremony.venue} />
         ) : (
