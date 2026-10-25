@@ -27,7 +27,7 @@ import { CardAction, InviteCard } from '../../features/my-invites/InviteCard';
 import { MoreAction, MoreSheet } from '../../features/my-invites/MoreSheet';
 import { RenameModal } from '../../features/my-invites/RenameModal';
 import { shareInvitation } from '../../features/my-invites/share';
-import { invitationService } from '../../services';
+import { invitationService, rsvpService } from '../../services';
 import { useLocale } from '../../i18n';
 import { useSession } from '../../store/session';
 import { colors, radius, spacing } from '../../theme';
@@ -53,6 +53,7 @@ export default function MyInvites() {
   const [renaming, setRenaming] = useState<Invitation | null>(null);
   const [deleting, setDeleting] = useState<Invitation | null>(null);
   const [newBook, setNewBook] = useState<Record<string, boolean>>({});
+  const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({});
   // 목록을 다시 불러올 때마다 현재 시각을 새로 잡는다 (의도한 의존성)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => new Date(), [list]);
@@ -66,6 +67,18 @@ export default function MyInvites() {
         .filter((i) => i.enabled.guestbook)
         .map(async (i) => [i.id, hasNewGuestbook(await invitationService.listGuestbook(i.id), i.guestbookSeenAt)] as const),
     ).then((pairs) => alive && setNewBook(Object.fromEntries(pairs)));
+    return () => {
+      alive = false;
+    };
+  }, [list]);
+
+  // 참석 응답 수: 참석 신청을 켠 초대장만
+  useEffect(() => {
+    if (!list) return;
+    let alive = true;
+    Promise.all(
+      list.filter((i) => i.enabled.rsvp).map(async (i) => [i.id, (await rsvpService.list(i.id)).length] as const),
+    ).then((pairs) => alive && setRsvpCounts(Object.fromEntries(pairs)));
     return () => {
       alive = false;
     };
@@ -94,6 +107,8 @@ export default function MyInvites() {
         return shareInvitation(inv);
       case 'guestbook':
         return router.push(`/invitation/${inv.id}/guestbook`);
+      case 'rsvp':
+        return router.push(`/invitation/${inv.id}/rsvp`);
       case 'preview':
         return router.push(`/invite/${inv.id}`);
       case 'more':
@@ -143,7 +158,14 @@ export default function MyInvites() {
       ) : (
         <View style={styles.list}>
           {shown.map((inv) => (
-            <InviteCard key={inv.id} invitation={inv} now={now} hasNew={!!newBook[inv.id]} onAction={(a) => onCard(inv, a)} />
+            <InviteCard
+              key={inv.id}
+              invitation={inv}
+              now={now}
+              hasNew={!!newBook[inv.id]}
+              rsvpCount={rsvpCounts[inv.id]}
+              onAction={(a) => onCard(inv, a)}
+            />
           ))}
         </View>
       )}

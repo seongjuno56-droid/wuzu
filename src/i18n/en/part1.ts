@@ -1,5 +1,13 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '참석 응답 ({0})': 'RSVPs ({0})',
+  '참석 응답': 'RSVPs',
+  '참석 {0}명 · 불참 {1}명': '{0} attending · {1} not attending',
+  '참석 {0}명(동반 포함) · 불참 {1}명': '{0} attending (incl. guests) · {1} not attending',
+  '응답 추가': 'Add response',
+  '추가': 'Add',
+  '동반 {0}명': '{0} guests',
+  '아직 받은 응답이 없어요.': 'No responses yet.',
   '행사까지 {0}일 남았습니다.': '{0} days until the event.',
   '오늘은 행사 당일이에요': 'Today is the event day',
   '주차': 'Parking',

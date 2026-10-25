@@ -5,12 +5,13 @@ import { Txt } from '../../components/Txt';
 import { formatDateTime } from '../../lib/format';
 import { colors, radius, spacing } from '../../theme';
 import { invitationKind } from '../../data/themes';
-import type { Invitation } from '../invitation/model';
+import type { Invitation, OptionalSection } from '../invitation/model';
+import { themeDef } from '../invitation/themes';
 import { periodLabel, screenStatus, ScreenStatus, STATUS_LABEL } from '../invitation/status';
 import { ACTIVATION } from '../wallet/pricing';
 import { CoverThumb } from './CoverThumb';
 
-export type CardAction = 'complete' | 'activate' | 'extend' | 'share' | 'guestbook' | 'more' | 'preview' | 'delete';
+export type CardAction = 'complete' | 'activate' | 'extend' | 'share' | 'guestbook' | 'rsvp' | 'more' | 'preview' | 'delete';
 
 const BADGE: Record<ScreenStatus, { bg: string; fg: string }> = {
   writing: { bg: '#FFF1DB', fg: '#B25E00' },
@@ -65,16 +66,37 @@ export function InviteCard({
   invitation,
   now,
   hasNew,
+  rsvpCount,
   onAction,
 }: {
   invitation: Invitation;
   now: Date;
   hasNew: boolean;
+  /** 받은 참석 응답 수 (참석 신청이 있는 테마) */
+  rsvpCount?: number;
   onAction: (a: CardAction) => void;
 }) {
   const status = screenStatus(invitation, now);
   const badge = BADGE[status];
   const guestbookOn = invitation.enabled.guestbook;
+  // 방명록이 없는 테마(기업)는 그 자리에 참석 응답
+  const def = themeDef(invitation.themeId);
+  const hasSection = (k: OptionalSection) => def.optional.some((s) => s.key === k);
+  const rsvpSlot = !hasSection('guestbook') && hasSection('rsvp');
+  const bookButton = (withNew: boolean) =>
+    rsvpSlot ? (
+      <CardButton
+        label={`참석 응답 (${rsvpCount ?? 0})`}
+        onPress={() => onAction('rsvp')}
+        disabled={!invitation.enabled.rsvp}
+      />
+    ) : (
+      <CardButton
+        label={withNew && guestbookOn && hasNew ? '(New) 방명록' : '방명록'}
+        onPress={() => onAction('guestbook')}
+        disabled={!guestbookOn}
+      />
+    );
   const more = (
     <Pressable onPress={() => onAction('more')} style={styles.more} accessibilityRole="button" accessibilityLabel="더보기">
       <Ionicons name="ellipsis-vertical" size={18} color={colors.label} />
@@ -128,7 +150,7 @@ export function InviteCard({
         {(status === 'inactive' || status === 'expired') && (
           <>
             <CardButton label="초대장 활성화" sub={`레터 ${ACTIVATION.cost}`} onPress={() => onAction('activate')} flex={2} />
-            <CardButton label="방명록" onPress={() => onAction('guestbook')} disabled={!guestbookOn} />
+            {bookButton(false)}
             {more}
           </>
         )}
@@ -136,11 +158,7 @@ export function InviteCard({
           <>
             <CardButton label="기간 연장" onPress={() => onAction('extend')} />
             <CardButton label="공유하기" onPress={() => onAction('share')} />
-            <CardButton
-              label={guestbookOn && hasNew ? '(New) 방명록' : '방명록'}
-              onPress={() => onAction('guestbook')}
-              disabled={!guestbookOn}
-            />
+            {bookButton(true)}
             {more}
           </>
         )}
