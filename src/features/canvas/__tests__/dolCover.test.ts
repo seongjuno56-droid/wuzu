@@ -11,7 +11,11 @@ const c: DolContent = {
     ...base.basic,
     childName: '이시안',
     photo: 'cover.jpg',
-    guardians: base.basic.guardians.map((g, i) => ({ ...g, name: ['이윤종', '이다영'][i] })),
+    guardians: base.basic.guardians.map((g, i) => ({
+      ...g,
+      relation: ['아빠', '엄마'][i],
+      name: ['이윤종', '이다영'][i],
+    })),
   },
   ceremony: { ...base.ceremony, date: '2027-04-22', venue: '비비드 파티룸' },
 };

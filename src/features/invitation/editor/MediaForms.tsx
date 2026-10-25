@@ -9,7 +9,8 @@ import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
 import { pickAudio } from '../media';
-import { DEFAULT_ENDING, LIMITS } from '../model';
+import { defaultDolEnding } from '../dol';
+import { defaultEnding, isDol, LIMITS } from '../model';
 import { Check, FormLabel, Hint, PhotoSlots } from './fields';
 
 const useContent = () => useEditor((s) => s.draft!.content);
@@ -70,7 +71,8 @@ export function GalleryForm({ onDragChange }: { onDragChange?: (dragging: boolea
 
 /** 엔딩: 스타일, 내용(필수, 기본 문구), 사진 최대 3장 */
 export function EndingForm({ onDragChange }: { onDragChange?: (dragging: boolean) => void }) {
-  const e = useContent().ending;
+  const c = useContent();
+  const e = c.ending;
   const patch = usePatch();
   return (
     <View style={styles.form}>
@@ -95,7 +97,10 @@ export function EndingForm({ onDragChange }: { onDragChange?: (dragging: boolean
         invalid={!e.content.trim()}
         minHeight={96}
         right={
-          <Pressable onPress={() => patch('ending', { content: DEFAULT_ENDING })} hitSlop={6}>
+          <Pressable
+            onPress={() => patch('ending', { content: isDol(c) ? defaultDolEnding() : defaultEnding() })}
+            hitSlop={6}
+          >
             <Txt variant="tiny" color={colors.infoInk}>
               기본 문구 넣기
             </Txt>

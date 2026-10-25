@@ -4,8 +4,16 @@ import { styleFor } from '../../data/templates';
 import { coverPreset } from '../canvas/preset';
 import type { CanvasDoc, ViewMode } from '../canvas/types';
 import { pruneAccounts, seedTimeline } from './dol';
-import { isDateString } from './model';
-import { Invitation, InvitationContent, isDol, OptionalSection, PageKey, ReorderablePage, SectionKey } from './model';
+import {
+  Invitation,
+  InvitationContent,
+  isDateString,
+  isDol,
+  OptionalSection,
+  PageKey,
+  ReorderablePage,
+  SectionKey,
+} from './model';
 import { createInvitation, themeDef, validateFor } from './themes';
 
 /** 제작 중인 초대장 (Step3~5 공유). 저장은 invitationService 가 담당 */

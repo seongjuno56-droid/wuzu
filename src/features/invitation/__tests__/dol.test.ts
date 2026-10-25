@@ -1,3 +1,4 @@
+import { useLocale } from '../../../i18n';
 import {
   addDays,
   birthDateProblem,
@@ -115,5 +116,22 @@ describe('돌잔치', () => {
     expect(birthDateProblem(c)).toBe(false); // 아직 안 넣음 — 빨간 테두리만
     expect(birthDateProblem({ ...c, basic: { ...c.basic, birthDate: '2099-01-01' } })).toBe(true);
     expect(birthDateProblem({ ...c, basic: { ...c.basic, birthDate: '2025-04-26' } })).toBe(false);
+  });
+});
+
+describe('돌잔치 기본 문구 — 사용자 언어별', () => {
+  afterEach(() => useLocale.setState({ locale: 'ko' }));
+  it('영어 사용자는 인사말·계좌 안내·엔딩·보호자 관계·성장 이야기 예시가 영어로 들어간다', () => {
+    useLocale.setState({ locale: 'en' });
+    const c = defaultDolContent(today);
+    expect(c.basic.guardians.map((g) => g.relation)).toEqual(['Dad', 'Mom']);
+    for (const s of [c.greeting.content, c.account.message, c.ending.content]) expect(s).not.toMatch(/[가-힣]/);
+    const items = seedTimeline([], '2025-04-26', '2026-04-26');
+    expect(items.map((i) => i.title)).toEqual(['Born', '100 Days', 'First Steps', 'First Birthday']);
+    expect(items.every((i) => !/[가-힣]/.test(i.text))).toBe(true);
+  });
+  it('한국어 사용자는 그대로 한국어', () => {
+    useLocale.setState({ locale: 'ko' });
+    expect(seedTimeline([], '2025-04-26', '2026-04-26')[0].title).toBe('태어난 날');
   });
 });

@@ -7,7 +7,7 @@ import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
 import { pickImages } from '../media';
-import { asWedding, DEFAULT_ACCOUNT_MESSAGE, LIMITS } from '../model';
+import { asWedding, defaultAccountMessage, LIMITS } from '../model';
 import { AccountFields, Check, FormLabel, Hint, PersonFields } from './fields';
 
 const useContent = () => useEditor((s) => s.draft!.content);
@@ -99,7 +99,7 @@ export function AccountForm() {
         placeholder="내용을 입력하세요."
         minHeight={96}
         right={
-          <Pressable onPress={() => patch('account', { message: DEFAULT_ACCOUNT_MESSAGE })} hitSlop={6}>
+          <Pressable onPress={() => patch('account', { message: defaultAccountMessage() })} hitSlop={6}>
             <Txt variant="tiny" color={colors.infoInk}>
               기본 문구 넣기
             </Txt>

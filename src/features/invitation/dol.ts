@@ -44,7 +44,17 @@ export const DEFAULT_DOL_ACCOUNT_MESSAGE =
   '참석이 어려우신 분들을 위해\n계좌번호를 안내해 드립니다.\n너그러운 마음으로 양해 부탁드립니다.';
 export const DEFAULT_DOL_ENDING = /* i18n-ignore */ '와 주셔서 감사합니다.\n건강하고 바르게 키우겠습니다.';
 
+// 영어 사용자 기본 문구
+const EN_DOL_GREETING =
+  "Our little one has already\nspent a whole year with us.\n\nFirst steps, first smiles, first babbles…\nWe would like to thank everyone\nwho shared these precious moments.\n\nPlease join us in celebrating\nour baby's very first birthday.";
+const EN_DOL_ACCOUNT_MESSAGE =
+  'For those who are unable to attend,\nwe have shared our account details below.\nThank you for your understanding.';
+const EN_DOL_ENDING = 'Thank you for coming.\nWe will raise our little one with love.';
+
 const guardian = (relation: string): Guardian => ({ id: newItemId(), relation, name: '' });
+
+/** 사용자 언어에 맞는 돌잔치 엔딩 기본 문구 */
+export const defaultDolEnding = () => (isEn() ? EN_DOL_ENDING : DEFAULT_DOL_ENDING);
 
 export function defaultDolContent(today: Date = new Date()): DolContent {
   const w = defaultContent(today);
@@ -55,16 +65,18 @@ export function defaultDolContent(today: Date = new Date()): DolContent {
       nickname: '',
       birthDate: '',
       photo: null,
-      guardians: [guardian(/* i18n-ignore */ '아빠'), guardian(/* i18n-ignore */ '엄마')],
+      guardians: isEn()
+        ? [guardian('Dad'), guardian('Mom')]
+        : [guardian(/* i18n-ignore */ '아빠'), guardian(/* i18n-ignore */ '엄마')],
     },
     ceremony: { ...w.ceremony, time: '12:00' },
-    greeting: { content: DEFAULT_DOL_GREETING, photo: null, appendNames: true },
+    greeting: { content: isEn() ? EN_DOL_GREETING : DEFAULT_DOL_GREETING, photo: null, appendNames: true },
     profile: { photo: null, intro: '', hashtags: [] },
     timeline: { items: [] },
-    account: { message: DEFAULT_DOL_ACCOUNT_MESSAGE, accounts: {} },
+    account: { message: isEn() ? EN_DOL_ACCOUNT_MESSAGE : DEFAULT_DOL_ACCOUNT_MESSAGE, accounts: {} },
     gallery: w.gallery,
     guestbook: w.guestbook,
-    ending: { ...w.ending, content: DEFAULT_DOL_ENDING },
+    ending: { ...w.ending, content: defaultDolEnding() },
     bgm: w.bgm,
   };
 }
@@ -97,27 +109,37 @@ export function addDays(date: string, days: number): string {
 
 const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 
-const SEEDS: { key: string; title: string; text: string; date: (birth: string, event: string) => string }[] = [
+const SEEDS: {
+  key: string;
+  title: string;
+  text: string;
+  en: [string, string];
+  date: (birth: string, event: string) => string;
+}[] = [
   {
     key: 'born',
+    en: ['Born', 'The day a tiny cry changed every day'],
     title: /* i18n-ignore */ '태어난 날',
     text: /* i18n-ignore */ '작은 울음으로 모든 하루를 바꾼 날',
     date: (b) => b,
   },
   {
     key: '100',
+    en: ['100 Days', 'Eat, sleep, smile, and suddenly 100 days'],
     title: /* i18n-ignore */ '100일',
     text: /* i18n-ignore */ '먹고 자고 웃다 보니 어느새 100일',
     date: (b) => addDays(b, 99),
   },
   {
     key: 'walk',
+    en: ['First Steps', 'Every single day was a first'],
     title: /* i18n-ignore */ '첫 걸음마',
     text: /* i18n-ignore */ '하루하루가 처음이었어요',
     date: () => '',
   },
   {
     key: 'first',
+    en: ['First Birthday', 'Finally, my very first birthday'],
     title: /* i18n-ignore */ '첫 생일',
     text: /* i18n-ignore */ '드디어 저의 첫 생일이에요',
     date: (b, e) => (isDate(e) ? e : addDays(b, 365)),
@@ -135,8 +157,8 @@ export function seedTimeline(items: TimelineItem[], birthDate: string, eventDate
       id: `seed-${s.key}`,
       photo: null,
       date: s.date(birthDate, eventDate),
-      title: s.title,
-      text: s.text,
+      title: isEn() ? s.en[0] : s.title,
+      text: isEn() ? s.en[1] : s.text,
       edited: false,
     }));
   }

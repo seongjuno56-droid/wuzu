@@ -289,6 +289,15 @@ export const DEFAULT_ACCOUNT_MESSAGE =
   '참석이 어려우신 분들을 위해\n계좌번호를 기재하였습니다.\n너그러운 마음으로 양해 부탁드립니다.';
 export const DEFAULT_ENDING = '먼길 와주셔서 감사합니다.\n앞으로 오래오래 행복하게 잘 살겠습니다.';
 
+// 영어 사용자 기본 문구 (사용자가 고치는 내용이라 번역 사전을 거치지 않고, 만들 때 언어에 맞춰 넣는다)
+const EN_ACCOUNT_MESSAGE =
+  'For those who are unable to attend,\nwe have shared our account details below.\nThank you for your understanding.';
+const EN_ENDING = 'Thank you for coming all this way.\nWe promise to live happily ever after.';
+/** 사용자 언어에 맞는 계좌 안내 기본 문구 */
+export const defaultAccountMessage = () => (isEn() ? EN_ACCOUNT_MESSAGE : DEFAULT_ACCOUNT_MESSAGE);
+/** 사용자 언어에 맞는 엔딩 기본 문구 */
+export const defaultEnding = () => (isEn() ? EN_ENDING : DEFAULT_ENDING);
+
 // ── 기본값 ────────────────────────────────────────────
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -333,7 +342,7 @@ export function defaultContent(today: Date = new Date()): WeddingContent {
       appendNames: true,
     },
     account: {
-      message: DEFAULT_ACCOUNT_MESSAGE,
+      message: defaultAccountMessage(),
       groom: account(),
       groomFather: account(),
       groomMother: account(),
@@ -343,7 +352,7 @@ export function defaultContent(today: Date = new Date()): WeddingContent {
     },
     gallery: { style: 'swipe', columns: 3, collapse: true, photos: [] },
     guestbook: { style: 1 },
-    ending: { style: 1, content: DEFAULT_ENDING, photos: [] },
+    ending: { style: 1, content: defaultEnding(), photos: [] },
     bgm: { uri: null, fileName: null, muteColor: 'white' },
   };
 }
