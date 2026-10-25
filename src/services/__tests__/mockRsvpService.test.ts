@@ -40,9 +40,9 @@ describe('참석 응답 mock 서비스', () => {
     const a = await s.submit({ invitationId: 'i', themeId: 'corporate', deadline: '2026-10-30', input: corp });
     now = new Date(2026, 9, 31);
     const id = a.ok ? a.response.id : '';
-    expect(await s.submit({ invitationId: 'i', themeId: 'corporate', deadline: '2026-10-30', input: corp, id })).toEqual(
-      { ok: false, reason: 'closed' },
-    );
+    expect(
+      await s.submit({ invitationId: 'i', themeId: 'corporate', deadline: '2026-10-30', input: corp, id }),
+    ).toEqual({ ok: false, reason: 'closed' });
   });
   it('만든 사람: 직접 넣기·고치기·지우기, 다른 초대장 명단과 섞이지 않음', async () => {
     const s = make();
