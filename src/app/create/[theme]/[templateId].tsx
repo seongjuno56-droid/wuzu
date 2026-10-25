@@ -33,15 +33,15 @@ export default function TemplateDetail() {
 
   if (!theme || !template) return <Redirect href="/create" />;
   // 실제 초대장 화면으로 미리 보는 테마 (그 밖은 표지 샘플)
-  const wedding = themeId === 'wedding' || themeId === 'dol';
+  const realPreview = ['wedding', 'dol', 'corporate'].includes(themeId);
 
   return (
     <Screen
       header={<Header title="템플릿 미리보기" />}
       background={template.style.bg}
       // 스토리형 미리보기는 화면 높이를 채워 넘긴다
-      scroll={!wedding || mode === 'scroll'}
-      contentStyle={wedding && mode === 'story' ? { flex: 1 } : undefined}
+      scroll={!realPreview || mode === 'scroll'}
+      contentStyle={realPreview && mode === 'story' ? { flex: 1 } : undefined}
       footer={
         <BottomCTA>
           <Button
@@ -51,7 +51,7 @@ export default function TemplateDetail() {
         </BottomCTA>
       }
     >
-      {wedding ? (
+      {realPreview ? (
         <>
           <View style={{ backgroundColor: template.style.bg }}>
             <ViewModeChips value={mode} onChange={setMode} />

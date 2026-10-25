@@ -28,9 +28,21 @@ const CARD_RATIO = 0.72; // 화면 폭 대비 카드 폭
 const CARD_ASPECT = 0.62; // 카드 가로/세로
 const GAP = spacing.md;
 
-/** 돌잔치 템플릿 카드: 예시 초대장의 표지를 카드 안에 맞춰 그린다 */
-function DolCoverCard({ templateId, bg, width, height }: { templateId: string; bg: string; width: number; height: number }) {
-  const sample = useMemo(() => sampleInvitation('dol', templateId), [templateId]);
+/** 돌잔치·기업 템플릿 카드: 예시 초대장의 표지를 카드 안에 맞춰 그린다 */
+function SampleCoverCard({
+  themeId,
+  templateId,
+  bg,
+  width,
+  height,
+}: {
+  themeId: string;
+  templateId: string;
+  bg: string;
+  width: number;
+  height: number;
+}) {
+  const sample = useMemo(() => sampleInvitation(themeId, templateId), [themeId, templateId]);
   const slide = fitSlide(width, height);
   return (
     <View style={{ width, height, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -108,9 +120,15 @@ export default function TemplateSelect() {
                   { width: cardWidth, height: cardWidth / CARD_ASPECT, opacity: i === index ? 1 : 0.5 },
                 ]}
               >
-                {themeId === 'dol' ? (
-                  // 돌잔치는 실제 표지(사진 틀·예시 사진)로 보여 준다
-                  <DolCoverCard templateId={item.id} bg={item.style.bg} width={cardWidth} height={cardWidth / CARD_ASPECT} />
+                {themeId === 'dol' || themeId === 'corporate' ? (
+                  // 돌잔치·기업은 실제 표지(사진 틀·로고·예시 사진)로 보여 준다
+                  <SampleCoverCard
+                    themeId={themeId}
+                    templateId={item.id}
+                    bg={item.style.bg}
+                    width={cardWidth}
+                    height={cardWidth / CARD_ASPECT}
+                  />
                 ) : (
                   <TemplatePreview template={item} coverOnly />
                 )}

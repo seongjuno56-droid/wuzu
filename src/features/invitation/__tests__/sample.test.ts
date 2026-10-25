@@ -24,3 +24,12 @@ describe('템플릿 미리보기 예시', () => {
     expect(c.gallery.photos.length).toBeGreaterThanOrEqual(LIMITS.galleryMin);
   });
 });
+
+describe('기업 예시', () => {
+  it('모든 탭이 검사를 통과하고 연사 소개가 켜져 있다', () => {
+    const inv = sampleInvitation('corporate', 'corporate-1', new Date(2026, 9, 25));
+    expect(inv.themeId).toBe('corporate');
+    expect(inv.enabled.speakers).toBe(true);
+    for (const k of sectionTabs(inv)) expect([k, validateFor(inv, k)]).toEqual([k, []]);
+  });
+});

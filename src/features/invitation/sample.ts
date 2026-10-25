@@ -2,8 +2,8 @@ import { Asset } from 'expo-asset';
 
 import type { GuestbookEntry } from '../../services/types';
 import { addDays, seedTimeline } from './dol';
-import { asWedding, DolContent, Invitation, toDateString } from './model';
-import { createInvitation } from './themes';
+import { asWedding, CorporateContent, DolContent, Invitation, toDateString } from './model';
+import { createInvitation, sectionTabs } from './themes';
 
 // 예시 사진: AI 로 만든 실사풍 웨딩 사진 (실존 인물 아님). 화면이 문자열 주소를 받으므로 번들 자산을 주소로 바꾼다
 const uri = (mod: number) => Asset.fromModule(mod).uri;
@@ -22,7 +22,9 @@ const SAMPLE_PHOTOS = {
 
 /** 템플릿 미리보기에 채워 넣는 예시 초대장 — 테마별 */
 export function sampleInvitation(themeId: string, templateId: string, today: Date = new Date()): Invitation {
-  return themeId === 'dol' ? dolSample(templateId, today) : weddingSample(templateId, today);
+  if (themeId === 'dol') return dolSample(templateId, today);
+  if (themeId === 'corporate') return corporateSample(templateId, today);
+  return weddingSample(templateId, today);
 }
 
 /** 결혼식 예시 (설계 시안의 문구 기준) */
@@ -124,6 +126,71 @@ function dolSample(templateId: string, today: Date): Invitation {
   c.gallery = { ...c.gallery, photos: [...DOL_PHOTOS.gallery(), DOL_PHOTOS.profile(), DOL_PHOTOS.first()] };
   c.ending = { ...c.ending, photos: [DOL_PHOTOS.walk()] };
   inv.completed = { basic: true, ceremony: true, greeting: true, profile: true, timeline: true, account: true, guestbook: true, ending: true, gallery: true };
+  return inv;
+}
+
+// 기업 예시 사진: AI 로 만든 사진 (실존 인물·회사 아님)
+const CORP_PHOTOS = {
+  hall: () => uri(require('../../../assets/sample/corporate/hall.jpg')),
+  networking: () => uri(require('../../../assets/sample/corporate/networking.jpg')),
+  logo: () => uri(require('../../../assets/sample/corporate/logo.png')),
+  speakers: () => [
+    uri(require('../../../assets/sample/corporate/speaker-1.jpg')),
+    uri(require('../../../assets/sample/corporate/speaker-2.jpg')),
+    uri(require('../../../assets/sample/corporate/speaker-3.jpg')),
+  ],
+};
+
+/** 기업 예시 — 가상의 회사 '우주컴퍼니' 파트너스 데이 (이름·문구는 예시) */
+function corporateSample(templateId: string, today: Date): Invitation {
+  const inv = createInvitation({ id: 'sample', ownerId: '', themeId: 'corporate', templateId, today });
+  const c = inv.content as CorporateContent;
+  const days = (n: number) => toDateString(new Date(today.getFullYear(), today.getMonth(), today.getDate() + n));
+  c.basic = {
+    eventName: /* i18n-ignore */ '2026 우주 파트너스 데이',
+    host: /* i18n-ignore */ '(주)우주컴퍼니',
+    logo: CORP_PHOTOS.logo(),
+    inviterTitle: /* i18n-ignore */ '대표이사',
+    inviterName: /* i18n-ignore */ '김우주',
+  };
+  c.ceremony = {
+    ...c.ceremony,
+    date: days(14),
+    time: '14:00',
+    venue: /* i18n-ignore */ '우주 컨벤션센터',
+    hall: /* i18n-ignore */ '3층 그랜드홀',
+    address: /* i18n-ignore */ '서울 강남구 테헤란로 521',
+    zonecode: '06164',
+    audience: /* i18n-ignore */ '파트너사 임직원',
+    dressCode: /* i18n-ignore */ '비즈니스 캐주얼',
+  };
+  c.greeting = { ...c.greeting, photo: CORP_PHOTOS.hall() };
+  c.program = {
+    items: [
+      ['14:00', /* i18n-ignore */ '등록 및 네트워킹', ''],
+      ['14:30', /* i18n-ignore */ '개회사', /* i18n-ignore */ '대표이사 김우주'],
+      ['15:00', /* i18n-ignore */ '기조 강연', /* i18n-ignore */ '박서연 연구소장'],
+      ['16:00', /* i18n-ignore */ '파트너 세션', /* i18n-ignore */ '이준호 · 최민지'],
+      ['17:30', /* i18n-ignore */ '만찬', ''],
+    ].map(([time, title, detail], i) => ({ id: `p${i}`, time, title, detail })),
+  };
+  const faces = CORP_PHOTOS.speakers();
+  c.speakers = {
+    items: [
+      [/* i18n-ignore */ '박서연', /* i18n-ignore */ '우주랩 연구소장', /* i18n-ignore */ 'AI가 바꾸는 일하는 방식'],
+      [/* i18n-ignore */ '이준호', /* i18n-ignore */ '그로스팀 리드', /* i18n-ignore */ '작은 팀의 큰 성장'],
+      [/* i18n-ignore */ '최민지', /* i18n-ignore */ '디자인 디렉터', /* i18n-ignore */ '브랜드 경험 설계'],
+    ].map(([name, title, line], i) => ({ id: `s${i}`, photo: faces[i], name, title, line })),
+  };
+  c.directions = {
+    parking: /* i18n-ignore */ '건물 지하 2~4층 주차 (3시간 무료)',
+    transit: /* i18n-ignore */ '2호선 삼성역 5번 출구 도보 5분',
+  };
+  c.rsvp = { deadline: days(10) };
+  c.contact = { name: /* i18n-ignore */ '행사 사무국', phone: '02-123-4567', email: 'event@wuzu.example' };
+  c.ending = { ...c.ending, photos: [CORP_PHOTOS.networking()] };
+  inv.enabled = { ...inv.enabled, speakers: true };
+  inv.completed = Object.fromEntries(sectionTabs(inv).map((k) => [k, true]));
   return inv;
 }
 
