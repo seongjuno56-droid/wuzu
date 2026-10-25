@@ -89,3 +89,22 @@ describe('기업 템플릿', () => {
     expect(styleFor('corporate', 'corporate-1', 'violet').bg).toBe(palettesFor('corporate')[9].bg);
   });
 });
+
+describe('모임 템플릿', () => {
+  it('10종, 밝은 색 조합 10색', () => {
+    expect(getTemplates('meetup')).toHaveLength(10);
+    expect(palettesFor('meetup').map((p) => p.id)).toEqual([
+      'confetti',
+      'mint',
+      'sunny',
+      'berry',
+      'sky',
+      'peach',
+      'lime',
+      'lilac',
+      'coral',
+      'night',
+    ]);
+    expect(paletteOfTemplate('meetup', 'meetup-1')).toBe('confetti');
+  });
+});

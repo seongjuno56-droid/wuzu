@@ -129,11 +129,40 @@ export const CORPORATE_PALETTES: Palette[] = CORPORATE_STYLES.map(({ name, style
   accent: style.accent,
 }));
 
+/** 모임 전용 10종 — 생일·동창회·집들이·송년회의 밝은 색 (설계 5장) */
+const MEETUP_STYLES: { name: string; style: TemplateStyle }[] = [
+  { name: '컨페티', style: { bg: '#FFF7E8', fg: '#3B2A14', sub: '#8A7457', accent: '#FF7A45', font: 'round', cover: 'date', frame: 'circle' } },
+  { name: '민트 파티', style: { bg: '#E9FAF4', fg: '#123D33', sub: '#5E8A7E', accent: '#16A37F', font: 'sans', cover: 'frame', frame: 'rounded' } },
+  { name: '써니', style: { bg: '#FFF9D6', fg: '#3D3510', sub: '#857B4C', accent: '#E09A00', font: 'round', cover: 'date', frame: 'circle' } },
+  { name: '베리', style: { bg: '#FCEBF2', fg: '#4A1630', sub: '#99677F', accent: '#D6336C', font: 'sans', cover: 'date', frame: 'rounded' } },
+  { name: '하늘색', style: { bg: '#EAF4FF', fg: '#14304F', sub: '#5F7A97', accent: '#2F80ED', font: 'round', cover: 'frame', frame: 'circle' } },
+  { name: '피치 펀치', style: { bg: '#FFEFE6', fg: '#4A2414', sub: '#9A6E58', accent: '#F76C3C', font: 'sans', cover: 'date', frame: 'arch' } },
+  { name: '라임', style: { bg: '#F3FBE3', fg: '#2B3B10', sub: '#738456', accent: '#6FA312', font: 'round', cover: 'date', frame: 'rounded' } },
+  { name: '라일락 나잇', style: { bg: '#F2EEFF', fg: '#2D2255', sub: '#776E9C', accent: '#7B5CE6', font: 'sans', cover: 'frame', frame: 'circle' } },
+  { name: '코랄 리프', style: { bg: '#FFF0EE', fg: '#4D1F1A', sub: '#9C6D67', accent: '#FF5A4E', font: 'round', cover: 'date', frame: 'arch' } },
+  { name: '나이트 파티', style: { bg: '#1B1F3B', fg: '#F6F2FF', sub: '#B3AECF', accent: '#FFC94D', font: 'sans', cover: 'date', frame: 'circle' } },
+];
+const MEETUP_PALETTE_IDS = ['confetti', 'mint', 'sunny', 'berry', 'sky', 'peach', 'lime', 'lilac', 'coral', 'night'];
+/** 모임 [색상] 칩의 10색 */
+export const MEETUP_PALETTES: Palette[] = MEETUP_STYLES.map(({ name, style }, i) => ({
+  id: MEETUP_PALETTE_IDS[i],
+  name,
+  bg: style.bg,
+  fg: style.fg,
+  sub: style.sub,
+  accent: style.accent,
+}));
+
 const THEME_STYLES: Partial<Record<ThemeId, { name: string; style: TemplateStyle }[]>> = {
   dol: DOL_STYLES,
   corporate: CORPORATE_STYLES,
+  meetup: MEETUP_STYLES,
 };
-const THEME_PALETTES: Partial<Record<ThemeId, Palette[]>> = { dol: DOL_PALETTES, corporate: CORPORATE_PALETTES };
+const THEME_PALETTES: Partial<Record<ThemeId, Palette[]>> = {
+  dol: DOL_PALETTES,
+  corporate: CORPORATE_PALETTES,
+  meetup: MEETUP_PALETTES,
+};
 /** 테마별 색 조합 */
 export const palettesFor = (themeId: string): Palette[] => THEME_PALETTES[themeId as ThemeId] ?? PALETTES;
 

@@ -28,6 +28,7 @@ export function coverPreset(style: TemplateStyle, themeId = 'wedding'): CanvasDo
 
   if (themeId === 'dol') return dolCover(style, text, bound);
   if (themeId === 'corporate') return corporateCover(style, text, bound, rule);
+  if (themeId === 'meetup') return meetupCover(style, text, bound);
 
   if (style.cover === 'names') {
     return {
@@ -106,13 +107,31 @@ type RuleMaker = (id: string, y: number, lengthPx: number) => CanvasElement;
 /** 기업 표지: 로고(있을 때만) · INVITATION · 행사명 · 주최 · 줄 · 일시 · 장소. frame 템플릿은 테두리 */
 function corporateCover(style: TemplateStyle, text: Maker, bound: BoundMaker, rule: RuleMaker): CanvasDoc {
   const elements: CanvasElement[] = [
-    { id: 'preset-logo', kind: 'photo', bind: 'logo', x: 0.5, y: 0.27, w: 0.2, rotation: 0, aspect: 1, frame: 'rounded' },
+    { id: 'preset-logo', kind: 'photo', bind: 'logo', optional: true, x: 0.5, y: 0.27, w: 0.2, rotation: 0, aspect: 1, frame: 'rounded' },
     text('preset-label', 'INVITATION', 0.37, 12, style.accent),
     bound('preset-event', 'eventName', 0.44, 26, style.fg, true),
     bound('preset-host', 'host', 0.505, 15, style.sub),
     rule('preset-rule', 0.55, 32),
     bound('preset-datetime', 'datetime', 0.6, 14, style.sub),
     bound('preset-venue', 'venue', 0.645, 14, style.sub),
+  ];
+  if (style.cover === 'frame') elements.unshift(frameBox(style));
+  return { background: { kind: 'template' }, elements };
+}
+
+/** 모임 표지: 대표 사진(있을 때만, 템플릿 틀) · LET'S MEET · 모임 이름 · 주최 · 일시 · 장소 */
+function meetupCover(style: TemplateStyle, text: Maker, bound: BoundMaker): CanvasDoc {
+  const frame: PhotoFrame = style.frame ?? 'circle';
+  const elements: CanvasElement[] = [
+    {
+      id: 'preset-photo', kind: 'photo', bind: 'coverPhoto', optional: true, x: 0.5, y: 0.3, w: 0.56, rotation: 0,
+      aspect: frame === 'circle' ? 1 : 1.15, frame,
+    },
+    text('preset-label', "LET'S MEET", 0.55, 12, style.accent),
+    bound('preset-event', 'eventName', 0.61, 26, style.fg, true),
+    bound('preset-host', 'host', 0.67, 14, style.sub),
+    bound('preset-datetime', 'datetime', 0.73, 14, style.sub),
+    bound('preset-venue', 'venue', 0.775, 14, style.sub),
   ];
   if (style.cover === 'frame') elements.unshift(frameBox(style));
   return { background: { kind: 'template' }, elements };

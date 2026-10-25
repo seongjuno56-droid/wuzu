@@ -11,6 +11,7 @@ import {
   InvitationContent,
   isCorporate,
   isDol,
+  isMeetup,
   isWedding,
   parseDate,
   WEEKDAYS_EN,
@@ -73,12 +74,15 @@ const DOL_BINDS: BindKey[] = ['childName', 'nickname', 'guardians', 'firstBirthd
 const CORPORATE_BINDS: BindKey[] = ['eventName', 'host', 'date', 'weekday', 'datetime', 'time', 'venue'];
 /** 결혼식이 아닌 테마는 날짜·장소 이름에 '예식'을 쓰지 않는다 */
 const EVENT_BIND_LABEL: Partial<Record<BindKey, string>> = { date: '날짜', datetime: '일시', time: '시간', venue: '장소명' };
+const MEETUP_BIND_LABEL: Partial<Record<BindKey, string>> = { eventName: '모임 이름' };
 export const bindLabel = (bind: BindKey, themeId: string) =>
-  (themeId === 'wedding' ? undefined : EVENT_BIND_LABEL[bind]) ?? BIND_LABEL[bind];
+  (themeId === 'meetup' ? MEETUP_BIND_LABEL[bind] : undefined) ??
+  (themeId === 'wedding' ? undefined : EVENT_BIND_LABEL[bind]) ??
+  BIND_LABEL[bind];
 
 /** [정보 글자] 목록 — 테마별 */
 export const bindsFor = (themeId: string): BindKey[] =>
-  themeId === 'dol' ? DOL_BINDS : themeId === 'corporate' ? CORPORATE_BINDS : WEDDING_BINDS;
+  themeId === 'dol' ? DOL_BINDS : themeId === 'corporate' || themeId === 'meetup' ? CORPORATE_BINDS : WEDDING_BINDS;
 
 export type LimitError = 'elements' | 'gifs' | 'videos';
 export const LIMIT_MESSAGE: Record<LimitError, string> = {
@@ -108,13 +112,13 @@ export function resolveBind(bind: BindKey, c: InvitationContent): { text: string
       return venue ? { text: venue, placeholder: false } : { text: isWedding(c) ? '예식장' : '장소', placeholder: true };
     }
   }
-  if (isCorporate(c)) {
+  if (isCorporate(c) || isMeetup(c)) {
     const b = c.basic;
     switch (bind) {
       case 'eventName':
         return b.eventName.trim()
           ? { text: b.eventName.trim(), placeholder: false }
-          : { text: '행사명', placeholder: true };
+          : { text: isMeetup(c) ? '모임 이름' : '행사명', placeholder: true };
       case 'host':
         return b.host.trim() ? { text: b.host.trim(), placeholder: false } : { text: '주최', placeholder: true };
       default:
@@ -167,7 +171,7 @@ export const photoFit = (bind: 'coverPhoto' | 'logo') => (bind === 'logo' ? 'con
 /** 사진 요소의 사진 — 돌잔치 표지 사진(없으면 빈 틀) / 기업 로고(없으면 그리지 않음). 없으면 null */
 export function resolvePhoto(c: InvitationContent, bind: 'coverPhoto' | 'logo' = 'coverPhoto'): string | null {
   if (bind === 'logo') return isCorporate(c) ? c.basic.logo : null;
-  return isDol(c) ? c.basic.photo : null;
+  return isDol(c) || isMeetup(c) ? c.basic.photo : null;
 }
 
 // ── 제한 ──────────────────────────────────────────────

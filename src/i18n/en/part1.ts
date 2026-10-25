@@ -1,5 +1,16 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '컨페티': 'Confetti',
+  '민트 파티': 'Mint Party',
+  '써니': 'Sunny',
+  '베리': 'Berry',
+  '하늘색': 'Sky Blue',
+  '피치 펀치': 'Peach Punch',
+  '라임': 'Lime',
+  '라일락 나잇': 'Lilac Night',
+  '코랄 리프': 'Coral Reef',
+  '나이트 파티': 'Night Party',
+  '모임 이름': 'Gathering name',
   '안내사항': 'Notices',
   '초대 문구': 'Invitation message',
   '일정표': 'Schedule',

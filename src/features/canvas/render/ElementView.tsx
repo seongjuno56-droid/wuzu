@@ -94,8 +94,8 @@ export function ElementContent({
   } else if (el.kind === 'photo') {
     const uri = resolvePhoto(content, el.bind);
     const shape = { width, height, overflow: 'hidden' as const, ...frameRadius(el.frame, width, height) };
-    // 로고는 선택이라 비어 있으면 아무것도 그리지 않는다 (표지 사진은 빈 틀)
-    node = !uri && el.bind === 'logo' ? null : uri ? (
+    // 선택 사진(기업 로고·모임 대표 사진)은 비어 있으면 아무것도 그리지 않는다 (돌잔치 표지 사진은 빈 틀)
+    node = !uri && (el.optional || el.bind === 'logo') ? null : uri ? (
       <Image source={{ uri }} style={shape} contentFit={photoFit(el.bind)} onError={() => setBroken(true)} />
     ) : (
       // 표지 사진을 아직 안 넣었으면 빈 틀

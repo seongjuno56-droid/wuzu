@@ -59,7 +59,7 @@ export type VideoElement = ElementBase & { kind: 'video'; uri: string; aspect: n
 /** 돌잔치 표지 사진 틀 */
 export type PhotoFrame = 'arch' | 'circle' | 'oval' | 'rounded' | 'cloud';
 /** 폼의 사진(표지 사진)과 연결된 사진 칸 — 사진은 그릴 때 폼 값으로 */
-export type PhotoElement = ElementBase & { kind: 'photo'; bind: 'coverPhoto' | 'logo'; aspect: number; frame: PhotoFrame };
+export type PhotoElement = ElementBase & { kind: 'photo'; bind: 'coverPhoto' | 'logo'; /** 사진이 없으면 그리지 않는다 (기업 로고·모임 대표 사진) */ optional?: boolean; aspect: number; frame: PhotoFrame };
 export type StickerElement = ElementBase & { kind: 'sticker'; icon: string; aspect: number };
 /** points: 상자 대비 0~1 [x0, y0, x1, y1, …] / width: 선 굵기, 슬라이드 폭 대비 */
 export type StrokeElement = ElementBase & { kind: 'stroke'; points: number[]; color: string; width: number; aspect: number };
