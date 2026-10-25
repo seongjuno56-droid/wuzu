@@ -25,3 +25,22 @@ export function dropIndex(args: {
   const index = Math.max(0, row) * columns + clampedCol;
   return Math.min(count - 1, Math.max(0, index));
 }
+
+/**
+ * 높이가 제각각인 세로 목록에서 dy 만큼 끌었을 때 놓일 칸 번호.
+ * 아래로 끌면 카드 아래 끝이, 위로 끌면 위 끝이 이웃 카드의 가운데를 넘을 때 자리를 바꾼다.
+ */
+export function dropIndexByHeights(args: { heights: number[]; gap: number; from: number; dy: number }): number {
+  const { heights, gap, from, dy } = args;
+  const tops: number[] = [];
+  heights.reduce((y, h) => (tops.push(y), y + h + gap), 0);
+  const top = tops[from] + dy;
+  const bottom = top + heights[from];
+  let to = from;
+  if (dy > 0) {
+    for (let j = from + 1; j < heights.length; j++) if (bottom > tops[j] + heights[j] / 2) to = j;
+  } else {
+    for (let j = from - 1; j >= 0; j--) if (top < tops[j] + heights[j] / 2) to = j;
+  }
+  return to;
+}

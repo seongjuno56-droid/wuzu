@@ -111,7 +111,7 @@ function DateField({
 }
 
 /** 기본 정보: 아이(이름·부르는 이름·태어난 날·표지 사진) + 보호자 1~4명 */
-export function DolBasicForm() {
+export function DolBasicForm({ onDragChange }: { onDragChange?: (dragging: boolean) => void }) {
   const c = useDol();
   const b = c.basic;
   const patch = usePatch();
@@ -146,6 +146,7 @@ export function DolBasicForm() {
         보호자
       </Txt>
       <ListEditor
+        onDragChange={onDragChange}
         items={b.guardians}
         max={DOL_LIMITS.guardians}
         addLabel="보호자 추가"
@@ -244,7 +245,7 @@ export function DolProfileForm() {
 }
 
 /** 성장 이야기: 항목(날짜·제목·한 줄·사진) 최대 6개 */
-export function DolTimelineForm() {
+export function DolTimelineForm({ onDragChange }: { onDragChange?: (dragging: boolean) => void }) {
   const items = useDol().timeline.items;
   const patch = usePatch();
   const set = (next: TimelineItem[]) => patch('timeline', { items: next });
@@ -254,6 +255,7 @@ export function DolTimelineForm() {
     <View style={styles.form}>
       {!items.length && <Hint>기본 정보에 태어난 날을 넣으면 예시 4개가 채워져요.</Hint>}
       <ListEditor
+        onDragChange={onDragChange}
         items={items}
         max={DOL_LIMITS.timeline}
         addLabel="이야기 추가"

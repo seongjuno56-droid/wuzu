@@ -51,9 +51,9 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
         scrollEnabled={!dragging}
         keyboardShouldPersistTaps="handled"
       >
-        {section === 'basic' && (dol ? <DolBasicForm /> : <BasicForm />)}
+        {section === 'basic' && (dol ? <DolBasicForm onDragChange={setDragging} /> : <BasicForm />)}
         {section === 'profile' && <DolProfileForm />}
-        {section === 'timeline' && <DolTimelineForm />}
+        {section === 'timeline' && <DolTimelineForm onDragChange={setDragging} />}
         {section === 'ceremony' && <CeremonyForm onDragChange={setDragging} />}
         {section === 'greeting' && <GreetingForm />}
         {section === 'account' && (dol ? <DolAccountForm /> : <AccountForm />)}
