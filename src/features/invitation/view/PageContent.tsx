@@ -1,7 +1,8 @@
 import type { GuestbookEntry } from '../../../services/types';
 import { ddayLine } from '../dol';
+import { meetupDdayLine } from '../meetup';
 import type { RsvpResponse } from '../../rsvp/rsvp';
-import { asWedding, Invitation, isCorporate, isDol, PageKey, withGallery } from '../model';
+import { asWedding, Invitation, isCorporate, isDol, isMeetup, PageKey, withGallery } from '../model';
 import { AccountPage } from './AccountPage';
 import { CeremonyPage } from './CeremonyPage';
 import { ContactPage, CorporateOverviewPage, DirectionsPage, ProgramPage, SpeakersPage } from './CorporatePages';
@@ -10,6 +11,7 @@ import { EndingPage } from './EndingPage';
 import { GalleryPage } from './GalleryPage';
 import { GreetingPage } from './GreetingPage';
 import { GuestbookPage } from './GuestbookPage';
+import { MeetupAccountPage, NoticesPage } from './MeetupPages';
 import { RsvpPage } from './RsvpPage';
 
 export type ViewInvitation = Pick<
@@ -48,7 +50,7 @@ export function PageContent({
       case 'ceremony':
         return <CorporateOverviewPage content={content} />;
       case 'program':
-        return <ProgramPage content={content} />;
+        return <ProgramPage items={content.program.items} title="프로그램" />;
       case 'speakers':
         return <SpeakersPage content={content} />;
       case 'directions':
@@ -56,13 +58,36 @@ export function PageContent({
       case 'contact':
         return <ContactPage content={content} />;
       case 'rsvp':
-        return <RsvpPage content={content} rsvp={rsvp} />;
+        return <RsvpPage settings={content.rsvp} title="참석 신청" cta="참석 신청하기" rsvp={rsvp} />;
       case 'greeting':
         return <GreetingPage content={content} />;
       case 'ending':
         return <EndingPage ending={content.ending} />;
       default:
         return null; // 기업에 없는 장 (갤러리·방명록·계좌)
+    }
+  }
+  if (isMeetup(content)) {
+    // 모임 전용 장 (초대 문구·갤러리·방명록·엔딩은 아래 공통 부품)
+    switch (page) {
+      case 'program':
+        return <ProgramPage items={content.program.items} title="일정표" />;
+      case 'notices':
+        return <NoticesPage content={content} />;
+      case 'account':
+        return <MeetupAccountPage content={content} />;
+      case 'rsvp':
+        return <RsvpPage settings={content.rsvp} title="참석 여부" cta="참석 여부 알려주기" rsvp={rsvp} />;
+      case 'ceremony':
+        return (
+          <CeremonyPage
+            ceremony={content.ceremony}
+            ddayText={meetupDdayLine}
+            todayText="오늘이 모임 날이에요"
+            placeTitle="오시는 길"
+            venuePlaceholder="장소 이름"
+          />
+        );
     }
   }
   if (isDol(content)) {

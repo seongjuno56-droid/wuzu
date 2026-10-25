@@ -1,5 +1,7 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '참석 여부 알려주기': 'Let us know',
+  '오늘이 모임 날이에요': 'Today is the day!',
   '예) 03학번 연말 송년회': 'e.g. Class of 2003 year-end party',
   '예) 김모임 또는 우리 동기 모임': 'e.g. Kim or our class group',
   '대표 사진': 'Main photo',

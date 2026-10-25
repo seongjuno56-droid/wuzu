@@ -7,8 +7,9 @@ import { Screen } from '../../components/Screen';
 import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
 import { GuestbookModals, GuestbookView } from '../../features/invitation/GuestbookModals';
-import { Invitation, isCorporate } from '../../features/invitation/model';
+import { Invitation, rsvpOf } from '../../features/invitation/model';
 import { screenStatus } from '../../features/invitation/status';
+import { themeDef } from '../../features/invitation/themes';
 import { InvitationView } from '../../features/invitation/view/InvitationView';
 import { lookFor } from '../../features/invitation/view/look';
 import { myRsvp } from '../../features/rsvp/myRsvp';
@@ -78,12 +79,12 @@ export default function InvitationScreen() {
   }
 
   const story = invitation.viewMode === 'story';
-  const corp = isCorporate(invitation.content) ? invitation.content : null;
-  const deadline = corp?.rsvp.deadline ?? '';
+  const settings = rsvpOf(invitation.content);
+  const deadline = settings?.deadline ?? '';
   // 만든 사람의 미리보기(활성 전)에서는 신청 버튼을 끈다 — 자기 명단에 시험 응답이 쌓이지 않게
   const preview = isOwner && screenStatus(invitation) !== 'active';
   const rsvp =
-    corp && invitation.enabled.rsvp && !preview
+    settings && invitation.enabled.rsvp && !preview
       ? { mine, closed: isRsvpClosed(deadline, new Date()), onOpen: () => setRsvpOpen(true) }
       : undefined;
   const look = lookFor(invitation.themeId, invitation.templateId, invitation.paletteId);
@@ -136,7 +137,7 @@ export default function InvitationScreen() {
           visible={rsvpOpen}
           themeId={invitation.themeId}
           initial={rsvpInitial}
-          title={mine ? '응답 고치기' : '참석 신청'}
+          title={mine ? '응답 고치기' : themeDef(invitation.themeId).pageLabel('rsvp')}
           submitLabel={mine ? '고치기' : '보내기'}
           onClose={() => setRsvpOpen(false)}
           onSubmit={async (input) => {

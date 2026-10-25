@@ -1,7 +1,7 @@
 import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { radius, spacing } from '../../../theme';
-import { CorporateContent } from '../model';
+import { CorporateContent, ProgramItem } from '../model';
 import { CeremonyPage, MapCard } from './CeremonyPage';
 import { IText, Page, PageTitle, useLook } from './look';
 
@@ -42,14 +42,14 @@ export function CorporateOverviewPage({ content }: { content: CorporateContent }
   );
 }
 
-/** 프로그램: 시간표 */
-export function ProgramPage({ content }: { content: CorporateContent }) {
+/** 시간표 — 기업 프로그램·모임 일정표 */
+export function ProgramPage({ items, title }: { items: ProgramItem[]; title: string }) {
   const look = useLook();
   return (
     <Page>
-      <PageTitle>프로그램</PageTitle>
+      <PageTitle>{title}</PageTitle>
       <View style={styles.table}>
-        {content.program.items.map((it) => (
+        {items.map((it) => (
           <View key={it.id} style={[styles.slot, { borderColor: look.sub + '33' }]}>
             <View style={styles.time}>
               <IText size={14} tone="accent" align="left" raw>

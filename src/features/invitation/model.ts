@@ -344,6 +344,9 @@ export function asWedding(c: InvitationContent): WeddingContent {
   return c;
 }
 
+/** 참석 응답을 받는 테마(기업·모임)의 설정. 그 밖은 null */
+export const rsvpOf = (c: InvitationContent): RsvpSettings | null => (isCorporate(c) || isMeetup(c) ? c.rsvp : null);
+
 /** 갤러리·방명록이 있는 테마 (결혼식·돌잔치·모임) 전용 부품에서 쓴다 */
 export function withGallery(c: InvitationContent): WeddingContent | DolContent | MeetupContent {
   if (isCorporate(c)) throw new Error(/* i18n-ignore */ '갤러리가 없는 초대장이에요');

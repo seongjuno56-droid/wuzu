@@ -3,7 +3,7 @@ import { Image, StyleSheet } from 'react-native';
 import { radius } from '../../../theme';
 import { inviterLine } from '../corporate';
 import { guardianNames } from '../dol';
-import { asWedding, givenName, InvitationContent, isCorporate, isDol, isWedding, Person } from '../model';
+import { asWedding, givenName, InvitationContent, isCorporate, isDol, isMeetup, isWedding, Person } from '../model';
 import { IText, Page, PageTitle } from './look';
 
 /** "홍철수 · 이순자의 아들 홍길동" — 故人이면 이름 앞에 故 */
@@ -18,6 +18,11 @@ function familyLine(father: Person, mother: Person, child: Person): string | nul
 
 /** 인사말 아래 이름 줄과 서명 — 테마별 */
 function namesFor(content: InvitationContent): { lines: string[]; signature: string | null } {
+  if (isMeetup(content)) {
+    // 모임: 서명은 주최 (비우면 없음)
+    const host = content.basic.host.trim();
+    return { lines: [], signature: content.greeting.appendNames && host ? host : null };
+  }
   if (isCorporate(content)) {
     // 기업: 이름 줄 없이 서명만 — '대표이사 김우주' (초청인이 없으면 주최)
     const sign = inviterLine(content.basic) || content.basic.host.trim();

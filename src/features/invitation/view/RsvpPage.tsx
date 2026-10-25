@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { radius, spacing } from '../../../theme';
 import { deadlineLine } from '../../rsvp/rsvp';
-import { CorporateContent } from '../model';
+import { RsvpSettings } from '../model';
 import { IText, Page, PageTitle, useLook } from './look';
 import type { RsvpHandlers } from './PageContent';
 
@@ -10,9 +10,21 @@ import type { RsvpHandlers } from './PageContent';
  * 참석 신청 장 — 장 안에는 버튼만 두고 입력은 모달에서 받는다
  * (스토리형에서 입력칸을 누르다 장이 넘어가지 않게)
  */
-export function RsvpPage({ content, rsvp }: { content: CorporateContent; rsvp?: RsvpHandlers }) {
+export function RsvpPage({
+  settings,
+  title,
+  cta,
+  rsvp,
+}: {
+  settings: RsvpSettings;
+  /** 기업 '참석 신청' / 모임 '참석 여부' */
+  title: string;
+  /** 첫 버튼 문구 */
+  cta: string;
+  rsvp?: RsvpHandlers;
+}) {
   const look = useLook();
-  const deadline = content.rsvp.deadline;
+  const deadline = settings.deadline;
   const button = (label: string, onPress?: () => void) => (
     <Pressable
       onPress={onPress}
@@ -28,7 +40,7 @@ export function RsvpPage({ content, rsvp }: { content: CorporateContent; rsvp?: 
   );
   return (
     <Page>
-      <PageTitle>참석 신청</PageTitle>
+      <PageTitle>{title}</PageTitle>
       {!!deadline && (
         <IText tone="sub" raw>
           {deadlineLine(deadline)}
@@ -36,7 +48,7 @@ export function RsvpPage({ content, rsvp }: { content: CorporateContent; rsvp?: 
       )}
       {!rsvp ? (
         <>
-          {button('참석 신청하기')}
+          {button(cta)}
           <IText size={13} tone="sub">
             초대장을 활성화하면 하객이 신청할 수 있어요.
           </IText>
@@ -59,7 +71,7 @@ export function RsvpPage({ content, rsvp }: { content: CorporateContent; rsvp?: 
       ) : rsvp.closed ? (
         <IText tone="sub">마감되었어요</IText>
       ) : (
-        button('참석 신청하기', rsvp.onOpen)
+        button(cta, rsvp.onOpen)
       )}
     </Page>
   );

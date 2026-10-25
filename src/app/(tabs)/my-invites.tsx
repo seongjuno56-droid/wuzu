@@ -121,6 +121,7 @@ export default function MyInvites() {
   const onMore = (a: MoreAction) => {
     const inv = more!;
     setMore(null);
+    if (a === 'rsvp') router.push(`/invitation/${inv.id}/rsvp`);
     if (a === 'history') router.push(`/invitation/${inv.id}/history`);
     if (a === 'rename') setRenaming(inv);
     if (a === 'edit') edit(inv);
@@ -192,7 +193,13 @@ export default function MyInvites() {
           setSheet(null);
         }}
       />
-      <MoreSheet invitation={more} visible={!!more} onSelect={onMore} onClose={() => setMore(null)} />
+      <MoreSheet
+        invitation={more}
+        visible={!!more}
+        rsvpCount={more ? rsvpCounts[more.id] : undefined}
+        onSelect={onMore}
+        onClose={() => setMore(null)}
+      />
       <RenameModal
         invitation={renaming}
         onClose={() => setRenaming(null)}

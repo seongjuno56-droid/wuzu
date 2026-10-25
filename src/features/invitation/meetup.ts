@@ -86,6 +86,10 @@ export function defaultMeetupContent(today: Date = new Date()): MeetupContent {
   };
 }
 
+/** D-day 아래 줄 — 숫자가 끼어 언어별로 만든다 */
+export const meetupDdayLine = (daysLeft: number) =>
+  isEn() ? `${daysLeft} days to go.` : /* i18n-ignore */ `모임까지 ${daysLeft}일 남았어요.`;
+
 const filled = (s: string) => s.trim().length > 0;
 const within = (s: string, max: number) => s.trim().length <= max;
 

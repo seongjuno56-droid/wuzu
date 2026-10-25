@@ -5,10 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Txt } from '../../components/Txt';
 import { appColumn, colors, radius, spacing } from '../../theme';
 import { invitationKind } from '../../data/themes';
+import { themeDef } from '../invitation/themes';
 import type { Invitation } from '../invitation/model';
 import { screenStatus } from '../invitation/status';
 
-export type MoreAction = 'history' | 'rename' | 'edit' | 'delete';
+export type MoreAction = 'rsvp' | 'history' | 'rename' | 'edit' | 'delete';
 
 const ITEMS: { key: MoreAction; label: string }[] = [
   { key: 'history', label: '이력 열람' },
@@ -21,17 +22,27 @@ const ITEMS: { key: MoreAction; label: string }[] = [
 export function MoreSheet({
   invitation,
   visible,
+  rsvpCount,
   onSelect,
   onClose,
 }: {
   invitation: Invitation | null;
   visible: boolean;
+  /** 받은 참석 응답 수 (모임) */
+  rsvpCount?: number;
   onSelect: (a: MoreAction) => void;
   onClose: () => void;
 }) {
   if (!invitation) return null;
   const blocked = screenStatus(invitation) === 'blocked';
-  const items = blocked ? ITEMS.filter((i) => i.key === 'history' || i.key === 'delete') : ITEMS;
+  const base = blocked ? ITEMS.filter((i) => i.key === 'history' || i.key === 'delete') : ITEMS;
+  // 방명록과 참석 여부를 둘 다 쓰는 테마(모임)는 카드 버튼 줄이 차 있어 참석 응답을 여기에 둔다
+  const def = themeDef(invitation.themeId);
+  const both = ['guestbook', 'rsvp'].every((k) => def.optional.some((s) => s.key === k));
+  const items =
+    both && invitation.enabled.rsvp && !blocked
+      ? [{ key: 'rsvp' as const, label: `참석 응답 (${rsvpCount ?? 0})` }, ...base]
+      : base;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.dim} onPress={onClose} accessibilityLabel="닫기">
