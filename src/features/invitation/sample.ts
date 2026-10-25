@@ -2,7 +2,7 @@ import { Asset } from 'expo-asset';
 
 import type { GuestbookEntry } from '../../services/types';
 import { addDays, seedTimeline } from './dol';
-import { asWedding, CorporateContent, DolContent, Invitation, toDateString } from './model';
+import { asWedding, CorporateContent, DolContent, Invitation, MeetupContent, toDateString } from './model';
 import { createInvitation, sectionTabs } from './themes';
 
 // 예시 사진: AI 로 만든 실사풍 웨딩 사진 (실존 인물 아님). 화면이 문자열 주소를 받으므로 번들 자산을 주소로 바꾼다
@@ -24,6 +24,7 @@ const SAMPLE_PHOTOS = {
 export function sampleInvitation(themeId: string, templateId: string, today: Date = new Date()): Invitation {
   if (themeId === 'dol') return dolSample(templateId, today);
   if (themeId === 'corporate') return corporateSample(templateId, today);
+  if (themeId === 'meetup') return meetupSample(templateId, today);
   return weddingSample(templateId, today);
 }
 
@@ -190,6 +191,59 @@ function corporateSample(templateId: string, today: Date): Invitation {
   c.contact = { name: /* i18n-ignore */ '행사 사무국', phone: '02-123-4567', email: 'event@wuzu.example' };
   c.ending = { ...c.ending, photos: [CORP_PHOTOS.networking()] };
   inv.enabled = { ...inv.enabled, speakers: true };
+  inv.completed = Object.fromEntries(sectionTabs(inv).map((k) => [k, true]));
+  return inv;
+}
+
+// 모임 예시 사진: AI 로 만든 사진 (실존 인물 아님)
+const MEETUP_PHOTOS = {
+  cover: () => uri(require('../../../assets/sample/meetup/cover.jpg')),
+  ending: () => uri(require('../../../assets/sample/meetup/ending.jpg')),
+  gallery: () => [
+    uri(require('../../../assets/sample/meetup/gallery-1.jpg')),
+    uri(require('../../../assets/sample/meetup/gallery-2.jpg')),
+    uri(require('../../../assets/sample/meetup/gallery-3.jpg')),
+    uri(require('../../../assets/sample/meetup/gallery-4.jpg')),
+  ],
+};
+
+/** 모임 예시 — 가상의 '03학번 연말 송년회' (이름·장소·계좌는 예시) */
+function meetupSample(templateId: string, today: Date): Invitation {
+  const inv = createInvitation({ id: 'sample', ownerId: '', themeId: 'meetup', templateId, today });
+  const c = inv.content as MeetupContent;
+  const days = (n: number) => toDateString(new Date(today.getFullYear(), today.getMonth(), today.getDate() + n));
+  c.basic = {
+    eventName: /* i18n-ignore */ '03학번 연말 송년회',
+    host: /* i18n-ignore */ '03학번 동기회',
+    photo: MEETUP_PHOTOS.cover(),
+  };
+  c.ceremony = {
+    ...c.ceremony,
+    date: days(12),
+    time: '19:00',
+    venue: /* i18n-ignore */ '을지로 루프탑 라운지',
+    hall: /* i18n-ignore */ '5층',
+    address: /* i18n-ignore */ '서울 중구 을지로 100',
+    zonecode: '04524',
+  };
+  c.program = {
+    items: [
+      ['19:00', /* i18n-ignore */ '모여서 건배'],
+      ['19:30', /* i18n-ignore */ '저녁 식사'],
+      ['20:30', /* i18n-ignore */ '올해의 사진 퀴즈'],
+      ['21:30', /* i18n-ignore */ '단체 사진'],
+    ].map(([time, title], i) => ({ id: `m${i}`, time, title, detail: '' })),
+  };
+  c.gallery = { ...c.gallery, photos: MEETUP_PHOTOS.gallery() };
+  c.rsvp = { deadline: days(9) };
+  c.account = {
+    amount: /* i18n-ignore */ '1인 3만원',
+    bank: /* i18n-ignore */ '카카오뱅크',
+    number: '3333-01-1234567',
+    holder: /* i18n-ignore */ '김총무',
+  };
+  c.ending = { ...c.ending, photos: [MEETUP_PHOTOS.ending()] };
+  inv.enabled = { ...inv.enabled, account: true };
   inv.completed = Object.fromEntries(sectionTabs(inv).map((k) => [k, true]));
   return inv;
 }

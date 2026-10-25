@@ -33,7 +33,7 @@ export default function TemplateDetail() {
 
   if (!theme || !template) return <Redirect href="/create" />;
   // 실제 초대장 화면으로 미리 보는 테마 (그 밖은 표지 샘플)
-  const realPreview = ['wedding', 'dol', 'corporate'].includes(themeId);
+  const realPreview = ['wedding', 'dol', 'corporate', 'meetup'].includes(themeId);
 
   return (
     <Screen

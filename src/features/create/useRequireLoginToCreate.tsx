@@ -7,7 +7,7 @@ import type { ViewMode } from '../canvas/types';
 import { useEditor } from '../invitation/editorStore';
 
 /** 지금 제작할 수 있는 테마 (모임·기업 행사는 준비 중) */
-const EDITABLE_THEMES = ['wedding', 'dol', 'corporate'];
+const EDITABLE_THEMES = ['wedding', 'dol', 'corporate', 'meetup'];
 
 /**
  * 템플릿 선택/제작하기:

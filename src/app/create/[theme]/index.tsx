@@ -28,7 +28,7 @@ const CARD_RATIO = 0.72; // 화면 폭 대비 카드 폭
 const CARD_ASPECT = 0.62; // 카드 가로/세로
 const GAP = spacing.md;
 
-/** 돌잔치·기업 템플릿 카드: 예시 초대장의 표지를 카드 안에 맞춰 그린다 */
+/** 돌잔치·기업·모임 템플릿 카드: 예시 초대장의 표지를 카드 안에 맞춰 그린다 */
 function SampleCoverCard({
   themeId,
   templateId,
@@ -120,8 +120,8 @@ export default function TemplateSelect() {
                   { width: cardWidth, height: cardWidth / CARD_ASPECT, opacity: i === index ? 1 : 0.5 },
                 ]}
               >
-                {themeId === 'dol' || themeId === 'corporate' ? (
-                  // 돌잔치·기업은 실제 표지(사진 틀·로고·예시 사진)로 보여 준다
+                {themeId === 'dol' || themeId === 'corporate' || themeId === 'meetup' ? (
+                  // 돌잔치·기업·모임은 실제 표지(사진 틀·로고·예시 사진)로 보여 준다
                   <SampleCoverCard
                     themeId={themeId}
                     templateId={item.id}

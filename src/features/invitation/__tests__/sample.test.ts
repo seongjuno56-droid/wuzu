@@ -33,3 +33,12 @@ describe('기업 예시', () => {
     for (const k of sectionTabs(inv)) expect([k, validateFor(inv, k)]).toEqual([k, []]);
   });
 });
+
+describe('모임 예시', () => {
+  it('모든 탭이 검사를 통과하고 회비 계좌가 켜져 있다', () => {
+    const inv = sampleInvitation('meetup', 'meetup-1', new Date(2026, 9, 26));
+    expect(inv.themeId).toBe('meetup');
+    expect(inv.enabled.account).toBe(true);
+    for (const k of sectionTabs(inv)) expect([k, validateFor(inv, k)]).toEqual([k, []]);
+  });
+});
