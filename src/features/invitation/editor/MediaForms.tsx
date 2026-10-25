@@ -9,8 +9,8 @@ import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
 import { pickAudio } from '../media';
-import { defaultDolEnding } from '../dol';
-import { defaultEnding, isDol, LIMITS, withGallery } from '../model';
+import { LIMITS, withGallery } from '../model';
+import { themeDef } from '../themes';
 import { Check, FormLabel, Hint, PhotoSlots } from './fields';
 
 const useContent = () => useEditor((s) => s.draft!.content);
@@ -71,8 +71,8 @@ export function GalleryForm({ onDragChange }: { onDragChange?: (dragging: boolea
 
 /** 엔딩: 스타일, 내용(필수, 기본 문구), 사진 최대 3장 */
 export function EndingForm({ onDragChange }: { onDragChange?: (dragging: boolean) => void }) {
-  const c = useContent();
-  const e = c.ending;
+  const e = useContent().ending;
+  const themeId = useEditor((s) => s.draft!.themeId);
   const patch = usePatch();
   return (
     <View style={styles.form}>
@@ -97,10 +97,7 @@ export function EndingForm({ onDragChange }: { onDragChange?: (dragging: boolean
         invalid={!e.content.trim()}
         minHeight={96}
         right={
-          <Pressable
-            onPress={() => patch('ending', { content: isDol(c) ? defaultDolEnding() : defaultEnding() })}
-            hitSlop={6}
-          >
+          <Pressable onPress={() => patch('ending', { content: themeDef(themeId).defaultEnding() })} hitSlop={6}>
             <Txt variant="tiny" color={colors.infoInk}>
               기본 문구 넣기
             </Txt>

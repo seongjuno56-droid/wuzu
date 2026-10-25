@@ -161,6 +161,9 @@ export function resolveBind(bind: BindKey, c: InvitationContent): { text: string
   }
 }
 
+/** 사진 채우기: 로고는 잘리지 않게 틀 안에 맞추고, 표지 사진은 틀을 채운다 */
+export const photoFit = (bind: 'coverPhoto' | 'logo') => (bind === 'logo' ? 'contain' : 'cover');
+
 /** 사진 요소의 사진 — 돌잔치 표지 사진(없으면 빈 틀) / 기업 로고(없으면 그리지 않음). 없으면 null */
 export function resolvePhoto(c: InvitationContent, bind: 'coverPhoto' | 'logo' = 'coverPhoto'): string | null {
   if (bind === 'logo') return isCorporate(c) ? c.basic.logo : null;

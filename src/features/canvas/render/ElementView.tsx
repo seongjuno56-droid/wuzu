@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { ICON_SOURCES, Icon3DName } from '../../../components/brand/Icon3D';
 import { translate, useLocale } from '../../../i18n';
 import type { InvitationContent } from '../../invitation/model';
-import { CANVAS_FONTS, resolveBind, resolvePhoto, SLIDE_RATIO } from '../model';
+import { CANVAS_FONTS, photoFit, resolveBind, resolvePhoto, SLIDE_RATIO } from '../model';
 import type { CanvasElement, PhotoFrame } from '../types';
 import { BrokenMedia } from './BrokenMedia';
 import { VideoElement } from './VideoElement';
@@ -96,7 +96,7 @@ export function ElementContent({
     const shape = { width, height, overflow: 'hidden' as const, ...frameRadius(el.frame, width, height) };
     // 로고는 선택이라 비어 있으면 아무것도 그리지 않는다 (표지 사진은 빈 틀)
     node = !uri && el.bind === 'logo' ? null : uri ? (
-      <Image source={{ uri }} style={shape} contentFit="cover" onError={() => setBroken(true)} />
+      <Image source={{ uri }} style={shape} contentFit={photoFit(el.bind)} onError={() => setBroken(true)} />
     ) : (
       // 표지 사진을 아직 안 넣었으면 빈 틀
       <View style={[shape, { backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>

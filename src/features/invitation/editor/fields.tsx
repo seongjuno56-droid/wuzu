@@ -214,14 +214,17 @@ export function PhotoOne({
   uri,
   onChange,
   required,
+  keepPng,
 }: {
   label: string;
   uri: string | null;
   onChange: (uri: string | null) => void;
   required?: boolean;
+  /** PNG 를 그대로 둔다 (로고의 투명 배경) */
+  keepPng?: boolean;
 }) {
   const pick = async () => {
-    const [photo] = await pickImages(1);
+    const [photo] = await pickImages(1, { keepPng });
     if (photo) onChange(photo);
   };
   return (

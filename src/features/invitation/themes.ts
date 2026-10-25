@@ -6,6 +6,7 @@
 import type { ViewMode } from '../canvas/types';
 import {
   defaultContent,
+  defaultEnding,
   DEFAULT_ENABLED,
   DEFAULT_ORDER,
   EnabledSections,
@@ -36,6 +37,8 @@ export interface ThemeDef {
   defaultEnabled: EnabledSections;
   defaultOrder: ReorderablePage[];
   createContent: (today: Date) => InvitationContent;
+  /** 엔딩 [기본 문구 넣기] — 사용자 언어로 */
+  defaultEnding: () => string;
   validate: (key: SectionKey, c: InvitationContent) => string[];
   sectionLabel: (key: SectionKey) => string;
   pageLabel: (page: PageKey) => string;
@@ -58,6 +61,7 @@ const wedding: ThemeDef = {
   defaultEnabled: DEFAULT_ENABLED,
   defaultOrder: DEFAULT_ORDER,
   createContent: (today) => defaultContent(today),
+  defaultEnding,
   validate: validateSection,
   sectionLabel: (k) => SECTION_LABEL[k],
   pageLabel: (p) => PAGE_LABEL[p],

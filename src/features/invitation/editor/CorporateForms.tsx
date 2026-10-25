@@ -46,7 +46,7 @@ export function CorporateBasicForm() {
         invalid={!b.host.trim()}
         placeholder="회사·단체 이름"
       />
-      <PhotoOne label="로고" uri={b.logo} onChange={(logo) => set({ logo })} />
+      <PhotoOne label="로고" uri={b.logo} onChange={(logo) => set({ logo })} keepPng />
       <View style={styles.group}>
         <FormLabel>초청인</FormLabel>
         <View style={styles.row}>

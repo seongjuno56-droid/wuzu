@@ -306,6 +306,7 @@ export const dolTheme: ThemeDef = {
   },
   defaultOrder: ['profile', 'timeline', 'ceremony', 'gallery', 'guestbook', 'account'],
   createContent: defaultDolContent,
+  defaultEnding: defaultDolEnding,
   validate: (key, c) => validateDol(key, c as DolContent),
   sectionLabel: (k) => DOL_SECTION_LABEL[k] ?? SECTION_LABEL[k],
   pageLabel: (p) => DOL_PAGE_LABEL[p] ?? PAGE_LABEL[p],

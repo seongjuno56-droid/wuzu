@@ -204,6 +204,7 @@ export const corporateTheme: ThemeDef = {
   defaultEnabled: { program: true, speakers: false, rsvp: true, contact: true, ending: true, bgm: false },
   defaultOrder: ['ceremony', 'program', 'speakers', 'directions', 'rsvp', 'contact'],
   createContent: defaultCorporateContent,
+  defaultEnding: defaultCorporateEnding,
   validate: (key, c) => validateCorporate(key, c as CorporateContent),
   sectionLabel: (k) => CORP_SECTION_LABEL[k] ?? SECTION_LABEL[k],
   pageLabel: (p) => CORP_PAGE_LABEL[p] ?? PAGE_LABEL[p],
