@@ -1,5 +1,9 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '이름을 입력해 주세요.': 'Please enter your name.',
+  '소속을 입력해 주세요.': 'Please enter your organization.',
+  '연락처를 확인해 주세요.': 'Please check your phone number.',
+  '동반 인원은 0~9명이에요.': 'Guests must be between 0 and 9.',
   '행사 개요': 'Event overview',
   '초청 인사': 'Invitation message',
   '행사명, 주최, 초청인 정보를 입력합니다.': 'Enter the event name, host and inviter.',
