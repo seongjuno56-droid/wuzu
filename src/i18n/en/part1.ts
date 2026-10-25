@@ -1,5 +1,15 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '행사 개요': 'Event overview',
+  '초청 인사': 'Invitation message',
+  '행사명, 주최, 초청인 정보를 입력합니다.': 'Enter the event name, host and inviter.',
+  '행사 일시와 장소, 대상, 드레스코드를 입력합니다.': 'Enter the date, venue, audience and dress code.',
+  '초대하는 분께 드릴 인사말을 입력합니다.': 'Write a message for your guests.',
+  '주차와 대중교통 안내를 입력합니다.': 'Enter parking and transit information.',
+  '행사 시간표를 보여줍니다.': 'Shows the event schedule.',
+  '연사 사진과 소개를 보여줍니다.': 'Shows speaker photos and bios.',
+  '참석 신청을 받고 명단을 관리합니다.': 'Collects RSVPs and manages the guest list.',
+  '담당자 연락처를 안내합니다.': 'Shows the contact person.',
   '프로그램': 'Program',
   '연사 소개': 'Speakers',
   '참석 신청': 'RSVP',
