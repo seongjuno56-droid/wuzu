@@ -81,7 +81,7 @@ export function CorporateOverviewFields() {
   const e = useCorp().ceremony;
   const patch = usePatch();
   return (
-    <View style={styles.form}>
+    <View style={[styles.form, styles.after]}>
       <TextField
         label="대상"
         value={e.audience}
@@ -322,6 +322,8 @@ export function ContactForm() {
 
 const styles = StyleSheet.create({
   form: { gap: spacing.lg },
+  /** 위 공통 일시·장소 폼과 떨어지게 */
+  after: { marginTop: spacing.lg },
   group: { gap: spacing.sm },
   row: { flexDirection: 'row', gap: spacing.sm },
   flex: { flex: 1 },

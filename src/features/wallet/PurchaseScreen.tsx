@@ -13,6 +13,7 @@ import { ExtendDays, invitationService, SpendOrder } from '../../services';
 import { colors, radius, spacing } from '../../theme';
 import type { Invitation } from '../invitation/model';
 import { periodLabel } from '../invitation/status';
+import { invitationKind } from '../../data/themes';
 import { ACTIVATION, EXTEND_OPTIONS, orderCost, orderLines } from './pricing';
 import { usePurchaseFlow } from './usePurchaseFlow';
 import { useWallet } from './useWallet';
@@ -157,7 +158,7 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
         </Txt>
       </View>
       <Txt variant="caption" weight="semibold" color={colors.label}>
-        #결혼식 초대장
+        {`#${invitationKind(inv.themeId)}`}
       </Txt>
       <Txt variant="title">{inv.name}</Txt>
       {mode === 'extend' && period && (

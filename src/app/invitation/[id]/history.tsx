@@ -12,6 +12,7 @@ import { formatDateTime } from '../../../lib/format';
 import { invitationService, LedgerEntry, walletService } from '../../../services';
 import { useSession } from '../../../store/session';
 import { colors, radius, spacing } from '../../../theme';
+import { invitationKind } from '../../../data/themes';
 
 /** 이력 열람: 활성화·연장·수정 기록 */
 export default function HistoryScreen() {
@@ -40,7 +41,7 @@ export default function HistoryScreen() {
             </Txt>
           </View>
           <Txt variant="caption" weight="semibold" color={colors.label}>
-            #결혼식 초대장
+            {`#${invitationKind(inv.themeId)}`}
           </Txt>
           <Txt variant="title">{inv.name}</Txt>
           <Txt variant="caption" color={active ? colors.success : colors.danger}>

@@ -1,4 +1,13 @@
-import { emptyRsvpInput, isRsvpClosed, RsvpResponse, rsvpFields, rsvpTotals, validateRsvp } from '../rsvp';
+import { useLocale } from '../../../i18n';
+import {
+  deadlineLine,
+  emptyRsvpInput,
+  isRsvpClosed,
+  RsvpResponse,
+  rsvpFields,
+  rsvpTotals,
+  validateRsvp,
+} from '../rsvp';
 
 const row = (v: Partial<RsvpResponse>): RsvpResponse => ({
   ...emptyRsvpInput(),
@@ -40,5 +49,15 @@ describe('참석 응답 규칙', () => {
       row({ id: 'c', attending: false, companions: 3 }),
     ];
     expect(rsvpTotals(list)).toEqual({ attending: 2, people: 4, declined: 1 });
+  });
+});
+
+describe('마감 안내 줄 — 사용자 언어', () => {
+  afterEach(() => useLocale.setState({ locale: 'ko' }));
+  it('한국어·영어 각각 한 언어로만', () => {
+    useLocale.setState({ locale: 'ko' });
+    expect(deadlineLine('2026-11-04')).toBe('2026년 11월 4일까지 알려 주세요.');
+    useLocale.setState({ locale: 'en' });
+    expect(deadlineLine('2026-11-04')).toBe('Please respond by Nov 4, 2026.');
   });
 });

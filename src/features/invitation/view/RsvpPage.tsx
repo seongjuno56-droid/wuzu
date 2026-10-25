@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { radius, spacing } from '../../../theme';
-import { CorporateContent, formatShortDate } from '../model';
+import { deadlineLine } from '../../rsvp/rsvp';
+import { CorporateContent } from '../model';
 import { IText, Page, PageTitle, useLook } from './look';
 import type { RsvpHandlers } from './PageContent';
 
@@ -28,7 +29,11 @@ export function RsvpPage({ content, rsvp }: { content: CorporateContent; rsvp?: 
   return (
     <Page>
       <PageTitle>참석 신청</PageTitle>
-      {!!deadline && <IText tone="sub">{`${formatShortDate(deadline)}까지 알려 주세요.`}</IText>}
+      {!!deadline && (
+        <IText tone="sub" raw>
+          {deadlineLine(deadline)}
+        </IText>
+      )}
       {!rsvp ? (
         <>
           {button('참석 신청하기')}

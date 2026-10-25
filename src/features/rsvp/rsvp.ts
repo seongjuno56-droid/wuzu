@@ -2,8 +2,9 @@
  * 참석 응답 — 기업 행사(참석 신청)·모임(참석 여부)이 같이 쓴다 (설계 6장)
  * 받는 항목은 테마가 정하고 만든 사람이 끌 수 없다.
  */
+import { currentLocale } from '../../i18n';
 import { isPhone } from '../invitation/corporate';
-import { isDateString, toDateString } from '../invitation/model';
+import { formatShortDate, isDateString, toDateString } from '../invitation/model';
 
 export type RsvpField = 'name' | 'org' | 'phone' | 'attending' | 'companions';
 
@@ -73,3 +74,9 @@ export function rsvpTotals(list: RsvpResponse[]) {
     declined: list.length - yes.length,
   };
 }
+
+/** 마감 안내 — 날짜가 끼어 번역 패턴이 맞지 않으므로 언어별로 만든다 */
+export const deadlineLine = (deadline: string) =>
+  currentLocale() === 'en'
+    ? `Please respond by ${formatShortDate(deadline)}.`
+    : /* i18n-ignore */ `${formatShortDate(deadline)}까지 알려 주세요.`;
