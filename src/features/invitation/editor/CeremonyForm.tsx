@@ -33,6 +33,8 @@ export function CeremonyForm({ onDragChange }: { onDragChange?: (dragging: boole
   const e = useEditor((s) => s.draft!.content.ceremony);
   const patch = useEditor((s) => s.patch);
   const set = (values: Partial<typeof e>) => patch('ceremony', values);
+  // 결혼식이 아닌 테마(돌잔치·기업)는 '예식' 대신 장소·날짜·시간
+  const wedding = useEditor((s) => s.draft!.themeId === 'wedding');
   const [modal, setModal] = useState<'address' | 'date' | 'time' | null>(null);
   const search = e.addressMode === 'search';
   const d = parseDate(e.date);
@@ -40,9 +42,9 @@ export function CeremonyForm({ onDragChange }: { onDragChange?: (dragging: boole
   return (
     <View style={styles.form}>
       <TextField
-        label="예식장명"
+        label={wedding ? '예식장명' : '장소명'}
         required
-        placeholder="예식장 이름"
+        placeholder={wedding ? '예식장 이름' : '장소 이름'}
         value={e.venue}
         onChangeText={(venue) => set({ venue })}
         maxLength={LIMITS.venue}
@@ -98,12 +100,12 @@ export function CeremonyForm({ onDragChange }: { onDragChange?: (dragging: boole
 
       <View style={styles.row}>
         <PickerField
-          label="예식일"
+          label={wedding ? '예식일' : '날짜'}
           icon="calendar-outline"
           value={`${e.date} (${weekdayNames()[d.getDay()]})`}
           onPress={() => setModal('date')}
         />
-        <PickerField label="예식시간" icon="time-outline" value={formatKoreanTime(e.time)} onPress={() => setModal('time')} />
+        <PickerField label={wedding ? '예식시간' : '시간'} icon="time-outline" value={formatKoreanTime(e.time)} onPress={() => setModal('time')} />
       </View>
 
       <View style={styles.group}>

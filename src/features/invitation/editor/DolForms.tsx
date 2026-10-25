@@ -1,114 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { TextArea } from '../../../components/TextArea';
 import { TextField } from '../../../components/TextField';
 import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
-import { birthDateProblem, DOL_LIMITS } from '../dol';
+import { addDays, birthDateProblem, DOL_LIMITS } from '../dol';
 import { useEditor } from '../editorStore';
-import { pickImages } from '../media';
-import { DateRange, DolContent, LIMITS, TimelineItem } from '../model';
-import { AccountFields, FormLabel, Hint } from './fields';
+import { DolContent, LIMITS, TimelineItem, toDateString } from '../model';
+import { AccountFields, DateField, FormLabel, Hint, PhotoOne } from './fields';
 import { ListEditor } from './ListEditor';
 import { addItem, newItemId, updateItem } from './listOps';
-import { DatePickerModal } from './Pickers';
 
 /** 돌잔치 입력 시트 — 기본 정보·아이 프로필·성장 이야기·마음 전하는 곳 (설계 3장) */
 
 const useDol = () => useEditor((s) => s.draft!.content as DolContent);
 const usePatch = () => useEditor((s) => s.patch);
-
-/** 사진 한 장 칸: 있으면 미리보기 + ×, 없으면 + (필수면 빨간 테두리) */
-function PhotoOne({
-  label,
-  uri,
-  onChange,
-  required,
-}: {
-  label: string;
-  uri: string | null;
-  onChange: (uri: string | null) => void;
-  required?: boolean;
-}) {
-  const pick = async () => {
-    const [photo] = await pickImages(1);
-    if (photo) onChange(photo);
-  };
-  return (
-    <View style={styles.group}>
-      <FormLabel required={required}>{label}</FormLabel>
-      {uri ? (
-        <View style={styles.photo}>
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-          <Pressable onPress={() => onChange(null)} style={styles.remove} accessibilityLabel="사진 삭제">
-            <Ionicons name="close" size={14} color="#fff" />
-          </Pressable>
-        </View>
-      ) : (
-        <Pressable
-          onPress={pick}
-          style={[styles.photo, styles.add, required && styles.addRequired]}
-          accessibilityRole="button"
-          accessibilityLabel="사진 추가"
-        >
-          <Ionicons name="add" size={24} color={colors.muted} />
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-/** 날짜 칸 — 누르면 달력 */
-function DateField({
-  label,
-  value,
-  onChange,
-  required,
-  range,
-  error,
-}: {
-  label: string;
-  value: string;
-  onChange: (date: string) => void;
-  required?: boolean;
-  range: DateRange;
-  /** 날짜는 넣었지만 규칙에 어긋날 때 칸 아래 안내 */
-  error?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <View style={styles.group}>
-      <FormLabel required={required}>{label}</FormLabel>
-      <Pressable
-        onPress={() => setOpen(true)}
-        style={[styles.dateBox, ((required && !value) || !!error) && styles.addRequired]}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Txt color={value ? colors.text : colors.placeholder}>{value || '날짜 선택'}</Txt>
-        <Ionicons name="calendar-outline" size={18} color={colors.muted} />
-      </Pressable>
-      {!!error && (
-        <Txt variant="tiny" color={colors.danger}>
-          {error}
-        </Txt>
-      )}
-      <DatePickerModal
-        visible={open}
-        // 처음 고를 때는 1년 전쯤(돌 무렵 아기) 달력에서 시작
-        value={value || '2025-06-01'}
-        range={range}
-        onClose={() => setOpen(false)}
-        onSelect={(date) => {
-          onChange(date);
-          setOpen(false);
-        }}
-      />
-    </View>
-  );
-}
 
 /** 기본 정보: 아이(이름·부르는 이름·태어난 날·표지 사진) + 보호자 1~4명 */
 export function DolBasicForm({ onDragChange }: { onDragChange?: (dragging: boolean) => void }) {
@@ -134,6 +42,7 @@ export function DolBasicForm({ onDragChange }: { onDragChange?: (dragging: boole
         placeholder="비우면 성을 뺀 이름으로 불러요"
       />
       <DateField
+        start={addDays(toDateString(new Date()), -300)}
         label="태어난 날"
         range="past"
         required
@@ -327,37 +236,6 @@ const styles = StyleSheet.create({
   pair: { flexDirection: 'row', gap: spacing.sm },
   narrow: { flex: 2 },
   wide: { flex: 3 },
-  photo: { width: 96, height: 120, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.surface },
-  add: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    borderStyle: 'dashed',
-  },
-  addRequired: { borderColor: colors.danger },
-  remove: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateBox: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    backgroundColor: colors.canvas,
-  },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   chip: {
     flexDirection: 'row',

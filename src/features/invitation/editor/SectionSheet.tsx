@@ -8,6 +8,15 @@ import { useEditor } from '../editorStore';
 import { SectionKey } from '../model';
 import { themeDef, validateFor } from '../themes';
 import { CeremonyForm } from './CeremonyForm';
+import {
+  ContactForm,
+  CorporateBasicForm,
+  CorporateOverviewFields,
+  DirectionsForm,
+  ProgramForm,
+  RsvpSettingsForm,
+  SpeakersForm,
+} from './CorporateForms';
 import { DolAccountForm, DolBasicForm, DolProfileForm, DolTimelineForm } from './DolForms';
 import { BgmForm, EndingForm, GalleryForm } from './MediaForms';
 import { AccountForm, BasicForm, GreetingForm, GuestbookForm } from './TextForms';
@@ -18,8 +27,9 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
   const confirm = useEditor((s) => s.confirm);
   const [dragging, setDragging] = useState(false);
   const valid = validateFor(draft, section).length === 0;
-  // 돌잔치는 기본 정보·계좌·아이 프로필·성장 이야기 폼이 따로 있다
+  // 돌잔치·기업은 기본 정보 등 따로 쓰는 폼이 있다
   const dol = draft.themeId === 'dol';
+  const corp = draft.themeId === 'corporate';
 
   const done = () => {
     if (confirm(section)) onClose();
@@ -51,10 +61,17 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
         scrollEnabled={!dragging}
         keyboardShouldPersistTaps="handled"
       >
-        {section === 'basic' && (dol ? <DolBasicForm onDragChange={setDragging} /> : <BasicForm />)}
+        {section === 'basic' &&
+          (dol ? <DolBasicForm onDragChange={setDragging} /> : corp ? <CorporateBasicForm /> : <BasicForm />)}
         {section === 'profile' && <DolProfileForm />}
         {section === 'timeline' && <DolTimelineForm onDragChange={setDragging} />}
         {section === 'ceremony' && <CeremonyForm onDragChange={setDragging} />}
+        {section === 'ceremony' && corp && <CorporateOverviewFields />}
+        {section === 'program' && <ProgramForm onDragChange={setDragging} />}
+        {section === 'speakers' && <SpeakersForm onDragChange={setDragging} />}
+        {section === 'directions' && <DirectionsForm />}
+        {section === 'rsvp' && <RsvpSettingsForm />}
+        {section === 'contact' && <ContactForm />}
         {section === 'greeting' && <GreetingForm />}
         {section === 'account' && (dol ? <DolAccountForm /> : <AccountForm />)}
         {section === 'gallery' && <GalleryForm onDragChange={setDragging} />}

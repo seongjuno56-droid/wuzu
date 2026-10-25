@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { SortableGrid } from '../../../components/SortableGrid';
@@ -7,7 +7,8 @@ import { TextField } from '../../../components/TextField';
 import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
 import { pickImages } from '../media';
-import { BankAccount, LIMITS, Person } from '../model';
+import { BankAccount, DateRange, LIMITS, Person, toDateString } from '../model';
+import { DatePickerModal } from './Pickers';
 
 /** 폼 안의 소제목 (신랑측, 사진, 추가 옵션 선택 …) */
 export function FormLabel({ children, required, right }: { children: ReactNode; required?: boolean; right?: ReactNode }) {
@@ -207,7 +208,146 @@ export function PhotoSlots(props: {
   );
 }
 
+/** 사진 한 장 칸: 있으면 미리보기 + ×, 없으면 + (필수면 빨간 테두리) */
+export function PhotoOne({
+  label,
+  uri,
+  onChange,
+  required,
+}: {
+  label: string;
+  uri: string | null;
+  onChange: (uri: string | null) => void;
+  required?: boolean;
+}) {
+  const pick = async () => {
+    const [photo] = await pickImages(1);
+    if (photo) onChange(photo);
+  };
+  return (
+    <View style={styles.group}>
+      <FormLabel required={required}>{label}</FormLabel>
+      {uri ? (
+        <View style={styles.onePhoto}>
+          <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          <Pressable onPress={() => onChange(null)} style={styles.oneRemove} accessibilityLabel="사진 삭제">
+            <Ionicons name="close" size={14} color="#fff" />
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          onPress={pick}
+          style={[styles.onePhoto, styles.oneAdd, required && styles.oneRequired]}
+          accessibilityRole="button"
+          accessibilityLabel="사진 추가"
+        >
+          <Ionicons name="add" size={24} color={colors.muted} />
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+/** 날짜 칸 — 누르면 달력 */
+export function DateField({
+  label,
+  value,
+  onChange,
+  required,
+  range,
+  error,
+  start,
+  clearable,
+}: {
+  label: string;
+  value: string;
+  onChange: (date: string) => void;
+  required?: boolean;
+  range: DateRange;
+  /** 날짜는 넣었지만 규칙에 어긋날 때 칸 아래 안내 */
+  error?: string;
+  /** 값이 없을 때 달력이 열리는 날 (기본: 오늘) */
+  start?: string;
+  /** [지우기]로 빈 값을 넣을 수 있다 */
+  clearable?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={styles.group}>
+      <FormLabel
+        required={required}
+        right={
+          clearable && !!value ? (
+            <Pressable onPress={() => onChange('')} hitSlop={6} accessibilityRole="button">
+              <Txt variant="tiny" color={colors.infoInk}>
+                지우기
+              </Txt>
+            </Pressable>
+          ) : undefined
+        }
+      >
+        {label}
+      </FormLabel>
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={[styles.dateBox, ((required && !value) || !!error) && styles.oneRequired]}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+      >
+        <Txt color={value ? colors.text : colors.placeholder}>{value || '날짜 선택'}</Txt>
+        <Ionicons name="calendar-outline" size={18} color={colors.muted} />
+      </Pressable>
+      {!!error && (
+        <Txt variant="tiny" color={colors.danger}>
+          {error}
+        </Txt>
+      )}
+      <DatePickerModal
+        visible={open}
+        value={value || start || toDateString(new Date())}
+        range={range}
+        onClose={() => setOpen(false)}
+        onSelect={(date) => {
+          onChange(date);
+          setOpen(false);
+        }}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  onePhoto: { width: 96, height: 120, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.surface },
+  oneAdd: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderStyle: 'dashed',
+  },
+  oneRequired: { borderColor: colors.danger },
+  oneRemove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateBox: {
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    backgroundColor: colors.canvas,
+  },
   flex: { flex: 1 },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   group: { gap: spacing.sm },
