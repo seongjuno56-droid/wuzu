@@ -11,7 +11,8 @@ import { periodLabel, screenStatus, ScreenStatus, STATUS_LABEL } from '../invita
 import { ACTIVATION } from '../wallet/pricing';
 import { CoverThumb } from './CoverThumb';
 
-export type CardAction = 'complete' | 'activate' | 'extend' | 'share' | 'guestbook' | 'rsvp' | 'more' | 'preview' | 'delete';
+export type CardAction =
+  'complete' | 'activate' | 'extend' | 'share' | 'guestbook' | 'rsvp' | 'more' | 'preview' | 'delete';
 
 const BADGE: Record<ScreenStatus, { bg: string; fg: string }> = {
   writing: { bg: '#FFF1DB', fg: '#B25E00' },
