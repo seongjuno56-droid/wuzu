@@ -7,7 +7,7 @@ import { Txt } from '../../../components/Txt';
 import { colors, radius, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
 import { pickImages } from '../media';
-import { asWedding, defaultAccountMessage, LIMITS } from '../model';
+import { asWedding, defaultAccountMessage, LIMITS, withGallery } from '../model';
 import { AccountFields, Check, FormLabel, Hint, PersonFields } from './fields';
 
 const useContent = () => useEditor((s) => s.draft!.content);
@@ -122,7 +122,7 @@ export function AccountForm() {
 
 /** 방명록: 스타일만 고른다 (작성 규칙은 하객 화면에서 적용) */
 export function GuestbookForm() {
-  const g = useContent().guestbook;
+  const g = withGallery(useContent()).guestbook;
   const patch = usePatch();
   return (
     <View style={styles.form}>

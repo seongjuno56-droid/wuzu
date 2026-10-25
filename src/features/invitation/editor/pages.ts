@@ -1,5 +1,5 @@
 import { moveItem } from '../../../lib/sortable';
-import { Invitation, PageKey, pageOrder, ReorderablePage, SectionKey } from '../model';
+import { ALWAYS_ON, Invitation, OptionalSection, PageKey, pageOrder, ReorderablePage, SectionKey } from '../model';
 
 /** 슬라이드를 눌렀을 때 여는 입력 시트 */
 export const PAGE_SECTION: Record<PageKey, SectionKey> = {
@@ -12,6 +12,11 @@ export const PAGE_SECTION: Record<PageKey, SectionKey> = {
   ending: 'ending',
   profile: 'profile',
   timeline: 'timeline',
+  program: 'program',
+  speakers: 'speakers',
+  directions: 'directions',
+  rsvp: 'rsvp',
+  contact: 'contact',
 };
 
 export type DockItem =
@@ -32,9 +37,9 @@ export const itemDone = (inv: Pick<Invitation, 'completed'>, item: DockItem) => 
 
 type OrderSource = Pick<Invitation, 'enabled' | 'order'>;
 
-/** 독바에서 옮길 수 있는 장 (보이는 순서대로). 예식 정보는 늘 켜져 있다 */
+/** 독바에서 옮길 수 있는 장 (보이는 순서대로). 예식 정보(행사 개요)·오시는 길은 늘 켜져 있다 */
 export const movablePages = (inv: OrderSource): ReorderablePage[] =>
-  inv.order.filter((p) => p === 'ceremony' || inv.enabled[p]);
+  inv.order.filter((p) => ALWAYS_ON.includes(p) || inv.enabled[p as OptionalSection]);
 
 /** 끈 거리(px) → 옮긴 칸 수. 반 칸 넘게 끌어야 한 칸 */
 export const slotsMoved = (dx: number, pitch: number) => (pitch > 0 ? Math.round(dx / pitch) : 0);

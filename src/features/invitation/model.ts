@@ -20,9 +20,26 @@ export type SectionKey =
   | 'bgm'
   // 돌잔치 전용
   | 'profile'
-  | 'timeline';
+  | 'timeline'
+  // 기업 행사 (참석 응답은 모임도 씀)
+  | 'program'
+  | 'speakers'
+  | 'directions'
+  | 'rsvp'
+  | 'contact';
 /** Step3 에서 켜고 끌 수 있는 항목 */
-export type OptionalSection = 'account' | 'gallery' | 'guestbook' | 'ending' | 'bgm' | 'profile' | 'timeline';
+export type OptionalSection =
+  | 'account'
+  | 'gallery'
+  | 'guestbook'
+  | 'ending'
+  | 'bgm'
+  | 'profile'
+  | 'timeline'
+  | 'program'
+  | 'speakers'
+  | 'rsvp'
+  | 'contact';
 /** 초대장 화면에 그려지는 페이지 */
 export type PageKey =
   | 'cover'
@@ -33,9 +50,25 @@ export type PageKey =
   | 'account'
   | 'ending'
   | 'profile'
-  | 'timeline';
+  | 'timeline'
+  | 'program'
+  | 'speakers'
+  | 'directions'
+  | 'rsvp'
+  | 'contact';
 /** Step4 에서 드래그로 순서를 바꿀 수 있는 페이지 */
-export type ReorderablePage = 'gallery' | 'ceremony' | 'guestbook' | 'account' | 'profile' | 'timeline';
+export type ReorderablePage =
+  | 'gallery'
+  | 'ceremony'
+  | 'guestbook'
+  | 'account'
+  | 'profile'
+  | 'timeline'
+  | 'program'
+  | 'speakers'
+  | 'directions'
+  | 'rsvp'
+  | 'contact';
 
 export type EnabledSections = Partial<Record<OptionalSection, boolean>>;
 
@@ -185,13 +218,88 @@ export interface DolContent {
   bgm: BgmInfo;
 }
 
-export type InvitationContent = WeddingContent | DolContent;
+// ── 기업 행사 (설계 4장) ──
+
+export interface CorporateBasic {
+  eventName: string;
+  /** 주최 (회사·단체명) */
+  host: string;
+  logo: string | null;
+  /** 초청인 직함·이름 — 둘 다 비우거나 둘 다 넣는다 */
+  inviterTitle: string;
+  inviterName: string;
+}
+
+/** 일시·장소(공통) + 대상·드레스코드 */
+export interface CorporateCeremony extends CeremonyInfo {
+  audience: string;
+  dressCode: string;
+}
+
+export interface ProgramItem {
+  id: string;
+  /** HH:mm 또는 '' */
+  time: string;
+  title: string;
+  /** 담당·설명 */
+  detail: string;
+}
+
+export interface Speaker {
+  id: string;
+  photo: string | null;
+  name: string;
+  title: string;
+  line: string;
+}
+
+export interface CorporateDirections {
+  parking: string;
+  transit: string;
+}
+
+/** 참석 신청 설정 — 받는 항목은 테마가 정한다 (features/rsvp/rsvp.ts) */
+export interface RsvpSettings {
+  /** '' = 마감 없음 */
+  deadline: string;
+}
+
+export interface ContactInfo {
+  name: string;
+  phone: string;
+  email: string;
+}
+
+export interface CorporateContent {
+  theme: 'corporate';
+  basic: CorporateBasic;
+  ceremony: CorporateCeremony;
+  greeting: GreetingInfo;
+  program: { items: ProgramItem[] };
+  speakers: { items: Speaker[] };
+  directions: CorporateDirections;
+  rsvp: RsvpSettings;
+  contact: ContactInfo;
+  ending: EndingInfo;
+  bgm: BgmInfo;
+}
+
+export type InvitationContent = WeddingContent | DolContent | CorporateContent;
 
 export const isDol = (c: InvitationContent): c is DolContent => c.theme === 'dol';
+export const isCorporate = (c: InvitationContent): c is CorporateContent => c.theme === 'corporate';
+/** 옛 저장본은 theme 이 없다 */
+export const isWedding = (c: InvitationContent): c is WeddingContent => !c.theme || c.theme === 'wedding';
 
-/** 결혼식 전용 부품에서만 쓴다 — 돌잔치가 들어오면 화면 연결이 잘못된 것 */
+/** 결혼식 전용 부품에서만 쓴다 — 다른 테마가 들어오면 화면 연결이 잘못된 것 */
 export function asWedding(c: InvitationContent): WeddingContent {
-  if (isDol(c)) throw new Error(/* i18n-ignore */ '결혼식 초대장이 아니에요');
+  if (!isWedding(c)) throw new Error(/* i18n-ignore */ '결혼식 초대장이 아니에요');
+  return c;
+}
+
+/** 갤러리·방명록이 있는 테마 (결혼식·돌잔치) 전용 부품에서 쓴다 */
+export function withGallery(c: InvitationContent): WeddingContent | DolContent {
+  if (isCorporate(c)) throw new Error(/* i18n-ignore */ '갤러리가 없는 초대장이에요');
   return c;
 }
 
@@ -264,6 +372,11 @@ export const SECTION_LABEL: Record<SectionKey, string> = {
   bgm: 'BGM',
   profile: '아이 프로필',
   timeline: '성장 이야기',
+  program: '프로그램',
+  speakers: '연사 소개',
+  directions: '오시는 길',
+  rsvp: '참석 신청',
+  contact: '문의처',
 };
 
 export const PAGE_LABEL: Record<PageKey, string> = {
@@ -276,6 +389,11 @@ export const PAGE_LABEL: Record<PageKey, string> = {
   ending: '엔딩',
   profile: '아이 프로필',
   timeline: '성장 이야기',
+  program: '프로그램',
+  speakers: '연사 소개',
+  directions: '오시는 길',
+  rsvp: '참석 신청',
+  contact: '문의처',
 };
 
 export const DEFAULT_ORDER: ReorderablePage[] = ['gallery', 'ceremony', 'guestbook', 'account'];
@@ -380,8 +498,11 @@ export function normalizeInvitation(inv: Invitation): { invitation: Invitation; 
 // ── 순서 / 탭 ─────────────────────────────────────────
 
 /** 실제로 그려질 페이지 순서: 표지·인사말 고정 → 사용 중인 재정렬 페이지 → 엔딩 */
+/** 늘 켜진 이동 장 (입력항목 선택에서 끌 수 없다) */
+export const ALWAYS_ON: ReorderablePage[] = ['ceremony', 'directions'];
+
 export function pageOrder(enabled: EnabledSections, order: ReorderablePage[]): PageKey[] {
-  const middle = order.filter((p) => p === 'ceremony' || !!enabled[p]);
+  const middle = order.filter((p) => ALWAYS_ON.includes(p) || !!enabled[p as OptionalSection]);
   return ['cover', 'greeting', ...middle, ...(enabled.ending ? (['ending'] as const) : [])];
 }
 

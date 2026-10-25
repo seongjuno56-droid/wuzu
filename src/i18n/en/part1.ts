@@ -1,5 +1,9 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '프로그램': 'Program',
+  '연사 소개': 'Speakers',
+  '참석 신청': 'RSVP',
+  '문의처': 'Contact',
   '순서 바꾸기': 'Reorder',
   '태어난 날을 확인해 주세요. 행사일보다 앞이어야 해요.': 'Check the birthday. It must be before the party date.',
   '일시': 'Date & time',

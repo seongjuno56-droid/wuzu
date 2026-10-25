@@ -10,7 +10,7 @@ import { colors, radius, spacing } from '../../../theme';
 import { useEditor } from '../editorStore';
 import { pickAudio } from '../media';
 import { defaultDolEnding } from '../dol';
-import { defaultEnding, isDol, LIMITS } from '../model';
+import { defaultEnding, isDol, LIMITS, withGallery } from '../model';
 import { Check, FormLabel, Hint, PhotoSlots } from './fields';
 
 const useContent = () => useEditor((s) => s.draft!.content);
@@ -18,7 +18,7 @@ const usePatch = () => useEditor((s) => s.patch);
 
 /** 갤러리: 스와이프/그리드, 그리드 배치·더보기, 사진 4~12장 */
 export function GalleryForm({ onDragChange }: { onDragChange?: (dragging: boolean) => void }) {
-  const g = useContent().gallery;
+  const g = withGallery(useContent()).gallery;
   const patch = usePatch();
   return (
     <View style={styles.form}>

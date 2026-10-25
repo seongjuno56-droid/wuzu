@@ -1,5 +1,5 @@
 import { dockItems, itemDone, moveInDock, movablePages, PAGE_SECTION, slotsMoved } from '../editor/pages';
-import { ReorderablePage } from '../model';
+import { pageOrder, ReorderablePage } from '../model';
 import { createInvitation } from '../themes';
 
 const inv = () => createInvitation({ id: 'i', ownerId: 'u', themeId: 'wedding', templateId: 'wedding-1' });
@@ -73,5 +73,13 @@ describe('돌잔치 독바', () => {
     ]);
     expect(movablePages(inv)).toEqual(['profile', 'timeline', 'ceremony', 'gallery', 'guestbook', 'account']);
     expect(PAGE_SECTION.profile).toBe('profile');
+  });
+});
+
+describe('늘 켜진 장', () => {
+  it('오시는 길은 enabled 와 상관없이 순서에 들어간다', () => {
+    const order: ReorderablePage[] = ['ceremony', 'program', 'directions', 'rsvp'];
+    expect(pageOrder({ program: true }, order)).toEqual(['cover', 'greeting', 'ceremony', 'program', 'directions']);
+    expect(movablePages({ enabled: {}, order })).toEqual(['ceremony', 'directions']);
   });
 });

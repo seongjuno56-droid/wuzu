@@ -4,7 +4,15 @@
  */
 import { fonts } from '../../theme';
 import { nicknameOf, withSubjectSuffix } from '../invitation/dol';
-import { formatDateTimeLine, formatKoreanTime, InvitationContent, isDol, parseDate, WEEKDAYS_EN } from '../invitation/model';
+import {
+  asWedding,
+  formatDateTimeLine,
+  formatKoreanTime,
+  InvitationContent,
+  isDol,
+  parseDate,
+  WEEKDAYS_EN,
+} from '../invitation/model';
 import type { BindKey, CanvasDoc, CanvasElement, ElementKind, FontKey, StrokeElement, TextElement } from './types';
 
 // ── 상수 ──────────────────────────────────────────────
@@ -119,8 +127,9 @@ export function resolveBind(bind: BindKey, c: InvitationContent): { text: string
         return { text: '', placeholder: true };
     }
   }
-  const groom = c.basic.groom.name.trim();
-  const bride = c.basic.bride.name.trim();
+  const w = asWedding(c);
+  const groom = w.basic.groom.name.trim();
+  const bride = w.basic.bride.name.trim();
   switch (bind) {
     case 'groomName':
       return groom ? { text: groom, placeholder: false } : { text: '신랑', placeholder: true };

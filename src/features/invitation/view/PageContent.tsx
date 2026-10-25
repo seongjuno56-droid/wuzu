@@ -1,6 +1,6 @@
 import type { GuestbookEntry } from '../../../services/types';
 import { ddayLine } from '../dol';
-import { asWedding, Invitation, isDol, PageKey } from '../model';
+import { asWedding, Invitation, isDol, PageKey, withGallery } from '../model';
 import { AccountPage } from './AccountPage';
 import { CeremonyPage } from './CeremonyPage';
 import { DolAccountPage, DolProfilePage, DolTimelinePage } from './DolPages';
@@ -49,14 +49,19 @@ export function PageContent({
     case 'greeting':
       return <GreetingPage content={content} />;
     case 'gallery':
-      return <GalleryPage gallery={content.gallery} />;
+      return <GalleryPage gallery={withGallery(content).gallery} />;
     case 'ceremony':
       return <CeremonyPage ceremony={content.ceremony} />;
     case 'account':
       return <AccountPage account={asWedding(content).account} basic={asWedding(content).basic} />;
     case 'guestbook':
       return (
-        <GuestbookPage settings={content.guestbook} entries={guestbook} onWrite={onGuestbookWrite} onViewAll={onGuestbookAll} />
+        <GuestbookPage
+          settings={withGallery(content).guestbook}
+          entries={guestbook}
+          onWrite={onGuestbookWrite}
+          onViewAll={onGuestbookAll}
+        />
       );
     case 'ending':
       return <EndingPage ending={content.ending} />;

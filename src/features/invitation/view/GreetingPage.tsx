@@ -2,7 +2,7 @@ import { Image, StyleSheet } from 'react-native';
 
 import { radius } from '../../../theme';
 import { guardianNames } from '../dol';
-import { givenName, InvitationContent, isDol, Person } from '../model';
+import { asWedding, givenName, InvitationContent, isDol, Person } from '../model';
 import { IText, Page, PageTitle } from './look';
 
 /** "홍철수 · 이순자의 아들 홍길동" — 故人이면 이름 앞에 故 */
@@ -30,7 +30,7 @@ function namesFor(content: InvitationContent): { lines: string[]; signature: str
       signature: content.greeting.appendNames && names ? /* i18n-ignore */ `${names} 드림.` : null,
     };
   }
-  const { basic, greeting } = content;
+  const { basic, greeting } = asWedding(content);
   const lines = [
     familyLine(basic.groomFather, basic.groomMother, basic.groom),
     familyLine(basic.brideFather, basic.brideMother, basic.bride),
