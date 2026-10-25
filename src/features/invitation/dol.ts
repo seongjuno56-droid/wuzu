@@ -218,6 +218,10 @@ export function validateDol(key: SectionKey, c: DolContent): string[] {
   return errors;
 }
 
+/** 지금 있는 보호자의 계좌만 남긴다 */
+export const pruneAccounts = (c: DolContent): Record<string, BankAccount> =>
+  Object.fromEntries(Object.entries(c.account.accounts).filter(([id]) => c.basic.guardians.some((g) => g.id === id)));
+
 /** 태어난 날을 넣었는데 행사일보다 늦음 — 입력칸에 '태어난 날을 확인해 주세요.' */
 export const birthDateProblem = (c: DolContent) =>
   isDate(c.basic.birthDate) && validateDol('basic', c).includes('birthDate');

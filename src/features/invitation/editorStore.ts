@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { styleFor } from '../../data/templates';
 import { coverPreset } from '../canvas/preset';
 import type { CanvasDoc, ViewMode } from '../canvas/types';
-import { seedTimeline } from './dol';
+import { pruneAccounts, seedTimeline } from './dol';
 import { isDateString } from './model';
 import { Invitation, InvitationContent, isDol, OptionalSection, PageKey, ReorderablePage, SectionKey } from './model';
 import { createInvitation, themeDef, validateFor } from './themes';
@@ -81,6 +81,10 @@ export const useEditor = create<EditorState>()((set, get) => ({
             timeline: { items: seedTimeline(items, content.basic.birthDate, content.ceremony.date) },
           };
         }
+      }
+      // 돌잔치 보호자를 지우면 그 보호자의 계좌도 같이 지운다 (저장본에 남지 않게)
+      if (isDol(content) && key === 'basic') {
+        content = { ...content, account: { ...content.account, accounts: pruneAccounts(content) } };
       }
       // 완료했던 섹션이 다시 규칙에 어긋나면 완료 표시를 푼다 — 다른 칸을 바꿔 어긋날 수도 있어 완료된 칸을 모두 다시 본다
       // (예: 계좌를 넣은 보호자를 지움, 행사일을 태어난 날보다 앞으로 옮김)

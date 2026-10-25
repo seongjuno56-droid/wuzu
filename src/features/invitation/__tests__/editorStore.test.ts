@@ -159,4 +159,15 @@ describe('editor store', () => {
     st().patch('ceremony', { venue: '파티룸' });
     expect(items()).toEqual([]);
   });
+  it("돌잔치: 보호자를 지우면 그 보호자의 계좌도 저장본에서 지운다", () => {
+    useEditor.getState().start({ ownerId: "u", themeId: "dol", templateId: "dol-1", today: new Date(2026, 9, 22) });
+    const st = () => useEditor.getState();
+    const c = () => st().draft!.content as DolContent;
+    const [dad, mom] = c().basic.guardians;
+    st().patch("account", {
+      accounts: { [dad.id]: { bank: "국민", number: "1" }, [mom.id]: { bank: "신한", number: "2" } },
+    });
+    st().patch("basic", { guardians: [mom] });
+    expect(Object.keys(c().account.accounts)).toEqual([mom.id]);
+  });
 });
