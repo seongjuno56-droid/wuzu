@@ -17,6 +17,7 @@ export const PAGE_SECTION: Record<PageKey, SectionKey> = {
   directions: 'directions',
   rsvp: 'rsvp',
   contact: 'contact',
+  notices: 'notices',
 };
 
 export type DockItem =

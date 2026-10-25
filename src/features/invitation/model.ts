@@ -26,7 +26,9 @@ export type SectionKey =
   | 'speakers'
   | 'directions'
   | 'rsvp'
-  | 'contact';
+  | 'contact'
+  // 모임
+  | 'notices';
 /** Step3 에서 켜고 끌 수 있는 항목 */
 export type OptionalSection =
   | 'account'
@@ -39,7 +41,8 @@ export type OptionalSection =
   | 'program'
   | 'speakers'
   | 'rsvp'
-  | 'contact';
+  | 'contact'
+  | 'notices';
 /** 초대장 화면에 그려지는 페이지 */
 export type PageKey =
   | 'cover'
@@ -55,7 +58,8 @@ export type PageKey =
   | 'speakers'
   | 'directions'
   | 'rsvp'
-  | 'contact';
+  | 'contact'
+  | 'notices';
 /** Step4 에서 드래그로 순서를 바꿀 수 있는 페이지 */
 export type ReorderablePage =
   | 'gallery'
@@ -68,7 +72,8 @@ export type ReorderablePage =
   | 'speakers'
   | 'directions'
   | 'rsvp'
-  | 'contact';
+  | 'contact'
+  | 'notices';
 
 export type EnabledSections = Partial<Record<OptionalSection, boolean>>;
 
@@ -284,10 +289,52 @@ export interface CorporateContent {
   bgm: BgmInfo;
 }
 
-export type InvitationContent = WeddingContent | DolContent | CorporateContent;
+// ── 모임 (설계 5장) — 기본 정보 필드 이름은 기업과 같게 두어 표지 정보 글자를 같이 쓴다 ──
+
+export interface MeetupBasic {
+  /** 모임 이름 */
+  eventName: string;
+  /** 주최 (사람 이름 또는 모임명, 선택) */
+  host: string;
+  /** 대표 사진 (선택) */
+  photo: string | null;
+}
+
+export interface Notice {
+  id: string;
+  title: string;
+  text: string;
+}
+
+export interface MeetupAccount {
+  /** 회비 금액 (자유 입력: '1인 3만원') */
+  amount: string;
+  bank: string;
+  number: string;
+  holder: string;
+}
+
+export interface MeetupContent {
+  theme: 'meetup';
+  basic: MeetupBasic;
+  ceremony: CeremonyInfo;
+  greeting: GreetingInfo;
+  /** 일정표 — 기업 프로그램과 같은 모양 */
+  program: { items: ProgramItem[] };
+  notices: { items: Notice[] };
+  gallery: GalleryInfo;
+  guestbook: GuestbookSettings;
+  rsvp: RsvpSettings;
+  account: MeetupAccount;
+  ending: EndingInfo;
+  bgm: BgmInfo;
+}
+
+export type InvitationContent = WeddingContent | DolContent | CorporateContent | MeetupContent;
 
 export const isDol = (c: InvitationContent): c is DolContent => c.theme === 'dol';
 export const isCorporate = (c: InvitationContent): c is CorporateContent => c.theme === 'corporate';
+export const isMeetup = (c: InvitationContent): c is MeetupContent => c.theme === 'meetup';
 /** 옛 저장본은 theme 이 없다 */
 export const isWedding = (c: InvitationContent): c is WeddingContent => !c.theme || c.theme === 'wedding';
 
@@ -297,8 +344,8 @@ export function asWedding(c: InvitationContent): WeddingContent {
   return c;
 }
 
-/** 갤러리·방명록이 있는 테마 (결혼식·돌잔치) 전용 부품에서 쓴다 */
-export function withGallery(c: InvitationContent): WeddingContent | DolContent {
+/** 갤러리·방명록이 있는 테마 (결혼식·돌잔치·모임) 전용 부품에서 쓴다 */
+export function withGallery(c: InvitationContent): WeddingContent | DolContent | MeetupContent {
   if (isCorporate(c)) throw new Error(/* i18n-ignore */ '갤러리가 없는 초대장이에요');
   return c;
 }
@@ -377,6 +424,7 @@ export const SECTION_LABEL: Record<SectionKey, string> = {
   directions: '오시는 길',
   rsvp: '참석 신청',
   contact: '문의처',
+  notices: '안내사항',
 };
 
 export const PAGE_LABEL: Record<PageKey, string> = {
@@ -394,6 +442,7 @@ export const PAGE_LABEL: Record<PageKey, string> = {
   directions: '오시는 길',
   rsvp: '참석 신청',
   contact: '문의처',
+  notices: '안내사항',
 };
 
 export const DEFAULT_ORDER: ReorderablePage[] = ['gallery', 'ceremony', 'guestbook', 'account'];

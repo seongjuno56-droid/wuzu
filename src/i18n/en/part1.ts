@@ -1,5 +1,18 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '안내사항': 'Notices',
+  '초대 문구': 'Invitation message',
+  '일정표': 'Schedule',
+  '참석 여부': 'RSVP',
+  '회비 계좌': 'Fee account',
+  '모임 이름과 주최, 대표 사진을 입력합니다.': 'Enter the gathering name, host and main photo.',
+  '모임 날짜와 장소를 입력합니다.': 'Enter the date and place.',
+  '초대하는 말을 입력합니다.': 'Write your invitation message.',
+  '모임 시간표를 보여줍니다.': 'Shows the schedule.',
+  '회비·준비물 같은 안내를 카드로 보여줍니다.': 'Shows notes like fees and what to bring.',
+  '사진 갤러리를 제공합니다.': 'Adds a photo gallery.',
+  '참석 여부와 동반 인원을 받습니다.': 'Collects attendance and number of guests.',
+  '회비 금액과 계좌를 안내합니다.': 'Shows the fee and bank account.',
   '참석 응답 ({0})': 'RSVPs ({0})',
   '참석 응답': 'RSVPs',
   '참석 {0}명 · 불참 {1}명': '{0} attending · {1} not attending',
