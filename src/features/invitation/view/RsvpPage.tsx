@@ -71,7 +71,7 @@ export function RsvpPage({
       ) : rsvp.closed ? (
         <IText tone="sub">마감되었어요</IText>
       ) : (
-        button(cta, rsvp.onOpen)
+        button(cta, rsvp.loading ? undefined : rsvp.onOpen)
       )}
     </Page>
   );

@@ -30,12 +30,16 @@ export default function InvitationScreen() {
   // 참석 신청: 이 기기에서 낸 응답을 기억해 다시 열면 보여 주고 고칠 수 있게
   const [mine, setMine] = useState<RsvpResponse | null>(null);
   const [rsvpOpen, setRsvpOpen] = useState(false);
+  const [mineLoaded, setMineLoaded] = useState(false);
   const rsvpInitial = useMemo(() => mine ?? emptyRsvpInput(), [mine]);
   useEffect(() => {
     myRsvp
       .get(id)
       .then((rid) => (rid ? rsvpService.get(id, rid) : null))
-      .then(setMine);
+      .then((r) => {
+        setMine(r);
+        setMineLoaded(true);
+      });
   }, [id]);
 
   const loadGuestbook = useCallback(async () => setEntries(await invitationService.listGuestbook(id)), [id]);
@@ -85,7 +89,7 @@ export default function InvitationScreen() {
   const preview = isOwner && screenStatus(invitation) !== 'active';
   const rsvp =
     settings && invitation.enabled.rsvp && !preview
-      ? { mine, closed: isRsvpClosed(deadline, new Date()), onOpen: () => setRsvpOpen(true) }
+      ? { mine, loading: !mineLoaded, closed: isRsvpClosed(deadline, new Date()), onOpen: () => setRsvpOpen(true) }
       : undefined;
   const look = lookFor(invitation.themeId, invitation.templateId, invitation.paletteId);
 

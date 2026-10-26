@@ -71,3 +71,19 @@ describe('기업 하객 화면', () => {
     expect(ui.getText('초대장을 활성화하면 하객이 신청할 수 있어요.')).toBeTruthy();
   });
 });
+
+describe('참석 신청 — 내 응답 불러오는 중', () => {
+  it('불러오는 동안은 버튼이 꺼져 있어 새 줄이 중복으로 생기지 않는다', () => {
+    const onOpen = jest.fn();
+    const ui = render(
+      <PageContent page="rsvp" invitation={inv()} rsvp={{ mine: null, closed: false, loading: true, onOpen }} />,
+    );
+    // 꺼진 버튼은 누를 곳이 없다 (press 가 던지면 누를 수 없다는 뜻)
+    try {
+      press(ui.getText('참석 신청하기'));
+    } catch {
+      // 누를 곳 없음
+    }
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+});

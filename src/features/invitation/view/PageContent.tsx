@@ -23,6 +23,8 @@ export interface RsvpHandlers {
   /** 이 기기에서 낸 응답 (없으면 null) */
   mine: RsvpResponse | null;
   closed: boolean;
+  /** 이 기기의 내 응답을 불러오는 중 — 그동안 버튼을 꺼서 새 줄이 중복으로 생기지 않게 */
+  loading?: boolean;
   onOpen: () => void;
 }
 
