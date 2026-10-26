@@ -34,3 +34,19 @@ describe('모임 입력 폼', () => {
     expect(ui.getText('이름 · 참석 여부 · 동반 인원')).toBeTruthy();
   });
 });
+
+describe('참석 여부 설정 안내 — 모임', () => {
+  beforeEach(() =>
+    useEditor
+      .getState()
+      .start({ ownerId: 'u', themeId: 'meetup', templateId: 'meetup-1', today: new Date(2026, 9, 26) }),
+  );
+  it('명단은 카드 더보기에 있다고 안내한다', () => {
+    const ui = render(<RsvpSettingsForm />);
+    expect(
+      ui.getText(
+        '받은 응답은 나의 초대장 카드의 [⋮ 더보기] > [참석 응답]에서 보고, 전화로 받은 응답도 직접 넣을 수 있어요.',
+      ),
+    ).toBeTruthy();
+  });
+});

@@ -6,12 +6,12 @@ import { useSession } from '../../store/session';
 import type { ViewMode } from '../canvas/types';
 import { useEditor } from '../invitation/editorStore';
 
-/** 지금 제작할 수 있는 테마 (모임·기업 행사는 준비 중) */
+/** 지금 제작할 수 있는 테마 (네 테마 모두) */
 const EDITABLE_THEMES = ['wedding', 'dol', 'corporate', 'meetup'];
 
 /**
  * 템플릿 선택/제작하기:
- * 비로그인 → 로그인, 결혼식·돌잔치 → 편집 시작(Step3), 그 외 테마 → 준비 중 안내
+ * 비로그인 → 로그인, 제작 가능한 테마 → 편집 시작(Step3), 그 외 테마 → 준비 중 안내
  */
 export function useRequireLoginToCreate() {
   const user = useSession((s) => s.user);

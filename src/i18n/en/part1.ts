@@ -1,5 +1,6 @@
 /** 영어 번역 1/4 — 키는 코드 속 한국어 원문 ({0}… 은 자리 표시) */
 export const part1: Record<string, string> = {
+  '받은 응답은 나의 초대장 카드의 [⋮ 더보기] > [참석 응답]에서 보고, 전화로 받은 응답도 직접 넣을 수 있어요.': 'See responses under [⋮ More] > [RSVPs] on the card in My invitations. You can also add responses you received by phone.',
   '저장하지 못했어요. 입력한 내용을 확인해 주세요.': 'Could not save. Please check what you entered.',
   '앱을 열 수 없어요. 연락처를 직접 입력해 주세요.': 'Could not open the app. Please use the contact details shown.',
   '참석 여부 알려주기': 'Let us know',
