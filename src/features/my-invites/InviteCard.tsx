@@ -87,7 +87,8 @@ export function InviteCard({
   const bookButton = (withNew: boolean) =>
     rsvpSlot ? (
       <CardButton
-        label={`참석 응답 (${rsvpCount ?? 0})`}
+        // 참석 신청을 끄면 개수를 읽지 않으므로 숫자 없이 꺼진 버튼
+        label={invitation.enabled.rsvp ? `참석 응답 (${rsvpCount ?? 0})` : '참석 응답'}
         onPress={() => onAction('rsvp')}
         disabled={!invitation.enabled.rsvp}
       />

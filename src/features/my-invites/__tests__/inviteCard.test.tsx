@@ -28,3 +28,12 @@ describe('나의 초대장 카드 — 참석 응답', () => {
     expect(ui.queryText('참석 응답 (0)')).toBeNull();
   });
 });
+
+describe('참석 신청을 끈 기업 카드', () => {
+  it('개수 없이 꺼진 [참석 응답] — 받은 응답이 있어도 (0) 으로 보이지 않는다', () => {
+    const inv = { ...card('corporate'), enabled: { ...card('corporate').enabled, rsvp: false } };
+    const ui = render(<InviteCard invitation={inv} now={now} hasNew={false} onAction={jest.fn()} />);
+    expect(ui.getText('참석 응답')).toBeTruthy();
+    expect(ui.queryText('참석 응답 (0)')).toBeNull();
+  });
+});
