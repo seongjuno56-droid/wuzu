@@ -29,6 +29,7 @@ function RsvpForm({ themeId, initial, title, submitLabel, onClose, onSubmit }: P
   const [v, setV] = useState(initial);
   const [tried, setTried] = useState(false);
   const [closed, setClosed] = useState(false);
+  const [rejected, setRejected] = useState(false);
   const fields = rsvpFields(themeId);
   const bad = validateRsvp(v, themeId);
   const show = (f: RsvpField) => tried && bad.includes(f);
@@ -38,6 +39,7 @@ function RsvpForm({ themeId, initial, title, submitLabel, onClose, onSubmit }: P
     if (bad.length) return;
     const r = await onSubmit(v);
     if (r === 'closed') setClosed(true);
+    setRejected(r === 'invalid');
     if (r === 'ok') onClose();
   };
   return (
@@ -117,6 +119,11 @@ function RsvpForm({ themeId, initial, title, submitLabel, onClose, onSubmit }: P
               <Txt variant="title">+</Txt>
             </Pressable>
           </View>
+        )}
+        {rejected && (
+          <Txt variant="caption" color={colors.danger}>
+            저장하지 못했어요. 입력한 내용을 확인해 주세요.
+          </Txt>
         )}
         {closed && (
           <Txt variant="caption" color={colors.danger}>
