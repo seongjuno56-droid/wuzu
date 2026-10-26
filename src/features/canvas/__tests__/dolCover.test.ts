@@ -1,3 +1,4 @@
+import { useLocale } from '../../../i18n';
 import { getTemplates } from '../../../data/templates';
 import { defaultDolContent } from '../../invitation/dol';
 import type { DolContent } from '../../invitation/model';
@@ -56,5 +57,14 @@ describe('돌잔치 표지', () => {
     expect(bindLabel('datetime', 'dol')).toBe('일시');
     expect(bindLabel('venue', 'wedding')).toBe('예식장명');
     expect(bindLabel('childName', 'dol')).toBe('아이 이름');
+  });
+});
+
+describe('돌잔치 정보 글자 — 영어', () => {
+  afterEach(() => useLocale.setState({ locale: 'ko' }));
+  it("'첫 생일' 글자가 영어 모드에서 영어", () => {
+    useLocale.setState({ locale: 'en' });
+    expect(resolveBind('firstBirthday', c).text).toBe("시안's first birthday");
+    expect(resolveBind('firstBirthday', base).text).toBe("Baby's first birthday");
   });
 });

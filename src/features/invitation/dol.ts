@@ -268,6 +268,12 @@ export function treasureLine(b: DolBasic): string {
   return isEn() ? `Treasure of ${names}` : /* i18n-ignore */ `${names}의 보물`;
 }
 
+/** 시안이의 첫 생일 / 시안's first birthday (이름이 없으면 우리 아이·Baby) */
+export function firstBirthdayLine(nick: string): string {
+  if (isEn()) return `${nick || 'Baby'}'s first birthday`;
+  return nick ? /* i18n-ignore */ `${withSubjectSuffix(nick)} 첫 생일` : '우리 아이의 첫 생일';
+}
+
 /** D-day 아래 줄: 시안이의 첫 생일까지 3일 */
 export function ddayLine(c: DolContent, daysLeft: number): string {
   const nick = nicknameOf(c.basic) || (isEn() ? 'Baby' : '아이');

@@ -3,7 +3,7 @@
  * (설계: docs/superpowers/specs/2026-10-16-canvas-cover-and-view-modes-design.md)
  */
 import { fonts } from '../../theme';
-import { nicknameOf, withSubjectSuffix } from '../invitation/dol';
+import { firstBirthdayLine, nicknameOf } from '../invitation/dol';
 import {
   asWedding,
   formatDateTimeLine,
@@ -142,9 +142,10 @@ export function resolveBind(bind: BindKey, c: InvitationContent): { text: string
       }
       case 'firstBirthday': {
         const nick = nicknameOf(b);
+        // 이름이 끼는 문장이라 번역 사전 대신 언어별로 만든다
         return nick
-          ? { text: /* i18n-ignore */ `${withSubjectSuffix(nick)} 첫 생일`, placeholder: false }
-          : { text: '우리 아이의 첫 생일', placeholder: true };
+          ? { text: firstBirthdayLine(nick), placeholder: false }
+          : { text: firstBirthdayLine(''), placeholder: true };
       }
       default:
         return { text: '', placeholder: true };
