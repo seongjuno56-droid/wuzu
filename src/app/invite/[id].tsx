@@ -13,7 +13,7 @@ import { themeDef } from '../../features/invitation/themes';
 import { InvitationView } from '../../features/invitation/view/InvitationView';
 import { lookFor } from '../../features/invitation/view/look';
 import { myRsvp } from '../../features/rsvp/myRsvp';
-import { emptyRsvpInput, isRsvpClosed, RsvpResponse } from '../../features/rsvp/rsvp';
+import { emptyRsvpInput, isRsvpClosed, RsvpResponse, rsvpNotice } from '../../features/rsvp/rsvp';
 import { RsvpFormModal } from '../../features/rsvp/RsvpFormModal';
 import { GuestbookEntry, invitationService, notificationService, rsvpService } from '../../services';
 import { useSession } from '../../store/session';
@@ -156,14 +156,14 @@ export default function InvitationScreen() {
             setMine(r.response);
             await myRsvp.set(invitation.id, r.response.id);
             if (r.created) {
-              await notificationService.add({
-                userId: invitation.ownerId,
-                category: 'rsvp',
-                title: '새 참석 응답',
-                body: `${r.response.name}님이 참석 응답을 보냈어요.`,
-                link: `/invitation/${invitation.id}/rsvp`,
-                createdAt: new Date().toISOString(),
-              });
+              await notificationService.add(
+                rsvpNotice({
+                  name: r.response.name,
+                  invitationId: invitation.id,
+                  ownerId: invitation.ownerId,
+                  at: new Date().toISOString(),
+                }),
+              );
             }
             toast('응답을 보냈어요');
             return 'ok';

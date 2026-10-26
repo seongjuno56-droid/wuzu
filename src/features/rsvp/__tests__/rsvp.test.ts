@@ -5,6 +5,7 @@ import {
   isRsvpClosed,
   RsvpResponse,
   rsvpFields,
+  rsvpNotice,
   rsvpTotals,
   validateRsvp,
 } from '../rsvp';
@@ -59,5 +60,19 @@ describe('마감 안내 줄 — 사용자 언어', () => {
     expect(deadlineLine('2026-11-04')).toBe('2026년 11월 4일까지 알려 주세요.');
     useLocale.setState({ locale: 'en' });
     expect(deadlineLine('2026-11-04')).toBe('Please respond by Nov 4, 2026.');
+  });
+});
+
+describe('새 참석 응답 알림', () => {
+  it('본문은 응답한 사람 이름만 — 받는 사람 언어로 제목이 번역되고, 이름이 낀 문장이 한국어로 남지 않는다', () => {
+    const n = rsvpNotice({ name: '김하객', invitationId: 'i', ownerId: 'u', at: '2026-10-27T00:00:00.000Z' });
+    expect(n).toEqual({
+      userId: 'u',
+      category: 'rsvp',
+      title: '새 참석 응답',
+      body: '김하객',
+      link: '/invitation/i/rsvp',
+      createdAt: '2026-10-27T00:00:00.000Z',
+    });
   });
 });

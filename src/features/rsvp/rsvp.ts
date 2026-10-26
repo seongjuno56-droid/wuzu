@@ -80,3 +80,16 @@ export const deadlineLine = (deadline: string) =>
   currentLocale() === 'en'
     ? `Please respond by ${formatShortDate(deadline)}.`
     : /* i18n-ignore */ `${formatShortDate(deadline)}까지 알려 주세요.`;
+
+/**
+ * 만든 사람에게 보낼 새 참석 응답 알림. 하객 기기에서 만들지만 만든 사람이 자기 언어로 읽으므로,
+ * 제목은 번역되는 고정 문구, 본문은 번역하지 않는 이름만 둔다
+ */
+export const rsvpNotice = (a: { name: string; invitationId: string; ownerId: string; at: string }) => ({
+  userId: a.ownerId,
+  category: 'rsvp' as const,
+  title: '새 참석 응답',
+  body: a.name,
+  link: `/invitation/${a.invitationId}/rsvp`,
+  createdAt: a.at,
+});
