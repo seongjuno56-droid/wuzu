@@ -1,5 +1,6 @@
 import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 
+import { toast } from '../../../components/Toast';
 import { radius, spacing } from '../../../theme';
 import { CorporateContent, ProgramItem } from '../model';
 import { CeremonyPage, MapCard } from './CeremonyPage';
@@ -140,7 +141,8 @@ export function ContactPage({ content }: { content: CorporateContent }) {
   const k = content.contact;
   const button = (label: string, a11y: string, url: string) => (
     <Pressable
-      onPress={() => Linking.openURL(url)}
+      // 전화·메일 앱이 없는 기기에서는 열기가 실패한다 — 연락처는 화면에 그대로 보이므로 안내만
+      onPress={() => Linking.openURL(url).catch(() => toast('앱을 열 수 없어요. 연락처를 직접 입력해 주세요.'))}
       style={[styles.contactBtn, { borderColor: look.sub + '55' }]}
       accessibilityRole="button"
       accessibilityLabel={a11y}

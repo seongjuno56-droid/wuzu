@@ -87,3 +87,16 @@ describe('참석 신청 — 내 응답 불러오는 중', () => {
     expect(onOpen).not.toHaveBeenCalled();
   });
 });
+
+describe('문의처 — 전화·메일 앱을 열지 못할 때', () => {
+  it('실패하면 연락처를 복사해 쓰라는 안내를 띄운다', async () => {
+    const Toast = jest.requireActual('../../../components/Toast');
+    const show = jest.spyOn(Toast, 'toast');
+    const { Linking } = jest.requireActual('react-native');
+    jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('no app'));
+    const ui = render(<PageContent page="contact" invitation={inv()} />);
+    press(ui.getLabel('메일 보내기'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(show).toHaveBeenCalledWith('앱을 열 수 없어요. 연락처를 직접 입력해 주세요.');
+  });
+});
