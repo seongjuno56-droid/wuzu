@@ -452,12 +452,12 @@ export function CanvasEditor({ initial, content, style, themeId, onDone, onCance
       />
       <AppModal
         visible={boundNotice}
-        message={'이 글자는 기본정보와 연결돼 있어요.\n기본정보에서 바꿀 수 있어요.'}
+        message={'이 글자는 기본 정보와 연결돼 있어요.\n기본 정보에서 바꿀 수 있어요.'}
         onDismiss={() => setBoundNotice(false)}
         actions={[
           { label: '닫기', variant: 'outline', onPress: () => setBoundNotice(false) },
           {
-            label: '기본정보 열기',
+            label: '기본 정보 열기',
             onPress: () => {
               setBoundNotice(false);
               // 지금까지 꾸민 내용은 저장하고 연다

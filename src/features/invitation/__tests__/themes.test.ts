@@ -17,3 +17,12 @@ describe('테마 정의', () => {
     expect(themeDef('wedding').pageLabel('ceremony')).toBe('예식 정보');
   });
 });
+
+describe('기본 정보 이름 통일', () => {
+  it('입력 시트 제목이 입력항목 선택의 이름과 같다 (띄어쓰기 포함)', () => {
+    for (const t of ['wedding', 'dol', 'corporate', 'meetup']) {
+      const def = themeDef(t);
+      expect(def.sectionLabel('basic')).toBe(def.fixed.find((s) => s.key === 'basic')!.title);
+    }
+  });
+});

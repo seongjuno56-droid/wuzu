@@ -63,7 +63,7 @@ export function BindPicker({
     <AppModal
       visible={visible}
       title="정보 글자"
-      message="기본정보·일시에 쓴 값이 들어가요."
+      message="기본 정보·일시에 쓴 값이 들어가요."
       onDismiss={onClose}
       actions={[{ label: '닫기', variant: 'outline', onPress: onClose }]}
     >

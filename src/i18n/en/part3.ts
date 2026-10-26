@@ -112,7 +112,7 @@ export const part3: Record<string, string> = {
   은행: 'Bank',
   '을지로 한옥 다이닝 별채': 'Euljiro Hanok Dining Annex',
   '음소거 버튼 색상': 'Mute button color',
-  '이 글자는 기본정보와 연결돼 있어요.\n기본정보에서 바꿀 수 있어요.': 'This text is linked to Basic info.\nYou can change it there.',
+  '이 글자는 기본 정보와 연결돼 있어요.\n기본 정보에서 바꿀 수 있어요.': 'This text is linked to Basic info.\nYou can change it there.',
   '이 슬라이드 입력하기': 'Edit this slide',
   '이 템플릿으로 만들기': 'Use this template',
   이동: 'Leave',

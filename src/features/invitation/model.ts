@@ -412,7 +412,7 @@ export const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png'];
 export const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'aac', 'wav', 'ogg'];
 
 export const SECTION_LABEL: Record<SectionKey, string> = {
-  basic: '기본정보',
+  basic: '기본 정보',
   ceremony: '예식정보',
   greeting: '인사말',
   account: '계좌번호',
