@@ -1,4 +1,4 @@
-import { dropIndex, dropIndexByHeights, moveItem } from '../sortable';
+import { dropIndex, dropIndexByHeights, edgeScrollStep, moveItem } from '../sortable';
 
 describe('moveItem', () => {
   it('moves an item forward and backward without mutating', () => {
@@ -49,5 +49,22 @@ describe('dropIndexByHeights (높이가 제각각인 세로 목록)', () => {
   });
   it('끝을 넘어가도 범위 안', () => {
     expect(dropIndexByHeights({ ...base, from: 0, dy: 5000 })).toBe(3);
+  });
+});
+
+describe('edgeScrollStep (끄는 중 가장자리 자동 스크롤)', () => {
+  // 보이는 영역 y 100~700, 가장자리 60px, 한 번에 최대 12px
+  const view = { top: 100, bottom: 700 };
+  it('가운데에서는 멈춤', () => {
+    expect(edgeScrollStep(400, view)).toBe(0);
+  });
+  it('아래 가장자리에 가까울수록 빠르게 아래로', () => {
+    expect(edgeScrollStep(670, view)).toBeGreaterThan(0);
+    expect(edgeScrollStep(700, view)).toBe(12);
+    expect(edgeScrollStep(800, view)).toBe(12);
+  });
+  it('위 가장자리에서는 위로', () => {
+    expect(edgeScrollStep(130, view)).toBeLessThan(0);
+    expect(edgeScrollStep(50, view)).toBe(-12);
   });
 });

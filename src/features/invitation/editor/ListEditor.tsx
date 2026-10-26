@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { AccessibilityActionEvent, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '../../../components/Txt';
-import { dropIndexByHeights, moveItem } from '../../../lib/sortable';
+import { dropIndexByHeights, edgeScrollStep, moveItem } from '../../../lib/sortable';
 import { colors, radius, spacing } from '../../../theme';
 import { removeItem } from './listOps';
+import { SheetScrollContext } from './sheetScroll';
 
 const GAP = spacing.md;
 
@@ -44,9 +45,22 @@ export function ListEditor<T extends { id: string }>({
   const heights = useRef(new Map<string, number>());
   const dragRef = useRef<Drag | null>(null);
   // 제스처 처리기는 최신 목록·콜백을 ref 로 읽는다
-  const latest = useRef({ items, onChange, onDragChange });
+  const sheet = useContext(SheetScrollContext);
+  const latest = useRef({ items, onChange, onDragChange, sheet });
   useEffect(() => {
-    latest.current = { items, onChange, onDragChange };
+    latest.current = { items, onChange, onDragChange, sheet };
+  });
+  // 끄는 중 가장자리 자동 스크롤: 손가락 위치·손가락이 끈 거리·시트를 스크롤한 양
+  const auto = useRef<{
+    fingerY: number;
+    fingerDy: number;
+    scrolled: number;
+    timer: ReturnType<typeof setInterval> | null;
+  }>({
+    fingerY: 0,
+    fingerDy: 0,
+    scrolled: 0,
+    timer: null,
   });
 
   const [handlers] = useState<HandleCallbacks>(() => ({
@@ -61,16 +75,38 @@ export function ListEditor<T extends { id: string }>({
       dragRef.current = d;
       l.onDragChange?.(true);
       setDrag(d);
+      const a = auto.current;
+      a.scrolled = 0;
+      a.fingerDy = 0;
+      a.timer = setInterval(() => {
+        const view = latest.current.sheet?.viewport();
+        if (!view || !a.fingerY) return;
+        const step = edgeScrollStep(a.fingerY, view);
+        if (!step) return;
+        const moved = latest.current.sheet!.scrollBy(step);
+        if (!moved) return;
+        a.scrolled += moved;
+        setDrag((cur) => (cur ? { ...cur, dy: a.fingerDy + a.scrolled } : cur));
+      }, 16);
     },
-    onMove: (dy: number) => setDrag((d) => (d ? { ...d, dy } : d)),
+    onMove: (dy: number, fingerY: number) => {
+      auto.current.fingerDy = dy;
+      auto.current.fingerY = fingerY;
+      setDrag((d) => (d ? { ...d, dy: dy + auto.current.scrolled } : d));
+    },
     /** dy 가 null 이면 취소 */
     onEnd: (dy: number | null) => {
+      const a = auto.current;
+      if (a.timer) clearInterval(a.timer);
+      a.timer = null;
+      a.fingerY = 0;
+      const scrolled = a.scrolled;
       const d = dragRef.current;
       dragRef.current = null;
       setDrag(null);
       latest.current.onDragChange?.(false);
       if (!d || dy === null) return;
-      const to = dropIndexByHeights({ heights: d.heights, gap: GAP, from: d.from, dy });
+      const to = dropIndexByHeights({ heights: d.heights, gap: GAP, from: d.from, dy: dy + scrolled });
       if (to !== d.from) latest.current.onChange(moveItem(latest.current.items, d.from, to));
     },
   }));
@@ -140,7 +176,8 @@ export function ListEditor<T extends { id: string }>({
 
 type HandleCallbacks = {
   onBegin: (id: string) => void;
-  onMove: (dy: number) => void;
+  /** 손가락이 끈 거리와 화면 기준 손가락 y */
+  onMove: (dy: number, fingerY: number) => void;
   /** dy 가 null 이면 취소 */
   onEnd: (dy: number | null) => void;
 };
@@ -163,7 +200,7 @@ function DragHandle({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => handlers.onBegin(id),
-      onPanResponderMove: (_, g) => handlers.onMove(g.dy),
+      onPanResponderMove: (_, g) => handlers.onMove(g.dy, g.moveY),
       onPanResponderRelease: (_, g) => handlers.onEnd(g.dy),
       onPanResponderTerminate: () => handlers.onEnd(null),
     }),

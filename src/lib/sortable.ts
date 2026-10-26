@@ -44,3 +44,15 @@ export function dropIndexByHeights(args: { heights: number[]; gap: number; from:
   }
   return to;
 }
+
+/**
+ * 끄는 중 손가락이 보이는 영역 가장자리(zone px 안)에 있으면 스크롤할 양.
+ * 가장자리에 가까울수록 빠르고(최대 max), 가운데면 0. 아래는 +, 위는 -.
+ */
+export function edgeScrollStep(fingerY: number, view: { top: number; bottom: number }, zone = 60, max = 12): number {
+  const nearBottom = fingerY - (view.bottom - zone);
+  if (nearBottom > 0) return Math.min(max, Math.ceil((nearBottom / zone) * max));
+  const nearTop = view.top + zone - fingerY;
+  if (nearTop > 0) return -Math.min(max, Math.ceil((nearTop / zone) * max));
+  return 0;
+}
