@@ -74,7 +74,14 @@ export function DolAccountPage({ content }: { content: DolContent }) {
   const rows = content.basic.guardians.flatMap((g) => {
     const a = content.account.accounts[g.id];
     return a && a.bank.trim() && a.number.trim()
-      ? [{ label: g.relation, person: { name: g.name, title: g.relation, deceased: false }, account: a }]
+      ? [
+          {
+            label: g.relation,
+            rawLabel: true,
+            person: { name: g.name, title: g.relation, deceased: false },
+            account: a,
+          },
+        ]
       : [];
   });
   return (

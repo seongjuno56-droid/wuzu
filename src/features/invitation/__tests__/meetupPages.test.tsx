@@ -1,3 +1,4 @@
+import { useLocale } from '../../../i18n';
 import { render } from '../../../test/ui';
 import type { MeetupContent } from '../model';
 import { createInvitation } from '../themes';
@@ -50,5 +51,16 @@ describe('모임 하객 화면', () => {
     const c = inv().content as MeetupContent;
     const ui = render(<PageContent page="greeting" invitation={inv({ basic: { ...c.basic, host: '03학번 동기' } })} />);
     expect(ui.getText('03학번 동기')).toBeTruthy();
+  });
+});
+
+describe('계좌 줄은 사용자 글을 번역하지 않는다', () => {
+  afterEach(() => useLocale.setState({ locale: 'ko' }));
+  it('영어 모드에서 예금주·은행 이름이 사전 낱말과 같아도 그대로', () => {
+    useLocale.setState({ locale: 'en' });
+    const full = inv({ account: { amount: '', bank: '참석', number: '123-45', holder: '회비' } });
+    const ui = render(<PageContent page="account" invitation={full} />);
+    expect(ui.queryText('참석 123-45')).toBeTruthy();
+    expect(ui.queryText('Account holder 회비')).toBeTruthy();
   });
 });
