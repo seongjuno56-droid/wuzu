@@ -47,7 +47,7 @@ export function MeetupAccountPage({ content }: { content: MeetupContent }) {
         <View style={styles.cards}>
           <AccountRow
             row={{
-              label: '',
+              label: '예금주',
               person: { name: a.holder.trim(), title: '', deceased: false },
               account: { bank: a.bank.trim(), number: a.number.trim() },
             }}

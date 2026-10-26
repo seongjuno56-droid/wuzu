@@ -13,7 +13,7 @@ import type { ViewMode } from '../../../features/canvas/types';
 import { useRequireLoginToCreate } from '../../../features/create/useRequireLoginToCreate';
 import { ViewModeChips, ViewModeModal } from '../../../features/invitation/editor/ViewModePicker';
 import { GuestbookModals, GuestbookView } from '../../../features/invitation/GuestbookModals';
-import { SAMPLE_GUESTBOOK, sampleInvitation } from '../../../features/invitation/sample';
+import { sampleGuestbook, sampleInvitation } from '../../../features/invitation/sample';
 import { InvitationView } from '../../../features/invitation/view/InvitationView';
 import type { GuestbookEntry } from '../../../services/types';
 
@@ -28,7 +28,7 @@ export default function TemplateDetail() {
   const sample = useMemo(() => sampleInvitation(themeId, templateId), [themeId, templateId]);
 
   // 미리보기 방명록은 화면 안에서만 동작 (저장하지 않음)
-  const [entries, setEntries] = useState<(GuestbookEntry & { password?: string })[]>(SAMPLE_GUESTBOOK);
+  const [entries, setEntries] = useState<(GuestbookEntry & { password?: string })[]>(() => sampleGuestbook(themeId));
   const [guestbook, setGuestbook] = useState<GuestbookView>(null);
 
   if (!theme || !template) return <Redirect href="/create" />;

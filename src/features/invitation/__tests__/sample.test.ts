@@ -1,5 +1,5 @@
 import { asWedding, DolContent, LIMITS, validateSection } from '../model';
-import { sampleInvitation } from '../sample';
+import { sampleGuestbook, sampleInvitation } from '../sample';
 import { sectionTabs, validateFor } from '../themes';
 
 describe('템플릿 미리보기 예시', () => {
@@ -40,5 +40,17 @@ describe('모임 예시', () => {
     expect(inv.themeId).toBe('meetup');
     expect(inv.enabled.account).toBe(true);
     for (const k of sectionTabs(inv)) expect([k, validateFor(inv, k)]).toEqual([k, []]);
+  });
+});
+
+describe('미리보기 방명록 예시 — 테마별', () => {
+  it('결혼식만 결혼 축하 문구, 돌잔치·모임은 그 테마 문구, 기업은 방명록이 없어 빈 목록', () => {
+    expect(sampleGuestbook('wedding').some((e) => e.content.includes('결혼'))).toBe(true);
+    expect(sampleGuestbook('corporate')).toEqual([]);
+    for (const t of ['dol', 'meetup']) {
+      const list = sampleGuestbook(t);
+      expect(list.length).toBeGreaterThan(0);
+      expect(list.some((e) => e.content.includes('결혼'))).toBe(false);
+    }
   });
 });

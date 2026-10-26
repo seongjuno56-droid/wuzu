@@ -258,3 +258,47 @@ export const SAMPLE_GUESTBOOK: GuestbookEntry[] = [
   },
   { id: 's2', invitationId: 'sample', name: '김나미', content: '올~ 축하해~ 다컸네', createdAt: '2026-09-30T00:00:00.000Z' },
 ];
+
+const entry = (id: string, name: string, content: string, createdAt: string): GuestbookEntry => ({
+  id,
+  invitationId: 'sample',
+  name,
+  content,
+  createdAt,
+});
+
+/** 미리보기 방명록 예시 — 테마에 맞는 문구 (기업은 방명록이 없어 빈 목록) */
+export function sampleGuestbook(themeId: string): GuestbookEntry[] {
+  if (themeId === 'dol')
+    return [
+      entry(
+        's1',
+        /* i18n-ignore */ '이모',
+        /* i18n-ignore */ '시안아 첫 생일 축하해! 건강하게만 자라렴',
+        '2026-10-01T00:00:00.000Z',
+      ),
+      entry(
+        's2',
+        /* i18n-ignore */ '김나미',
+        /* i18n-ignore */ '벌써 돌이라니! 너무 귀여워요',
+        '2026-09-30T00:00:00.000Z',
+      ),
+    ];
+  if (themeId === 'meetup')
+    return [
+      entry(
+        's1',
+        /* i18n-ignore */ '박동기',
+        /* i18n-ignore */ '다들 오랜만이다! 꼭 갈게~',
+        '2026-10-01T00:00:00.000Z',
+      ),
+      entry(
+        's2',
+        /* i18n-ignore */ '김나미',
+        /* i18n-ignore */ '회비 보냈어요. 그날 봐요!',
+        '2026-09-30T00:00:00.000Z',
+      ),
+    ];
+  if (themeId === 'corporate') return [];
+  return SAMPLE_GUESTBOOK;
+}
