@@ -166,6 +166,9 @@ export function resolveBind(bind: BindKey, c: InvitationContent): { text: string
   }
 }
 
+/** 깨진 표시는 깨졌던 그 주소일 때만 — 사진을 바꾸면 새 주소로 다시 그린다 */
+export const isBrokenMedia = (brokenUri: string | null, uri: string | null) => !!uri && brokenUri === uri;
+
 /** 사진 채우기: 로고는 잘리지 않게 틀 안에 맞추고, 표지 사진은 틀을 채운다 */
 export const photoFit = (bind: 'coverPhoto' | 'logo') => (bind === 'logo' ? 'contain' : 'cover');
 

@@ -21,6 +21,7 @@ import {
   finishTextEdit,
   inRect,
   tapToSlide,
+  isBrokenMedia,
 } from '../model';
 import type { CanvasDoc, CanvasElement, TextElement } from '../types';
 
@@ -205,5 +206,14 @@ describe('인스타식 편집 규칙', () => {
   it('슬라이드 안을 누른 위치 → 비율 좌표 (밖이면 가운데)', () => {
     expect(tapToSlide({ x: 150, y: 400 }, { x: 50, y: 100, width: 200, height: 356 })).toEqual({ x: 0.5, y: 300 / 356 });
     expect(tapToSlide({ x: 10, y: 10 }, { x: 50, y: 100, width: 200, height: 356 })).toEqual({ x: 0.5, y: 0.5 });
+  });
+});
+
+describe('깨진 사진 표시', () => {
+  it('깨졌던 주소에만 깨진 표시 — 사진을 바꾸면 새 주소로 다시 그린다', () => {
+    expect(isBrokenMedia('a.jpg', 'a.jpg')).toBe(true);
+    expect(isBrokenMedia('a.jpg', 'b.jpg')).toBe(false);
+    expect(isBrokenMedia(null, 'a.jpg')).toBe(false);
+    expect(isBrokenMedia('a.jpg', null)).toBe(false);
   });
 });

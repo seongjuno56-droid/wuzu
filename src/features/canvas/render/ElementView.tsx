@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { ICON_SOURCES, Icon3DName } from '../../../components/brand/Icon3D';
 import { translate, useLocale } from '../../../i18n';
 import type { InvitationContent } from '../../invitation/model';
-import { CANVAS_FONTS, photoFit, resolveBind, resolvePhoto, SLIDE_RATIO } from '../model';
+import { CANVAS_FONTS, isBrokenMedia, photoFit, resolveBind, resolvePhoto, SLIDE_RATIO } from '../model';
 import type { CanvasElement, PhotoFrame } from '../types';
 import { BrokenMedia } from './BrokenMedia';
 import { VideoElement } from './VideoElement';
@@ -46,7 +46,8 @@ export function ElementContent({
   slideW: number;
   onLayout?: (e: LayoutChangeEvent) => void;
 }) {
-  const [broken, setBroken] = useState(false);
+  // 깨진 주소를 기억한다 (불리언이면 사진을 바꿔도 깨진 표시가 남는다)
+  const [brokenUri, setBrokenUri] = useState<string | null>(null);
   const locale = useLocale((s) => s.locale);
   const width = el.w * slideW;
   const height = elementHeight(el, slideW) ?? 0;
@@ -77,6 +78,10 @@ export function ElementContent({
     );
   }
 
+  const mediaUri =
+    el.kind === 'image' || el.kind === 'gif' ? el.uri : el.kind === 'photo' ? resolvePhoto(content, el.bind) : null;
+  const broken = isBrokenMedia(brokenUri, mediaUri);
+  const onError = () => setBrokenUri(mediaUri);
   let node: ReactNode;
   if (broken) {
     node = <BrokenMedia width={width} height={height} />;
@@ -88,7 +93,7 @@ export function ElementContent({
         style={{ width, height, borderRadius: radius }}
         contentFit="cover"
         autoplay
-        onError={() => setBroken(true)}
+        onError={onError}
       />
     );
   } else if (el.kind === 'photo') {
@@ -96,7 +101,7 @@ export function ElementContent({
     const shape = { width, height, overflow: 'hidden' as const, ...frameRadius(el.frame, width, height) };
     // 선택 사진(기업 로고·모임 대표 사진)은 비어 있으면 아무것도 그리지 않는다 (돌잔치 표지 사진은 빈 틀)
     node = !uri && (el.optional || el.bind === 'logo') ? null : uri ? (
-      <Image source={{ uri }} style={shape} contentFit={photoFit(el.bind)} onError={() => setBroken(true)} />
+      <Image source={{ uri }} style={shape} contentFit={photoFit(el.bind)} onError={onError} />
     ) : (
       // 표지 사진을 아직 안 넣었으면 빈 틀
       <View style={[shape, { backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
