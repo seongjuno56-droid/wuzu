@@ -43,3 +43,7 @@ yarn-error.*
 # superpowers workspace
 .superpowers/
 .playwright-mcp/
+
+# 어드민 로컬 DB·비밀값
+admin/.pglite
+admin/.env.local
