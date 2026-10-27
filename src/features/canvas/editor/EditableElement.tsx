@@ -157,6 +157,7 @@ export function EditableElement({
             el={shown}
             content={content}
             slideW={slideW}
+            editing
             onLayout={(e) => setBoxH(e.nativeEvent.layout.height)}
           />
           {selected && interactive && !live && (

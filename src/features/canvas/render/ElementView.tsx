@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode, useState } from 'react';
-import { LayoutChangeEvent, Text, View } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { ICON_SOURCES, Icon3DName } from '../../../components/brand/Icon3D';
@@ -40,11 +40,14 @@ export function ElementContent({
   content,
   slideW,
   onLayout,
+  editing,
 }: {
   el: CanvasElement;
   content: InvitationContent;
   slideW: number;
   onLayout?: (e: LayoutChangeEvent) => void;
+  /** 직접 꾸미기 화면 — 빈 선택 사진 칸도 보여서 고를 수 있게 */
+  editing?: boolean;
 }) {
   // 깨진 주소를 기억한다 (불리언이면 사진을 바꿔도 깨진 표시가 남는다)
   const [brokenUri, setBrokenUri] = useState<string | null>(null);
@@ -99,8 +102,19 @@ export function ElementContent({
   } else if (el.kind === 'photo') {
     const uri = resolvePhoto(content, el.bind);
     const shape = { width, height, overflow: 'hidden' as const, ...frameRadius(el.frame, width, height) };
-    // 선택 사진(기업 로고·모임 대표 사진)은 비어 있으면 아무것도 그리지 않는다 (돌잔치 표지 사진은 빈 틀)
-    node = !uri && (el.optional || el.bind === 'logo') ? null : uri ? (
+    // 선택 사진(기업 로고·모임 대표 사진)은 비어 있으면 하객 화면엔 아무것도 그리지 않고,
+    // 직접 꾸미기에서만 점선 칸으로 보여 고를 수 있게 한다 (돌잔치 표지 사진은 늘 빈 틀)
+    const emptyOptional = !uri && (el.optional || el.bind === 'logo');
+    node = emptyOptional ? (
+      editing ? (
+        <View accessibilityLabel="빈 사진 칸" style={[shape, styles.emptySlot]}>
+          <Ionicons name="image-outline" size={Math.max(16, width * 0.14)} color="rgba(0,0,0,0.35)" />
+          <Text style={{ fontSize: Math.max(10, width * 0.07), color: 'rgba(0,0,0,0.45)' }}>
+            {translate(el.bind === 'logo' ? '로고' : '대표 사진', locale)}
+          </Text>
+        </View>
+      ) : null
+    ) : uri ? (
       <Image source={{ uri }} style={shape} contentFit={photoFit(el.bind)} onError={onError} />
     ) : (
       // 표지 사진을 아직 안 넣었으면 빈 틀
@@ -180,3 +194,14 @@ export function ElementView({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  emptySlot: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+});

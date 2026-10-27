@@ -8,6 +8,7 @@ export const part1: Record<string, string> = {
   '예) 03학번 연말 송년회': 'e.g. Class of 2003 year-end party',
   '예) 김모임 또는 우리 동기 모임': 'e.g. Kim or our class group',
   '대표 사진': 'Main photo',
+  '빈 사진 칸': 'Empty photo slot',
   '넣으면 표지에 들어가요.': 'It will appear on the cover.',
   '안내 추가': 'Add notice',
   '회비': 'Fee',
