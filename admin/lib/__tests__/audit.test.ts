@@ -174,6 +174,34 @@ describe('listAuditLogs', () => {
     expect(fromOnly.rows.map((r) => r.targetId).slice(0, 3)).toEqual(['inv1', '24', '23']);
   });
 
+  it('잘못된 adminId·from·to 를 줘도 오류 없이 그 걸러 보기만 빠진다', async () => {
+    const db = await newTestDb();
+    const adminId = await addAdmin(db, 'a@wuzu.kr', '운영자');
+    await db.query(
+      `insert into admin_audit_logs(admin_id, action, target_type, target_id, created_at)
+       values ($1, 'member.ban', 'member', 'm1', '2026-10-05 03:00:00+00'),
+              ($1, 'invitation.hide', 'invitation', 'i1', '2026-10-06 03:00:00+00')`,
+      [adminId],
+    );
+
+    for (const bad of [
+      { adminId: 'abc' },
+      { from: '2026-13-40' },
+      { to: '어제' },
+      { from: '2026-02-30', to: '2026-1-5' },
+    ]) {
+      const res = await listAuditLogs(db, { ...bad, page: 1 });
+      expect(res.total, JSON.stringify(bad)).toBe(2);
+    }
+    // 잘못된 값은 빠지고 올바른 걸러 보기는 그대로 적용된다
+    const mixed = await listAuditLogs(db, { adminId: 'abc', action: 'member.ban', to: '어제', page: 1 });
+    expect(mixed.rows.map((r) => r.targetId)).toEqual(['m1']);
+    // page 가 NaN·Infinity 면 1페이지
+    for (const page of [Number.NaN, Number.POSITIVE_INFINITY, -3]) {
+      expect((await listAuditLogs(db, { page })).rows, String(page)).toHaveLength(2);
+    }
+  });
+
   it('날짜 걸러 보기는 세션 시간대와 상관없이 한국 시간 하루 기준', async () => {
     const db = await newTestDb();
     const adminId = await addAdmin(db, 'a@wuzu.kr', '운영자');

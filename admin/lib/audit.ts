@@ -54,9 +54,24 @@ export interface AuditListQuery {
   page: number;
 }
 
-/** jsonb 매개변수로 보낼 값. undefined 는 null 로 */
+/** jsonb 매개변수로 보낼 값. null·undefined 는 SQL NULL 로 */
 function toJson(value: unknown): string | null {
-  return value === undefined ? null : JSON.stringify(value);
+  return value == null ? null : JSON.stringify(value);
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+/** 'YYYY-MM-DD' 모양이고 달력에 실제로 있는 날짜인지 */
+function isCalendarDate(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
 }
 
 /**
@@ -89,7 +104,10 @@ export function withAudit<R>(
   });
 }
 
-/** 작업 기록 목록: 걸러 보기, 최신순, PAGE_SIZE 개씩 */
+/**
+ * 작업 기록 목록: 걸러 보기, 최신순, PAGE_SIZE 개씩.
+ * 주소에서 온 값이 잘못된 모양(uuid·날짜)이면 그 걸러 보기만 빼고 보여 준다.
+ */
 export async function listAuditLogs(
   db: Db,
   q: AuditListQuery,
@@ -100,11 +118,11 @@ export async function listAuditLogs(
     params.push(value);
     conds.push(sql(`$${params.length}`));
   };
-  if (q.adminId) add((p) => `l.admin_id = ${p}::uuid`, q.adminId);
+  if (q.adminId && isUuid(q.adminId)) add((p) => `l.admin_id = ${p}::uuid`, q.adminId);
   if (q.action) add((p) => `l.action = ${p}`, q.action);
   if (q.targetType) add((p) => `l.target_type = ${p}`, q.targetType);
-  if (q.from) add((p) => `l.created_at >= (${p}::date)::timestamp at time zone 'Asia/Seoul'`, q.from);
-  if (q.to) add((p) => `l.created_at < (${p}::date + 1)::timestamp at time zone 'Asia/Seoul'`, q.to);
+  if (q.from && isCalendarDate(q.from)) add((p) => `l.created_at >= (${p}::date)::timestamp at time zone 'Asia/Seoul'`, q.from);
+  if (q.to && isCalendarDate(q.to)) add((p) => `l.created_at < (${p}::date + 1)::timestamp at time zone 'Asia/Seoul'`, q.to);
   const where = conds.length > 0 ? `where ${conds.join(' and ')}` : '';
 
   const [{ total }] = await db.query<{ total: number }>(
@@ -112,7 +130,7 @@ export async function listAuditLogs(
     params,
   );
 
-  const page = Math.max(1, Math.floor(q.page) || 1);
+  const page = Number.isFinite(q.page) ? Math.max(1, Math.floor(q.page)) : 1;
   const rows = await db.query<AuditRow>(
     `select l.id::text as "id", l.admin_id as "adminId", a.name as "adminName",
             l.action, l.target_type as "targetType", l.target_id as "targetId",
