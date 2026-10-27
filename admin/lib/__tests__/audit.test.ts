@@ -165,10 +165,32 @@ describe('listAuditLogs', () => {
     const byType = await listAuditLogs(db, { targetType: 'member', page: 1 });
     expect(byType.total).toBe(25);
 
-    // 날짜 범위: to 는 그날 끝까지 포함
+    // 날짜 범위(한국 시간): KST 10-01 하루 = UTC 09-30 15:00 ~ 10-01 15:00 → 0..14시 15건
     const byDate = await listAuditLogs(db, { from: '2026-10-01', to: '2026-10-01', page: 1 });
-    expect(byDate.total).toBe(24);
+    expect(byDate.total).toBe(15);
+    // KST 10-02 0시 = UTC 10-01 15:00 부터 → 15..24시 10건 + 이운영 1건
     const fromOnly = await listAuditLogs(db, { from: '2026-10-02', page: 1 });
-    expect(fromOnly.rows.map((r) => r.targetId)).toEqual(['inv1', '24']);
+    expect(fromOnly.total).toBe(11);
+    expect(fromOnly.rows.map((r) => r.targetId).slice(0, 3)).toEqual(['inv1', '24', '23']);
+  });
+
+  it('날짜 걸러 보기는 세션 시간대와 상관없이 한국 시간 하루 기준', async () => {
+    const db = await newTestDb();
+    const adminId = await addAdmin(db, 'a@wuzu.kr', '운영자');
+    await db.query(`set time zone 'UTC'`);
+    // UTC 2026-10-27 15:30 = KST 2026-10-28 00:30
+    await db.query(
+      `insert into admin_audit_logs(admin_id, action, target_type, target_id, created_at)
+       values ($1, 'member.ban', 'member', 'm1', '2026-10-27 15:30:00+00')`,
+      [adminId],
+    );
+
+    for (const tz of ['UTC', 'America/New_York']) {
+      await db.query(`set time zone '${tz}'`);
+      const on28 = await listAuditLogs(db, { from: '2026-10-28', to: '2026-10-28', page: 1 });
+      expect(on28.total, tz).toBe(1);
+      const on27 = await listAuditLogs(db, { from: '2026-10-27', to: '2026-10-27', page: 1 });
+      expect(on27.total, tz).toBe(0);
+    }
   });
 });

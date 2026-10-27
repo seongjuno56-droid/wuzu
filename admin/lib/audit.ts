@@ -47,9 +47,9 @@ export interface AuditListQuery {
   adminId?: string;
   action?: string;
   targetType?: string;
-  /** 'YYYY-MM-DD', 그날 0시부터 */
+  /** 'YYYY-MM-DD', 한국 시간 그날 0시부터 */
   from?: string;
-  /** 'YYYY-MM-DD', 그날 끝까지 포함 */
+  /** 'YYYY-MM-DD', 한국 시간 그날 끝까지 포함 */
   to?: string;
   page: number;
 }
@@ -103,8 +103,8 @@ export async function listAuditLogs(
   if (q.adminId) add((p) => `l.admin_id = ${p}::uuid`, q.adminId);
   if (q.action) add((p) => `l.action = ${p}`, q.action);
   if (q.targetType) add((p) => `l.target_type = ${p}`, q.targetType);
-  if (q.from) add((p) => `l.created_at >= ${p}::date`, q.from);
-  if (q.to) add((p) => `l.created_at < ${p}::date + 1`, q.to);
+  if (q.from) add((p) => `l.created_at >= (${p}::date)::timestamp at time zone 'Asia/Seoul'`, q.from);
+  if (q.to) add((p) => `l.created_at < (${p}::date + 1)::timestamp at time zone 'Asia/Seoul'`, q.to);
   const where = conds.length > 0 ? `where ${conds.join(' and ')}` : '';
 
   const [{ total }] = await db.query<{ total: number }>(
