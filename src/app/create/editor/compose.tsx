@@ -11,6 +11,7 @@ import { toast } from '../../../components/Toast';
 import { Txt } from '../../../components/Txt';
 import { paletteOfTemplate, styleFor } from '../../../data/templates';
 import { CanvasEditor } from '../../../features/canvas/editor/CanvasEditor';
+import { resolvePhoto } from '../../../features/canvas/model';
 import { canvasForEditing } from '../../../features/canvas/preset';
 import type { CanvasDoc } from '../../../features/canvas/types';
 import { useEditor } from '../../../features/invitation/editorStore';
@@ -145,7 +146,10 @@ export default function EditorCompose() {
   const openCanvas = () => {
     if (!currentPage) return;
     setSection(null);
-    setCanvas({ page: currentPage, initial: canvasForEditing(design, styleFor(draft.themeId, draft.templateId, draft.paletteId), draft.themeId) });
+    const style = styleFor(draft.themeId, draft.templateId, draft.paletteId);
+    // 모임은 대표 사진이 없으면 표지 배치가 달라진다
+    const hasPhoto = !!resolvePhoto(draft.content);
+    setCanvas({ page: currentPage, initial: canvasForEditing(design, style, draft.themeId, { hasPhoto }) });
   };
 
   // 캔버스 편집 중에는 화면 전체를 편집기에 넘긴다

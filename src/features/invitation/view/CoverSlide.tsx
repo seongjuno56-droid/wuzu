@@ -1,4 +1,5 @@
 import { styleFor } from '../../../data/templates';
+import { resolvePhoto } from '../../canvas/model';
 import { coverPreset } from '../../canvas/preset';
 import { CanvasSlide } from '../../canvas/render/CanvasSlide';
 import type { Invitation } from '../model';
@@ -13,6 +14,8 @@ export function CoverSlide({
 }) {
   const style = styleFor(invitation.themeId, invitation.templateId, invitation.paletteId);
   const design = invitation.design.cover;
-  const doc = design?.mode === 'canvas' ? design.canvas : coverPreset(style, invitation.themeId);
+  const doc = design?.mode === 'canvas' ? design.canvas : coverPreset(style, invitation.themeId, {
+          hasPhoto: !!resolvePhoto(invitation.content),
+        });
   return <CanvasSlide doc={doc} content={invitation.content} templateBg={style.bg} width={width} />;
 }

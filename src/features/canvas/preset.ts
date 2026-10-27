@@ -4,11 +4,16 @@ import type { BindKey, CanvasDoc, CanvasElement, FontKey, PhotoFrame, SlideDesig
 /** 360px 폭 기준 px → 슬라이드 폭 대비 비율 */
 const u = (px: number) => px / 360;
 
+/** 표지 배치를 고르는 내용 정보 — 모임은 대표 사진이 없으면 글자를 가운데로 올린다 */
+export interface CoverOptions {
+  hasPhoto?: boolean;
+}
+
 /**
  * 템플릿 표지(형식 모드)의 배치. 형식 표지도 이 프리셋을 그대로 그리므로
  * [직접 꾸미기]로 바꿔도 모습이 달라지지 않는다.
  */
-export function coverPreset(style: TemplateStyle, themeId = 'wedding'): CanvasDoc {
+export function coverPreset(style: TemplateStyle, themeId = 'wedding', opts: CoverOptions = {}): CanvasDoc {
   const serif = style.font === 'serif';
   const round = style.font === 'round';
   const regular: FontKey = round ? 'round' : serif ? 'serif' : 'sans';
@@ -28,7 +33,7 @@ export function coverPreset(style: TemplateStyle, themeId = 'wedding'): CanvasDo
 
   if (themeId === 'dol') return dolCover(style, text, bound);
   if (themeId === 'corporate') return corporateCover(style, text, bound, rule);
-  if (themeId === 'meetup') return meetupCover(style, text, bound);
+  if (themeId === 'meetup') return meetupCover(style, text, bound, opts.hasPhoto ?? true);
 
   if (style.cover === 'names') {
     return {
@@ -119,19 +124,25 @@ function corporateCover(style: TemplateStyle, text: Maker, bound: BoundMaker, ru
   return { background: { kind: 'template' }, elements };
 }
 
-/** 모임 표지: 대표 사진(있을 때만, 템플릿 틀) · LET'S MEET · 모임 이름 · 주최 · 일시 · 장소 */
-function meetupCover(style: TemplateStyle, text: Maker, bound: BoundMaker): CanvasDoc {
+/**
+ * 모임 표지: 대표 사진(있을 때만, 템플릿 틀) · LET'S MEET · 모임 이름 · 주최 · 일시 · 장소.
+ * 대표 사진이 없으면 글자 묶음을 표지 가운데로 올리고, 사진 칸은 위쪽에 작게 둔다
+ * (하객 화면엔 안 보이고, 직접 꾸미기에서 고르거나 나중에 사진을 넣었을 때 쓰인다).
+ */
+function meetupCover(style: TemplateStyle, text: Maker, bound: BoundMaker, hasPhoto: boolean): CanvasDoc {
   const frame: PhotoFrame = style.frame ?? 'circle';
+  const top = hasPhoto ? 0.55 : 0.4;
   const elements: CanvasElement[] = [
     {
-      id: 'preset-photo', kind: 'photo', bind: 'coverPhoto', optional: true, x: 0.5, y: 0.3, w: 0.56, rotation: 0,
+      id: 'preset-photo', kind: 'photo', bind: 'coverPhoto', optional: true, x: 0.5,
+      y: hasPhoto ? 0.3 : 0.24, w: hasPhoto ? 0.56 : 0.3, rotation: 0,
       aspect: frame === 'circle' ? 1 : 1.15, frame,
     },
-    text('preset-label', "LET'S MEET", 0.55, 12, style.accent),
-    bound('preset-event', 'eventName', 0.61, 26, style.fg, true),
-    bound('preset-host', 'host', 0.67, 14, style.sub),
-    bound('preset-datetime', 'datetime', 0.73, 14, style.sub),
-    bound('preset-venue', 'venue', 0.775, 14, style.sub),
+    text('preset-label', "LET'S MEET", top, 12, style.accent),
+    bound('preset-event', 'eventName', top + 0.06, 26, style.fg, true),
+    bound('preset-host', 'host', top + 0.12, 14, style.sub),
+    bound('preset-datetime', 'datetime', top + 0.18, 14, style.sub),
+    bound('preset-venue', 'venue', top + 0.225, 14, style.sub),
   ];
   if (style.cover === 'frame') elements.unshift(frameBox(style));
   return { background: { kind: 'template' }, elements };
@@ -141,7 +152,12 @@ function meetupCover(style: TemplateStyle, text: Maker, bound: BoundMaker): Canv
  * [직접 꾸미기]를 열 때 편집기에 넘길 캔버스. 꾸민 적 없으면 프리셋의 깊은 복사본.
  * 초안에는 [완료] 때만 넣는다 — 취소하면 아무것도 바뀌지 않는다.
  */
-export function canvasForEditing(design: SlideDesign | undefined, style: TemplateStyle, themeId = 'wedding'): CanvasDoc {
+export function canvasForEditing(
+  design: SlideDesign | undefined,
+  style: TemplateStyle,
+  themeId = 'wedding',
+  opts: CoverOptions = {},
+): CanvasDoc {
   if (design?.mode === 'canvas') return design.canvas;
-  return JSON.parse(JSON.stringify(coverPreset(style, themeId))) as CanvasDoc;
+  return JSON.parse(JSON.stringify(coverPreset(style, themeId, opts))) as CanvasDoc;
 }
