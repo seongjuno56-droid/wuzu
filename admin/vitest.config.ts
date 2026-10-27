@@ -13,5 +13,8 @@ export default defineConfig({
     environment: 'node',
     include: ['**/__tests__/**/*.test.ts'],
     exclude: ['node_modules/**', '.next/**'],
+    // PGlite 를 띄우고 마이그레이션을 올리는 DB 테스트는 여러 파일이 함께 돌면 5초를 넘기기도 한다
+    testTimeout: 30000,
+    hookTimeout: 30000,
   },
 });
