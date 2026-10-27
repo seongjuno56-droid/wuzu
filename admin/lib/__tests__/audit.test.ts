@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Db } from '../db';
-import { listAuditLogs, withAudit } from '../audit';
+import { auditFilterFrom, exportAuditLogs, listAuditLogs, withAudit } from '../audit';
+import { parseListQuery } from '../listQuery';
 import { newTestDb } from '../../test/db';
 
 /** 운영자 한 명을 만들고 id 를 돌려준다 */
@@ -220,5 +221,31 @@ describe('listAuditLogs', () => {
       const on27 = await listAuditLogs(db, { from: '2026-10-27', to: '2026-10-27', page: 1 });
       expect(on27.total, tz).toBe(0);
     }
+  });
+});
+
+describe('exportAuditLogs', () => {
+  it('주소의 걸러 보기 그대로, 페이지 없이 최신순', async () => {
+    const db = await newTestDb();
+    const kim = await addAdmin(db, 'kim@wuzu.kr', '김운영');
+    const lee = await addAdmin(db, 'lee@wuzu.kr', '이운영');
+    for (let i = 0; i < 25; i++) {
+      await db.query(
+        `insert into admin_audit_logs(admin_id, action, target_type, target_id, created_at)
+         values ($1, 'member.ban', 'member', $2, timestamptz '2026-10-01 00:00:00+00' + make_interval(hours => $3))`,
+        [kim, String(i), i],
+      );
+    }
+    await db.query(
+      `insert into admin_audit_logs(admin_id, action, target_type, target_id) values ($1, 'invitation.hide', 'invitation', 'inv1')`,
+      [lee],
+    );
+
+    const filter = auditFilterFrom(parseListQuery({ admin: kim, action: 'member.ban', target: 'member', page: '2' }));
+    expect(filter).toEqual({ adminId: kim, action: 'member.ban', targetType: 'member', from: undefined, to: undefined });
+    const rows = await exportAuditLogs(db, filter);
+    expect(rows).toHaveLength(25);
+    expect(rows[0]).toMatchObject({ targetId: '24', adminName: '김운영' });
+    expect(await exportAuditLogs(db, auditFilterFrom(parseListQuery({ target: 'invitation' })))).toHaveLength(1);
   });
 });

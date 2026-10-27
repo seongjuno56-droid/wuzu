@@ -1,7 +1,9 @@
 import 'server-only';
+import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { withAudit } from './audit';
 import { getDb, type Db } from './db';
+import { isUuid } from './ids';
 import { SESSION_COOKIE, verifySession } from './session';
 
 /** 비밀번호 bcrypt 비용 */
@@ -14,8 +16,6 @@ export const MIN_PASSWORD_LENGTH = 10;
  * 어떤 비밀번호와도 맞지 않는 임의 문자열의 해시다.
  */
 const DUMMY_HASH = '$2b$10$1yJCaZwBRCHaPke8WHkL1.Fs4kjaHdM6OZeNMDMO1L7onA11GPUmG';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** 화면에 돌려주는 운영자 정보. 비밀번호 해시는 담지 않는다 */
 export interface AdminRow {
@@ -33,8 +33,8 @@ const ADMIN_COLUMNS = `id, email, name, role, active,
   must_change_password as "mustChangePassword",
   created_at as "createdAt", last_login_at as "lastLoginAt"`;
 
-/** 이메일은 저장·비교 모두 앞뒤 공백 없이 소문자로 */
-function normalizeEmail(email: string): string {
+/** 이메일은 저장·비교 모두 앞뒤 공백 없이 소문자로. 저장된 값은 늘 이 모양이다 */
+export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
@@ -49,7 +49,7 @@ export type LoginResult =
 export async function login(db: Db, email: string, password: string): Promise<LoginResult> {
   const [row] = await db.query<{ id: string; password_hash: string; active: boolean; must_change_password: boolean }>(
     `select id, password_hash, active, must_change_password
-       from admins where lower(email) = $1`,
+       from admins where email = $1`,
     [normalizeEmail(email)],
   );
   const matched = await bcrypt.compare(password, row?.password_hash ?? DUMMY_HASH);
@@ -63,7 +63,7 @@ export async function login(db: Db, email: string, password: string): Promise<Lo
 export async function currentAdmin(db: Db, token: string | undefined): Promise<AdminRow | null> {
   if (!token) return null;
   const session = await verifySession(token);
-  if (!session || !UUID_RE.test(session.adminId)) return null;
+  if (!session || !isUuid(session.adminId)) return null;
   const [row] = await db.query<AdminRow>(
     `select ${ADMIN_COLUMNS} from admins where id = $1 and active`,
     [session.adminId],
@@ -151,4 +151,90 @@ export async function createFirstAdmin(
     [normalized, name.trim(), hash],
   );
   return row.id;
+}
+
+/** 운영자 목록: 만든 순서대로. 비밀번호 해시는 담지 않는다 */
+export function listAdmins(db: Db): Promise<AdminRow[]> {
+  return db.query<AdminRow>(`select ${ADMIN_COLUMNS} from admins order by created_at, id`);
+}
+
+export type CreateAdminResult = 'ok' | 'duplicate' | 'too_short';
+
+/**
+ * 운영자 추가. 처음 로그인하면 비밀번호를 바꾸도록 must_change_password=true.
+ * 이메일은 소문자로 저장하므로 대소문자만 다른 이메일도 duplicate.
+ * 작업 기록에는 이메일·이름만 남기고 비밀번호는 넣지 않는다.
+ * 이메일 모양·이름 빈칸은 부르는 쪽(서버 액션)에서 먼저 확인한다.
+ */
+export async function createAdmin(
+  db: Db,
+  byAdminId: string,
+  input: { email: string; name: string; tempPassword: string },
+): Promise<CreateAdminResult> {
+  if (input.tempPassword.length < MIN_PASSWORD_LENGTH) return 'too_short';
+  const email = normalizeEmail(input.email);
+  const name = input.name.trim();
+  const hash = await bcrypt.hash(input.tempPassword, BCRYPT_COST);
+  // 작업 기록 대상 id 를 미리 정해 두려고 id 를 여기서 만든다
+  const id = randomUUID();
+  return withAudit(
+    db,
+    { adminId: byAdminId, action: 'admin.create', targetType: 'admin', targetId: id },
+    async (tx) => {
+      // 동시에 같은 이메일을 넣어도 unique 제약에 걸려 한쪽만 들어간다
+      const inserted = await tx.query<{ id: string }>(
+        `insert into admins(id, email, name, password_hash, must_change_password)
+         values ($1, $2, $3, $4, true)
+         on conflict (email) do nothing
+         returning id`,
+        [id, email, name, hash],
+      );
+      if (inserted.length === 0) {
+        return { before: null, after: null, changed: false, result: 'duplicate' as const };
+      }
+      return { before: null, after: { email, name }, changed: true, result: 'ok' as const };
+    },
+  );
+}
+
+export type SetAdminActiveResult = 'ok' | 'last_admin' | 'not_found';
+
+/**
+ * 운영자 비활성화(active=false)·다시 켜기(true). 자기 자신도 같은 규칙.
+ * 끄고 나면 활성 운영자가 0명이 되는 경우는 last_admin 으로 막는다.
+ * 이미 그 상태면 아무것도 바꾸지 않고 기록도 남기지 않는다.
+ */
+export async function setAdminActive(
+  db: Db,
+  byAdminId: string,
+  targetId: string,
+  active: boolean,
+): Promise<SetAdminActiveResult> {
+  if (!isUuid(targetId)) return 'not_found';
+  return withAudit(
+    db,
+    {
+      adminId: byAdminId,
+      action: active ? 'admin.reactivate' : 'admin.deactivate',
+      targetType: 'admin',
+      targetId,
+    },
+    async (tx) => {
+      const unchanged = (result: SetAdminActiveResult) => ({ before: null, after: null, changed: false, result });
+      // 활성 운영자를 모두 잠가, 두 운영자가 동시에 서로를 꺼서 0명이 되는 일을 막는다
+      const activeIds = await tx.query<{ id: string }>(
+        `select id from admins where active order by id for update`,
+      );
+      const [row] = await tx.query<{ active: boolean }>(
+        `select active from admins where id = $1 for update`,
+        [targetId],
+      );
+      if (!row) return unchanged('not_found');
+      if (row.active === active) return unchanged('ok');
+      if (!active && activeIds.length <= 1) return unchanged('last_admin');
+
+      await tx.query(`update admins set active = $1 where id = $2`, [active, targetId]);
+      return { before: { active: row.active }, after: { active }, changed: true, result: 'ok' as const };
+    },
+  );
 }

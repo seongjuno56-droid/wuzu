@@ -1,6 +1,7 @@
 import 'server-only';
 import { withAudit } from './audit';
 import type { Db } from './db';
+import { isUuid } from './ids';
 import { INVITATION_STATES, THEMES, type InvitationState, type ThemeId } from './labels';
 import { likePattern, PAGE_SIZE, safePage, type ListQuery } from './listQuery';
 
@@ -43,8 +44,6 @@ export function invitationFilterFrom(query: ListQuery, now: Date): InvitationFil
   return { q: query.q, theme: f.theme, state: f.state, banned: f.banned, owner: f.owner, now };
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function isOneOf<T extends string>(list: readonly T[], value: string | undefined): value is T {
   return value !== undefined && (list as readonly string[]).includes(value);
 }
@@ -86,7 +85,7 @@ function invitationWhere(f: InvitationFilter): { where: string; params: unknown[
   if (isOneOf(BANNED_FILTERS, f.banned)) {
     conds.push(f.banned === 'true' ? 'i.banned' : 'not i.banned');
   }
-  if (f.owner && UUID_RE.test(f.owner)) {
+  if (f.owner && isUuid(f.owner)) {
     params.push(f.owner);
     conds.push(`i.owner_id = $${params.length}::uuid`);
   }
@@ -136,7 +135,7 @@ export function exportInvitations(db: Db, f: InvitationFilter): Promise<Invitati
 
 /** 만든 사람 걸러 보기에 보여 줄 회원 이름. 없거나 uuid 가 아니면 null */
 export async function getInvitationOwnerName(db: Db, memberId: string): Promise<string | null> {
-  if (!UUID_RE.test(memberId)) return null;
+  if (!isUuid(memberId)) return null;
   const [row] = await db.query<{ name: string }>(`select name from profiles where id = $1`, [memberId]);
   return row?.name ?? null;
 }
@@ -152,7 +151,7 @@ export async function setInvitationBanned(
   banned: boolean,
   memo: string,
 ): Promise<'ok' | 'not_found'> {
-  if (!UUID_RE.test(id)) return 'not_found';
+  if (!isUuid(id)) return 'not_found';
   return withAudit(
     db,
     { adminId, action: banned ? 'invitation.hide' : 'invitation.unhide', targetType: 'invitation', targetId: id, memo },

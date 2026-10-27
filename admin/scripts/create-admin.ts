@@ -4,7 +4,7 @@
  * DATABASE_URL 이 있으면 그 DB, 없으면 admin/.pglite 에 만든다. admin/ 에서 실행한다.
  * lib/db.ts 가 'server-only' 를 쓰므로 package.json 에서 --conditions=react-server 로 실행한다.
  */
-import { createFirstAdmin } from '../lib/admins';
+import { createFirstAdmin, normalizeEmail } from '../lib/admins';
 import { getDb } from '../lib/db';
 
 async function main(): Promise<void> {
@@ -14,18 +14,19 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const normalized = normalizeEmail(email);
   const db = await getDb();
   const [{ n }] = await db.query<{ n: number }>(
-    `select count(*)::int as n from admins where lower(email) = $1`,
-    [email.trim().toLowerCase()],
+    `select count(*)::int as n from admins where email = $1`,
+    [normalized],
   );
   if (n > 0) {
-    console.error(`이미 있는 이메일입니다: ${email.trim().toLowerCase()}`);
+    console.error(`이미 있는 이메일입니다: ${normalized}`);
     process.exit(1);
   }
 
   const id = await createFirstAdmin(db, email, name, password);
-  console.log(`운영자를 만들었습니다: ${email.trim().toLowerCase()} (${id})`);
+  console.log(`운영자를 만들었습니다: ${normalized} (${id})`);
 }
 
 main().then(

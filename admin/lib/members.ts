@@ -1,6 +1,7 @@
 import 'server-only';
 import { withAudit } from './audit';
 import type { Db } from './db';
+import { isUuid } from './ids';
 import { likePattern, PAGE_SIZE, safePage, type ListQuery } from './listQuery';
 
 export const MEMBER_STATUSES = ['active', 'withdrawing', 'banned'] as const;
@@ -87,8 +88,6 @@ export function memberFilterFrom(query: ListQuery): MemberFilter {
 export const MEMBER_DETAIL_INVITATIONS = 20;
 const MEMBER_DETAIL_LEDGER = 20;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 const MEMBER_COLUMNS = `p.id, p.login_id as "loginId", p.email, p.name, p.provider, p.status,
   p.created_at as "createdAt",
   coalesce(b.balance, 0)::int as balance,
@@ -153,7 +152,7 @@ export function exportMembers(db: Db, f: MemberFilter): Promise<MemberRow[]> {
 
 /** 회원 상세: 정보·잔액·최근 초대장·최근 원장 20줄. 없으면 null */
 export async function getMember(db: Db, id: string): Promise<MemberDetail | null> {
-  if (!UUID_RE.test(id)) return null;
+  if (!isUuid(id)) return null;
   const [m] = await db.query<Omit<MemberDetail, 'invitations' | 'ledger'>>(
     `select ${MEMBER_COLUMNS},
             p.birth::text as birth, p.gender, p.phone,
@@ -199,7 +198,7 @@ export async function setMemberBanned(
   banned: boolean,
   memo: string,
 ): Promise<SetBannedResult> {
-  if (!UUID_RE.test(memberId)) return 'not_found';
+  if (!isUuid(memberId)) return 'not_found';
   return withAudit(
     db,
     { adminId, action: banned ? 'member.ban' : 'member.unban', targetType: 'member', targetId: memberId, memo },
