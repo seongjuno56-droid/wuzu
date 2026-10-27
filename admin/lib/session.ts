@@ -8,9 +8,6 @@ export const SESSION_TTL_SECONDS = 43200;
 
 const ALG = 'HS256';
 
-/** proxy 가 지금 요청 경로를 넣어 주는 요청 헤더. requireAdmin 이 읽는다 */
-export const PATHNAME_HEADER = 'x-wuzu-pathname';
-
 /** ADMIN_SESSION_SECRET 을 읽는다. 없거나 32자 미만이면 바로 오류를 낸다 */
 function secretKey(): Uint8Array {
   const secret = process.env.ADMIN_SESSION_SECRET;

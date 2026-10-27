@@ -2,7 +2,7 @@ import 'server-only';
 import bcrypt from 'bcryptjs';
 import { withAudit } from './audit';
 import { getDb, type Db } from './db';
-import { PATHNAME_HEADER, SESSION_COOKIE, verifySession } from './session';
+import { SESSION_COOKIE, verifySession } from './session';
 
 /** 비밀번호 bcrypt 비용 */
 const BCRYPT_COST = 10;
@@ -73,21 +73,19 @@ export async function currentAdmin(db: Db, token: string | undefined): Promise<A
 
 /**
  * 서버 컴포넌트·서버 액션용. 로그인한 활성 운영자를 돌려준다.
- * 아니면 /login 으로, 비밀번호를 바꿔야 하면 /password 외 화면에서 /password 로 보낸다.
- * 지금 경로는 proxy 가 넣어 주는 요청 헤더로 안다.
+ * 아니면 /login 으로 보낸다. 비밀번호를 바꿔야 하는 운영자는 /password 로 보낸다.
+ * allowPasswordChange 는 비밀번호 변경 화면과 그 서버 액션에서만 true 로 쓴다.
+ * (요청 경로로 판단하면 서버 액션 id 만 바꿔 POST /password 로 다른 액션을 실행할 수 있다)
  * next/headers·next/navigation 은 여기서만 불러온다. 맨 위에서 불러오면
  * 이 파일을 쓰는 scripts/create-admin.ts 가 Next 밖(tsx)에서 돌지 못한다.
  */
-export async function requireAdmin(): Promise<AdminRow> {
-  const { cookies, headers } = await import('next/headers');
+export async function requireAdmin(opts: { allowPasswordChange?: boolean } = {}): Promise<AdminRow> {
+  const { cookies } = await import('next/headers');
   const { redirect } = await import('next/navigation');
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const admin = await currentAdmin(await getDb(), token);
   if (!admin) return redirect('/login');
-  if (admin.mustChangePassword) {
-    const pathname = (await headers()).get(PATHNAME_HEADER);
-    if (pathname !== '/password') return redirect('/password');
-  }
+  if (admin.mustChangePassword && !opts.allowPasswordChange) return redirect('/password');
   return admin;
 }
 
