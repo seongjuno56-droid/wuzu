@@ -201,4 +201,25 @@ export const part2: Record<string, string> = {
   '소중한 하객분에게 드릴 인사말을 입력합니다.': 'Write a greeting for your guests.',
   '송년회, 신년회, 세미나': 'Year-end parties, new year parties, seminars',
   '수신 거부 : 마이페이지': 'To opt out: My Page',
+  // 레터 이용안내 (환불)
+  'Apple이 환불을 승인하면 해당 결제로 충전된 레터가 회수되며, 이미 일부를 사용한 경우 남아 있는 레터만 회수됩니다.':
+    'If Apple approves a refund, the letters from that purchase are taken back; if some were already used, only the remaining letters are taken back.',
+  'iOS 앱에서 충전한 레터의 구매 취소 및 환불은 App Store 정책에 따라 Apple을 통해서만 요청할 수 있으며, 환불 여부는 Apple이 결정합니다.':
+    'Under App Store policy, refunds for letters bought in the iOS app can only be requested through Apple, and Apple decides whether to refund.',
+  '결제 후 48시간 이내에는 Google Play에서 직접 환불을 요청할 수도 있습니다.':
+    'Within 48 hours of payment, you can also request a refund directly from Google Play.',
+  '결제 후 7일 이내이고 해당 결제 건의 레터를 하나도 사용하지 않았다면 결제 금액 전액을 환불해 드립니다.':
+    'If it has been 7 days or less since payment and none of the letters from that purchase have been used, we refund the full amount.',
+  '레터 금액은 레터 충전 페이지에 표시되는 수량당 금액을 기준으로 하며, 해외결제의 경우 환율 등에 의하여 표시되는 금액과 실제 결제금액 간의 차이가 있을 수 있습니다.':
+    'Letter prices are based on the per-letter price shown on the charge page. For overseas payments, the amount charged may differ from the displayed price due to exchange rates.',
+  '레터가 사용될 때는 관리자에 의해 무료 지급 또는 이벤트를 통해 획득한 레터부터 사용되며, 그다음 충전한 레터 중 오래된 순으로 사용됩니다.':
+    'Free letters from the admin or events are used first, then purchased letters from oldest to newest.',
+  '미성년자가 법정대리인의 동의 없이 결제한 경우, 결제 오류나 서비스 장애로 레터를 사용하지 못한 경우에는 위 기간과 관계없이 환불해 드립니다.':
+    'Payments made by minors without a guardian’s consent, payment errors, and letters that could not be used due to a service outage are refunded regardless of the periods above.',
+  '표시되는 레터 가격은 부가가치세가 포함된 금액입니다.': 'Displayed letter prices include VAT.',
+  '해당 결제 건의 레터를 일부 사용했거나 결제 후 7일이 지난 경우, 남아 있는 레터 수량에 결제 당시 레터 1개 금액을 곱한 만큼 환불해 드립니다.':
+    'If some letters from that purchase were used or more than 7 days have passed, we refund the remaining letters at the per-letter price you paid.',
+  '환불 및 결제 문의: 고객센터 010-8326-8262': 'Refund and payment inquiries: Customer support 010-8326-8262',
+  "환불 요청은 'reportaproblem.apple.com' 또는 '설정 > 사용자 이름 > 미디어 및 구입 항목 > 구입 내역 보기'에서 할 수 있습니다.":
+    "Request a refund at 'reportaproblem.apple.com' or in 'Settings > your name > Media & Purchases > View Purchase History'.",
 };
