@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { requireAdmin } from '@/lib/admins';
 import { getDb } from '@/lib/db';
 import { formatDate, formatDateTime } from '@/lib/format';
+import { INVITATION_STATUS_LABEL, LEDGER_KIND_LABEL } from '@/lib/labels';
 import {
   getMember,
   MEMBER_DETAIL_INVITATIONS,
@@ -19,19 +20,6 @@ import { setMemberBannedAction } from '../actions';
 export const metadata = { title: '회원 상세 · wuzu 어드민' };
 
 const GENDER_LABEL: Record<string, string> = { male: '남', female: '여', none: '선택 안 함' };
-
-const LEDGER_KIND_LABEL: Record<string, string> = {
-  activate: '활성화',
-  extend: '연장',
-  edit: '수정',
-  charge: '충전',
-  signup_bonus: '가입 보너스',
-  admin_grant: '운영자 지급',
-  admin_revoke: '운영자 회수',
-  refund: '환불',
-};
-
-const INVITATION_STATUS_LABEL: Record<string, string> = { draft: '작성 중', final: '완성' };
 
 const invitationColumns: Column<MemberInvitation>[] = [
   { key: 'number', label: '초대장No' },

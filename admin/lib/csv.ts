@@ -1,8 +1,8 @@
 /** 엑셀이 한글을 UTF-8 로 읽도록 맨 앞에 붙이는 BOM */
 const BOM = '﻿';
 
-/** 엑셀이 수식으로 읽는 첫 글자 */
-const FORMULA_START = /^[=+\-@]/;
+/** 엑셀이 수식으로 읽는 첫 글자 (탭·CR 도 그 뒤 수식이 읽힐 수 있어 막는다) */
+const FORMULA_START = /^[=+\-@\t\r]/;
 
 function cell(value: string | number | null): string {
   if (value == null) return '';
