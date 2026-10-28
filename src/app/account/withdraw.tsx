@@ -8,6 +8,7 @@ import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
 import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
+import { signOut } from '../../features/auth/signOut';
 import { Check } from '../../features/invitation/editor/fields';
 import { authService } from '../../services';
 import { useSession } from '../../store/session';
@@ -44,7 +45,6 @@ function Block({ title, items }: { title: string; items: string[] }) {
 /** 회원탈퇴: 안내 확인 체크 → 탈퇴 신청 → 로그아웃 → 완료 화면 */
 export default function WithdrawScreen() {
   const user = useSession((s) => s.user);
-  const logout = useSession((s) => s.logout);
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   if (!user) return <Redirect href="/auth/login" />;
@@ -54,7 +54,8 @@ export default function WithdrawScreen() {
     setBusy(true);
     try {
       await authService.requestWithdraw(user.id);
-      logout();
+      // 탈퇴 신청한 세션은 끊는다 (철회는 30일 안에 다시 로그인하면 보인다)
+      await signOut();
       router.replace('/account/withdrawn');
     } catch {
       toast('탈퇴하지 못했어요. 잠시 후 다시 시도해 주세요.');

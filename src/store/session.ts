@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { User } from '../services/types';
+import type { AuthService, User } from '../services/types';
 
 export type PushConsent = 'agreed' | 'declined' | null;
 
@@ -38,3 +38,27 @@ export const useSession = create<SessionState>()(
     },
   ),
 );
+
+/**
+ * 앱 시작 때 저장된 세션으로 회원 정보를 새로 읽는다.
+ * - 세션이 없거나 쓸 수 없는 계정(null)·탈퇴 신청 계정이면 로그아웃 (탈퇴 철회는 다시 로그인해야 보인다)
+ * - 네트워크 오류면 저장된 회원을 그대로 둔다 (오프라인에서 로그아웃시키지 않는다)
+ */
+export async function restoreSession(auth: Pick<AuthService, 'currentUser' | 'logout'>): Promise<void> {
+  let user: User | null;
+  try {
+    user = await auth.currentUser();
+  } catch {
+    return;
+  }
+  if (user && user.status !== 'withdrawing') {
+    useSession.getState().setUser(user);
+    return;
+  }
+  useSession.getState().logout();
+  try {
+    await auth.logout();
+  } catch {
+    // 남은 세션 정리 실패는 다음 시작 때 다시 시도된다
+  }
+}

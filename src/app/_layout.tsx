@@ -9,7 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastHost } from '../components/Toast';
 import '../features/invitation/registerThemes';
 import { PaymentSheetHost } from '../features/wallet/PaymentSheetHost';
-import { useSession } from '../store/session';
+import { authService } from '../services';
+import { restoreSession, useSession } from '../store/session';
 import { colors, fontSources, MAX_APP_WIDTH } from '../theme';
 
 const FONT_TIMEOUT_MS = 3000;
@@ -25,6 +26,11 @@ export default function RootLayout() {
     const t = setTimeout(() => setFontTimedOut(true), FONT_TIMEOUT_MS);
     return () => clearTimeout(t);
   }, []);
+
+  // 저장된 세션이 복구되면 회원 정보를 서버에서 새로 읽는다 (정지·탈퇴 신청·세션 만료면 로그아웃)
+  useEffect(() => {
+    if (hydrated) restoreSession(authService);
+  }, [hydrated]);
 
   const ready = hydrated && (fontsLoaded || !!fontError || fontTimedOut);
 

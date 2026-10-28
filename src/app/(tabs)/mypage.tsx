@@ -9,6 +9,7 @@ import { MenuGap, MenuRow } from '../../components/MenuRow';
 import { Screen } from '../../components/Screen';
 import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
+import { signOut as endSession } from '../../features/auth/signOut';
 import { useWallet } from '../../features/wallet/useWallet';
 import { notificationService } from '../../services';
 import { useSession } from '../../store/session';
@@ -23,7 +24,6 @@ const LINK_ROUTES: Record<string, string> = {
 /** 마이페이지: 인사·보유 레터 / 회원정보·My 레터·앱 설정·WUZU 정보 / 로그아웃 / 사업자 정보 */
 export default function MyPage() {
   const user = useSession((s) => s.user);
-  const logout = useSession((s) => s.logout);
   const balance = useWallet((s) => s.balance);
   const refresh = useWallet((s) => s.refresh);
   const [unread, setUnread] = useState(0);
@@ -37,8 +37,8 @@ export default function MyPage() {
 
   if (!user) return <Redirect href="/auth/login" />;
 
-  const signOut = () => {
-    logout();
+  const signOut = async () => {
+    await endSession();
     router.navigate('/home');
   };
 

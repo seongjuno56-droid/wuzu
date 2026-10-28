@@ -15,6 +15,7 @@ import { RecommendedCards } from '../../components/home/RecommendedCards';
 import { Screen } from '../../components/Screen';
 import { Txt } from '../../components/Txt';
 import { noticeList } from '../../data/notices';
+import { signOut } from '../../features/auth/signOut';
 import { useMyInvitations } from '../../features/invitation/useMyInvitations';
 import { formatDate } from '../../lib/format';
 import { useSession } from '../../store/session';
@@ -22,7 +23,6 @@ import { colors, radius, shadow, spacing } from '../../theme';
 
 export default function Home() {
   const user = useSession((s) => s.user);
-  const logout = useSession((s) => s.logout);
   const pushConsent = useSession((s) => s.pushConsent);
   const setPushConsent = useSession((s) => s.setPushConsent);
   const needsOnboarding = useSession((s) => s.needsOnboarding);
@@ -102,7 +102,7 @@ export default function Home() {
 
       <HomeFooter
         loggedIn={!!user}
-        onAuthPress={() => (user ? logout() : router.push('/auth/login'))}
+        onAuthPress={() => (user ? signOut() : router.push('/auth/login'))}
         onLinkPress={(label) =>
           label === '구매 복원'
             ? setInfo('복원할 구매 내역이 없어요.')
