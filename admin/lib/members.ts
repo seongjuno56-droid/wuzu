@@ -2,19 +2,14 @@ import 'server-only';
 import { withAudit } from './audit';
 import type { Db } from './db';
 import { isUuid } from './ids';
+import { MEMBER_STATUSES, type MemberStatus } from './labels';
 import { likePattern, PAGE_SIZE, safePage, type ListQuery } from './listQuery';
 
-export const MEMBER_STATUSES = ['active', 'withdrawing', 'banned'] as const;
-export type MemberStatus = (typeof MEMBER_STATUSES)[number];
+// 회원 상태 값·표시 문구는 작업 기록 요약도 쓰므로 labels.ts 에 있다
+export { MEMBER_STATUS_LABEL, MEMBER_STATUSES, type MemberStatus } from './labels';
 
 export const PROVIDERS = ['email', 'kakao', 'google', 'apple'] as const;
 export type Provider = (typeof PROVIDERS)[number];
-
-export const MEMBER_STATUS_LABEL: Record<MemberStatus, string> = {
-  active: '정상',
-  withdrawing: '탈퇴 진행 중',
-  banned: '정지',
-};
 
 export const PROVIDER_LABEL: Record<Provider, string> = {
   email: '이메일',

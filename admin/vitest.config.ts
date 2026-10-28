@@ -15,6 +15,8 @@ export default defineConfig({
     exclude: ['node_modules/**', '.next/**'],
     // PGlite 를 띄우고 마이그레이션을 올리는 DB 테스트는 여러 파일이 함께 돌면 5초를 넘기기도 한다
     testTimeout: 30000,
+    // 코어 수만큼 PGlite(wasm)를 한꺼번에 띄우면 바쁜 PC 에서 30초도 넘긴다. 동시에 4개까지만
+    maxWorkers: 4,
     hookTimeout: 30000,
   },
 });

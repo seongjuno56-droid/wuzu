@@ -11,6 +11,15 @@ export const THEME_LABEL: Record<ThemeId, string> = {
   meetup: '모임',
 };
 
+export const MEMBER_STATUSES = ['active', 'withdrawing', 'banned'] as const;
+export type MemberStatus = (typeof MEMBER_STATUSES)[number];
+
+export const MEMBER_STATUS_LABEL: Record<MemberStatus, string> = {
+  active: '정상',
+  withdrawing: '탈퇴 진행 중',
+  banned: '정지',
+};
+
 export const INVITATION_STATES = ['draft', 'active', 'expired'] as const;
 /** 초대장 공개 상태: 활성화 전 → draft, 만료 전 → active, 아니면 expired */
 export type InvitationState = (typeof INVITATION_STATES)[number];
@@ -57,9 +66,15 @@ export const AUDIT_TARGET_TYPE_LABEL: Record<AuditTargetType, string> = {
 /** 작업 기록 before·after 의 칸 이름 */
 export const AUDIT_FIELD_LABEL: Record<string, string> = {
   status: '상태',
-  banned: '숨김',
+  banned: '표시',
   active: '활성',
   mustChangePassword: '비밀번호 변경 필요',
   email: '이메일',
   name: '이름',
+};
+
+/** 작업 기록 before·after 의 값 표시. 칸마다 원값 → 한국어 */
+export const AUDIT_VALUE_LABEL: Record<string, Record<string, string>> = {
+  status: MEMBER_STATUS_LABEL,
+  banned: { true: '숨김', false: '보임' },
 };

@@ -89,6 +89,11 @@ async function openDb(): Promise<Db> {
   const pglite = await PGlite.create(path.join(process.cwd(), '.pglite'));
   const db = pgliteDb(pglite);
   await migrate(db, { withAuthStub: true });
+  // 빈 로컬 DB 면 시드(운영자·회원·초대장·원장). seed → admins → db 로 돌아오므로 여기서 불러온다
+  const { seedIfEmpty } = await import('./seed');
+  if (await seedIfEmpty(db, url)) {
+    console.log('로컬 DB 에 시드를 넣었습니다. 로그인: admin@wuzu.local / wuzu-admin-1234');
+  }
   return db;
 }
 
