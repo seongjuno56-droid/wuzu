@@ -1,0 +1,78 @@
+import { useLocale } from '../../../i18n';
+import {
+  deadlineLine,
+  emptyRsvpInput,
+  isRsvpClosed,
+  RsvpResponse,
+  rsvpFields,
+  rsvpNotice,
+  rsvpTotals,
+  validateRsvp,
+} from '../rsvp';
+
+const row = (v: Partial<RsvpResponse>): RsvpResponse => ({
+  ...emptyRsvpInput(),
+  id: 'r',
+  invitationId: 'i',
+  source: 'guest',
+  createdAt: '2026-10-25T00:00:00.000Z',
+  updatedAt: '2026-10-25T00:00:00.000Z',
+  ...v,
+});
+
+describe('참석 응답 규칙', () => {
+  it('테마별 받는 항목', () => {
+    expect(rsvpFields('corporate')).toEqual(['name', 'org', 'phone', 'attending']);
+    expect(rsvpFields('meetup')).toEqual(['name', 'attending', 'companions']);
+  });
+  it('기업: 이름·소속·연락처 필수, 연락처 형식', () => {
+    expect(validateRsvp(emptyRsvpInput(), 'corporate')).toEqual(['name', 'org', 'phone']);
+    const ok = { ...emptyRsvpInput(), name: '홍길동', org: '우주컴퍼니', phone: '010-1234-5678' };
+    expect(validateRsvp(ok, 'corporate')).toEqual([]);
+    expect(validateRsvp({ ...ok, phone: '1234' }, 'corporate')).toEqual(['phone']);
+  });
+  it('모임: 이름 필수, 동반 인원 0~9 (불참이면 동반 인원은 보지 않음)', () => {
+    const ok = { ...emptyRsvpInput(), name: '김나미', companions: 2 };
+    expect(validateRsvp(ok, 'meetup')).toEqual([]);
+    expect(validateRsvp({ ...ok, companions: 10 }, 'meetup')).toEqual(['companions']);
+    expect(validateRsvp({ ...ok, attending: false, companions: 10 }, 'meetup')).toEqual([]);
+    expect(validateRsvp({ ...ok, name: ' ' }, 'meetup')).toEqual(['name']);
+  });
+  it('마감: 마감일 당일까지 받고 다음 날부터 닫힌다, 빈 마감일은 늘 열림', () => {
+    expect(isRsvpClosed('', new Date(2030, 0, 1))).toBe(false);
+    expect(isRsvpClosed('2026-10-30', new Date(2026, 9, 30, 23, 59))).toBe(false);
+    expect(isRsvpClosed('2026-10-30', new Date(2026, 9, 31, 0, 0))).toBe(true);
+  });
+  it('합계: 참석 행·동반 인원 포함 인원·불참', () => {
+    const list = [
+      row({ id: 'a', attending: true, companions: 2 }),
+      row({ id: 'b', attending: true, companions: 0 }),
+      row({ id: 'c', attending: false, companions: 3 }),
+    ];
+    expect(rsvpTotals(list)).toEqual({ attending: 2, people: 4, declined: 1 });
+  });
+});
+
+describe('마감 안내 줄 — 사용자 언어', () => {
+  afterEach(() => useLocale.setState({ locale: 'ko' }));
+  it('한국어·영어 각각 한 언어로만', () => {
+    useLocale.setState({ locale: 'ko' });
+    expect(deadlineLine('2026-11-04')).toBe('2026년 11월 4일까지 알려 주세요.');
+    useLocale.setState({ locale: 'en' });
+    expect(deadlineLine('2026-11-04')).toBe('Please respond by Nov 4, 2026.');
+  });
+});
+
+describe('새 참석 응답 알림', () => {
+  it('본문은 응답한 사람 이름만 — 받는 사람 언어로 제목이 번역되고, 이름이 낀 문장이 한국어로 남지 않는다', () => {
+    const n = rsvpNotice({ name: '김하객', invitationId: 'i', ownerId: 'u', at: '2026-10-27T00:00:00.000Z' });
+    expect(n).toEqual({
+      userId: 'u',
+      category: 'rsvp',
+      title: '새 참석 응답',
+      body: '김하객',
+      link: '/invitation/i/rsvp',
+      createdAt: '2026-10-27T00:00:00.000Z',
+    });
+  });
+});

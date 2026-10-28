@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "wuzu",
+    "slug": "wuzu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "kr.wuzu.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1F5E46",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "kr.wuzu.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "scheme": "wuzu",
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-audio",
+      "expo-asset",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "레터 구매를 확인하기 위해 Face ID를 사용합니다."
+        }
+      ],
+      "expo-image",
+      "expo-video",
+      "expo-localization"
+    ]
+  }
+}
