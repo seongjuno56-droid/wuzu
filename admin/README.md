@@ -61,6 +61,18 @@ npm run dev
    Windows PowerShell 이면 `$env:DATABASE_URL="<주소>"; npm run create-admin -- <이메일> <이름> <비밀번호>`.
    이 운영자로 배포 주소에 로그인한 뒤, 다른 운영자는 **운영자** 화면에서 추가합니다(처음 로그인할 때 비밀번호를 바꾸게 됩니다).
 
+## 앱 로그인 설정 (카카오 · 구글)
+
+자세한 화면별 순서는 [`docs/setup/app-login.md`](../docs/setup/app-login.md) 에 있습니다. 어드민과 관련된 것만 요약합니다.
+
+- **마이그레이션 2개 추가** — SQL Editor 에서 이 순서대로 한 번씩 실행합니다(앞의 두 개는 이미 운영 DB 에 있음).
+  1. `supabase/migrations/20261029000001_member_auth.sql` — 소셜 가입 트리거, 내 정보 RPC, profiles RLS, 탈퇴 확정 함수
+  2. `supabase/migrations/20261029000002_deletion_requests.sql` — 계정 삭제 요청 표
+- **탈퇴 자동 확정 예약(pg_cron, 한 번만)** — **Database → Extensions** 에서 `pg_cron` 을 켜고 SQL Editor 에 `supabase/manual/schedule_withdraw_finalize.sql` 실행.
+  매일 UTC 19:17(한국 새벽 4:17)에 `public.finalize_withdrawals()` 가 돕니다. 확인: `select * from cron.job;` 에 `finalize-withdrawals` 한 줄.
+- **계정 삭제 요청 공개 주소** — `https://wuzu-admin.vercel.app/delete-account` (로그인 없이 열림). 플레이 콘솔 **데이터 보안 → 계정 삭제 URL** 에 넣고, 들어온 요청은 어드민 **탈퇴 요청** 메뉴에서 처리합니다.
+- **Vercel Firewall** — 이 폼은 자체 요청 수 제한이 없으므로 `/login` 규칙 옆에 `POST /delete-account` 속도 제한 규칙을 둡니다(IP 기준 60초에 5번 정도).
+
 ## 운영 메모
 
 - 로그인 잠금: 한 운영자 계정에서 비밀번호를 연달아 10번 틀리면 그 계정은 15분 동안 로그인할 수 없습니다(맞는 비밀번호도 거절). 15분이 지나면 저절로 풀리고, 급하면 SQL Editor 에서 `update admins set locked_until = null, failed_login_count = 0 where email = '<이메일>';` 로 바로 풀 수 있습니다.
