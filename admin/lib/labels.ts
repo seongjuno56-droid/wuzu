@@ -11,13 +11,14 @@ export const THEME_LABEL: Record<ThemeId, string> = {
   meetup: '모임',
 };
 
-export const MEMBER_STATUSES = ['active', 'withdrawing', 'banned'] as const;
+export const MEMBER_STATUSES = ['active', 'withdrawing', 'banned', 'withdrawn'] as const;
 export type MemberStatus = (typeof MEMBER_STATUSES)[number];
 
 export const MEMBER_STATUS_LABEL: Record<MemberStatus, string> = {
   active: '정상',
   withdrawing: '탈퇴 진행 중',
   banned: '정지',
+  withdrawn: '탈퇴 완료',
 };
 
 export const INVITATION_STATES = ['draft', 'active', 'expired'] as const;
@@ -54,6 +55,7 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   'admin.deactivate': '운영자 비활성화',
   'admin.reactivate': '운영자 다시 켜기',
   'admin.password_change': '비밀번호 변경',
+  'deletion_request.handle': '탈퇴 요청 처리',
 };
 
 /** 작업 기록 대상 종류 (admin_audit_logs.target_type) */
@@ -61,6 +63,7 @@ export const AUDIT_TARGET_TYPE_LABEL: Record<AuditTargetType, string> = {
   member: '회원',
   invitation: '초대장',
   admin: '운영자',
+  deletion_request: '탈퇴 요청',
 };
 
 /** 작업 기록 before·after 의 칸 이름 */
@@ -71,10 +74,12 @@ export const AUDIT_FIELD_LABEL: Record<string, string> = {
   mustChangePassword: '비밀번호 변경 필요',
   email: '이메일',
   name: '이름',
+  handled: '처리',
 };
 
 /** 작업 기록 before·after 의 값 표시. 칸마다 원값 → 한국어 */
 export const AUDIT_VALUE_LABEL: Record<string, Record<string, string>> = {
   status: MEMBER_STATUS_LABEL,
   banned: { true: '숨김', false: '보임' },
+  handled: { true: '처리 완료', false: '미처리' },
 };

@@ -147,6 +147,19 @@ describe('setMemberBanned', () => {
     expect(await logs(db)).toHaveLength(0);
   });
 
+  it('탈퇴 완료 회원은 withdrawn, 목록에서 상태로 걸러 보기', async () => {
+    const db = await newTestDb();
+    const adminId = await addAdmin(db);
+    const gone = await addMember(db, { name: '탈퇴 회원', status: 'withdrawn' });
+    await addMember(db, { name: '김철수' });
+    const list = await listMembers(db, { q: '', status: 'withdrawn', page: 1 });
+    expect(list.rows.map((r) => r.id)).toEqual([gone]);
+    expect(list.rows[0].status).toBe('withdrawn');
+    expect(await setMemberBanned(db, adminId, gone, true, '도배')).toBe('withdrawn');
+    expect((await getMember(db, gone))!.status).toBe('withdrawn');
+    expect(await logs(db)).toHaveLength(0);
+  });
+
   it('없는 회원은 not_found', async () => {
     const db = await newTestDb();
     const adminId = await addAdmin(db);

@@ -110,6 +110,10 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
             탈퇴 진행 중인 회원은 정지·해제할 수 없습니다.
           </p>
+        ) : member.status === 'withdrawn' ? (
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+            탈퇴가 끝나 개인 정보가 지워진 회원입니다. 결제·레터 기록만 법에 따라 남아 있습니다.
+          </p>
         ) : member.status === 'banned' ? (
           <ReasonConfirmForm
             key="unban"

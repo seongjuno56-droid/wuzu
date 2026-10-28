@@ -40,7 +40,7 @@ describe('핵심 스키마', () => {
       `select count(*)::int as n from pg_class
         where relnamespace = 'public'::regnamespace and relkind = 'r' and relrowsecurity`,
     );
-    expect(t.n).toBe(7);
+    expect(t.n).toBe(8);
   });
 
   it('초대장 slug 는 10자 미만이면 거절, 같은 slug 두 번이면 거절', async () => {

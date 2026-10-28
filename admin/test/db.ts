@@ -17,7 +17,7 @@ export async function addMember(
     email?: string | null;
     loginId?: string | null;
     provider?: 'email' | 'kakao' | 'google' | 'apple';
-    status?: 'active' | 'withdrawing' | 'banned';
+    status?: 'active' | 'withdrawing' | 'banned' | 'withdrawn';
     createdAt?: string;
   },
 ): Promise<string> {

@@ -180,10 +180,10 @@ export async function getMember(db: Db, id: string): Promise<MemberDetail | null
   return { ...m, invitations, ledger };
 }
 
-export type SetBannedResult = 'ok' | 'not_found' | 'withdrawing';
+export type SetBannedResult = 'ok' | 'not_found' | 'withdrawing' | 'withdrawn';
 
 /**
- * 회원 정지(banned=true)·해제(false). 탈퇴 진행 중 회원은 바꾸지 않는다.
+ * 회원 정지(banned=true)·해제(false). 탈퇴 진행 중·탈퇴 완료 회원은 바꾸지 않는다.
  * 이미 그 상태면 아무것도 바꾸지 않고 기록도 남기지 않는다.
  */
 export async function setMemberBanned(
@@ -205,6 +205,7 @@ export async function setMemberBanned(
       const unchanged = (result: SetBannedResult) => ({ before: null, after: null, changed: false, result });
       if (!row) return unchanged('not_found');
       if (row.status === 'withdrawing') return unchanged('withdrawing');
+      if (row.status === 'withdrawn') return unchanged('withdrawn');
       const next: MemberStatus = banned ? 'banned' : 'active';
       if (row.status === next) return unchanged('ok');
 

@@ -42,7 +42,7 @@ const columns: Column<MemberRow>[] = [
     key: 'status',
     label: '상태',
     render: (m) => (
-      <span style={{ color: m.status === 'banned' ? 'var(--danger)' : m.status === 'withdrawing' ? 'var(--text-secondary)' : undefined }}>
+      <span style={{ color: m.status === 'banned' ? 'var(--danger)' : m.status === 'withdrawing' || m.status === 'withdrawn' ? 'var(--text-secondary)' : undefined }}>
         {MEMBER_STATUS_LABEL[m.status] ?? m.status}
       </span>
     ),

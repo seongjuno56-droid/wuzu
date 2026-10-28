@@ -30,6 +30,7 @@ export async function setMemberBannedAction(
   if (result === 'withdrawing') {
     return { ok: false, message: '탈퇴 진행 중인 회원은 정지·해제할 수 없습니다.' };
   }
+  if (result === 'withdrawn') return { ok: false, message: '탈퇴한 회원은 정지·해제할 수 없습니다.' };
   revalidatePath('/members');
   revalidatePath(`/members/${memberId}`);
   return { ok: true };

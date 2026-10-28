@@ -231,6 +231,51 @@ async function main(): Promise<void> {
     check(`${label} CSV`, ok, detail);
   }
 
+  // 12. 계정 삭제 요청: 로그인 없이 휴대폰 폭으로 열고 폼 제출 → 어드민에서 처리
+  const ctxP = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ko-KR' });
+  const pub = await ctxP.newPage();
+  await pub.goto(`${base}/delete-account`);
+  const pubPath = new URL(pub.url()).pathname;
+  const noHScroll = await pub.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  check(
+    '삭제 요청 화면 로그인 없이 열림',
+    pubPath === '/delete-account' && noHScroll,
+    `${pubPath}, 가로 스크롤 ${noHScroll ? '없음' : '있음'}`,
+    await shot(pub, 'delete-account'),
+  );
+  const REQ_EMAIL = 'qa-delete@example.com';
+  await pub.getByLabel(/연락 받을 이메일/).fill(REQ_EMAIL);
+  await pub.getByLabel(/로그인 방식/).selectOption('google');
+  await pub.getByLabel(/앱 닉네임/).fill('QA 닉네임');
+  await pub.getByLabel(/하고 싶은 말/).fill('계정을 지워 주세요.');
+  await pub.getByRole('button', { name: /삭제 요청 보내기/ }).click();
+  const doneText = '요청을 받았어요. 7일 안에 처리하고 적어 주신 이메일로 알려 드릴게요.';
+  await pub.getByText(doneText).waitFor();
+  check('삭제 요청 제출', true, '성공 문구 보임', await shot(pub, 'delete-account-done'));
+  await ctxP.close();
+
+  await a.goto(`${base}/deletion-requests`);
+  const reqRow = a.locator('tbody tr').filter({ hasText: REQ_EMAIL });
+  const reqVisible = (await reqRow.count()) === 1;
+  const searchHref = reqVisible ? await reqRow.getByRole('link', { name: '회원 검색' }).getAttribute('href') : null;
+  check(
+    '어드민 탈퇴 요청 미처리 목록',
+    reqVisible && searchHref === `/members?q=${encodeURIComponent(REQ_EMAIL)}`,
+    `행 ${reqVisible ? '있음' : '없음'}, 회원 검색 링크 ${searchHref}`,
+    await shot(a, 'deletion-requests-open'),
+  );
+  await reqRow.getByLabel('사유').fill('QA 처리, 메일 회신함');
+  await reqRow.getByRole('button', { name: '처리 완료' }).click();
+  await reqRow.waitFor({ state: 'detached' });
+  await a.goto(`${base}/deletion-requests?tab=done`);
+  const doneRow = await a.locator('tbody tr').filter({ hasText: REQ_EMAIL }).innerText();
+  check(
+    '탈퇴 요청 처리 완료 탭',
+    doneRow.includes('QA 처리, 메일 회신함') && doneRow.includes('기본 운영자'),
+    doneRow.replace(/\s+/g, ' '),
+    await shot(a, 'deletion-requests-done'),
+  );
+
   await writeFile(path.join(outDir, 'results.json'), JSON.stringify({ base, memberUrl, checks }, null, 2));
   await browser.close();
   const failed = checks.filter((c) => !c.ok);

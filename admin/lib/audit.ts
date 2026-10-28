@@ -11,9 +11,10 @@ export type AuditAction =
   | 'admin.create'
   | 'admin.deactivate'
   | 'admin.reactivate'
-  | 'admin.password_change';
+  | 'admin.password_change'
+  | 'deletion_request.handle';
 
-export type AuditTargetType = 'member' | 'invitation' | 'admin';
+export type AuditTargetType = 'member' | 'invitation' | 'admin' | 'deletion_request';
 
 export interface AuditEntry {
   adminId: string;

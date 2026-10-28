@@ -8,6 +8,7 @@ import { logoutAction } from '@/app/login/actions';
 export const NAV_ITEMS = [
   { href: '/members', label: '회원' },
   { href: '/invitations', label: '초대장' },
+  { href: '/deletion-requests', label: '탈퇴 요청' },
   { href: '/admins', label: '운영자' },
   { href: '/audit', label: '작업 기록' },
 ];
