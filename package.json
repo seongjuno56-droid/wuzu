@@ -58,7 +58,8 @@
     "preset": "jest-expo",
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/.superpowers/"
+      "/.superpowers/",
+      "/admin/"
     ],
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.ts"

@@ -1,0 +1,32 @@
+:root {
+  --brand: #183A2E;
+  --divider: #E5E7EB;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --danger: #DC2626;
+  --radius-sm: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-size: 14px;
+}
+
+a {
+  color: inherit;
+}
+
+input,
+button,
+select {
+  font: inherit;
+}
