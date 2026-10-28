@@ -37,7 +37,7 @@ export default function DeleteAccountPage() {
 
         <h2 style={h2}>앱에서 바로 탈퇴하기</h2>
         <p style={p}>
-          앱을 쓰고 있다면 <Path>마이페이지 → 회원정보 수정 → 회원탈퇴</Path> 에서 바로 탈퇴할 수 있어요.
+          앱을 쓰고 있다면 <Path>마이페이지 → 회원정보 → 수정하기 → 회원탈퇴</Path> 에서 안내를 확인하고 <b>탈퇴하기</b>를 누르면 바로 탈퇴할 수 있어요.
         </p>
 
         <h2 style={h2}>지워지는 것과 남는 것</h2>
@@ -63,7 +63,7 @@ export default function DeleteAccountPage() {
 
         <h2 style={h2}>Delete your account in the app</h2>
         <p style={p}>
-          In the app, go to <Path>My Page → Edit profile → Delete account</Path> (마이페이지 → 회원정보 수정 → 회원탈퇴).
+          In the app, go to <Path>My page → Member info → Edit → Delete account</Path> (마이페이지 → 회원정보 → 수정하기 → 회원탈퇴), confirm the notice, and tap <b>탈퇴하기</b> (Delete).
         </p>
 
         <h2 style={h2}>What is deleted and what is kept</h2>
