@@ -21,6 +21,7 @@ export function useLoginResultHandler(onSuccess: (user: User) => void = goHome) 
   const [withdrawing, setWithdrawing] = useState<Withdrawing | null>(null);
   const [banned, setBanned] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelFailed, setCancelFailed] = useState(false);
 
   /** 성공·제재·탈퇴 신청을 처리하면 true. 취소·실패는 false 를 돌려 호출한 쪽이 맡는다 */
   const handle = (result: SocialLoginResult): boolean => {
@@ -31,7 +32,10 @@ export function useLoginResultHandler(onSuccess: (user: User) => void = goHome) 
       onSuccess(result.user);
       return true;
     }
-    if (result.reason === 'withdrawing') setWithdrawing(result);
+    if (result.reason === 'withdrawing') {
+      setCancelFailed(false);
+      setWithdrawing(result);
+    }
     else if (result.reason === 'banned') setBanned(true);
     else return false;
     return true;
@@ -51,11 +55,15 @@ export function useLoginResultHandler(onSuccess: (user: User) => void = goHome) 
   const cancelWithdraw = async () => {
     if (!withdrawing || cancelling) return;
     setCancelling(true);
+    setCancelFailed(false);
     try {
       const user = await authService.cancelWithdraw(withdrawing.userId);
       setWithdrawing(null);
       setUser(user);
       onSuccess(user);
+    } catch {
+      // 모달은 그대로 두어 다시 누를 수 있게 한다 (토스트는 모달에 가려지므로 모달 안에 안내)
+      setCancelFailed(true);
     } finally {
       setCancelling(false);
     }
@@ -81,6 +89,11 @@ export function useLoginResultHandler(onSuccess: (user: User) => void = goHome) 
             <Txt variant="caption" weight="semibold" color={colors.danger} align="center">
               {formatDate(withdrawing.cancelDeadline)}까지 철회 가능
             </Txt>
+            {cancelFailed && (
+              <Txt variant="caption" color={colors.danger} align="center">
+                탈퇴를 철회하지 못했어요. 잠시 후 다시 시도해 주세요.
+              </Txt>
+            )}
           </View>
         )}
       </AppModal>

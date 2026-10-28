@@ -168,4 +168,5 @@ export const part4: Record<string, string> = {
   'Google로 시작하기': 'Continue with Google',
   '개발용 mock 로그인: 카카오 버튼 = 정상 계정': 'Dev mock login: Kakao button = normal account',
   '로그인하지 못했어요. 잠시 뒤 다시 시도해 주세요.': 'Could not sign in. Please try again in a moment.',
+  '탈퇴를 철회하지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't cancel the account deletion. Please try again shortly.",
 };

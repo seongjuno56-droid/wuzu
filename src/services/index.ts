@@ -6,6 +6,7 @@ import { createMockNotificationService } from './mock/mockNotificationService';
 import { createMockPaymentService } from './mock/mockPaymentService';
 import { createMockRsvpService } from './mock/mockRsvpService';
 import { createMockWalletService } from './mock/mockWalletService';
+import { clearAuthStorage } from './supabase/authStorage';
 import { createSupabaseClient } from './supabase/client';
 import { createSupabaseAuthService } from './supabase/supabaseAuthService';
 import type { AuthService } from './types';
@@ -20,7 +21,9 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 export const usingMockAuth = !(SUPABASE_URL && SUPABASE_ANON_KEY);
 export const authService: AuthService =
   SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createSupabaseAuthService(createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY))
+    ? createSupabaseAuthService(createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY), {
+        clearLocalSession: () => clearAuthStorage(AsyncStorage),
+      })
     : createMockAuthService({ delayMs: 400, storage: AsyncStorage });
 
 // 아래 서비스는 아직 mock (실서버 도입 시 교체)

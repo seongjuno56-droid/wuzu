@@ -149,4 +149,35 @@ describe('로그인 화면', () => {
     expect(useSession.getState().user?.id).toBe('u1');
     expect(router.dismissTo).toHaveBeenCalledWith('/home');
   });
+
+  it('탈퇴 철회가 실패하면 안내하고 모달을 그대로 둔다', async () => {
+    respond({
+      ok: false,
+      reason: 'withdrawing',
+      userId: 'u1',
+      requestedAt: '2026-10-20T00:00:00.000Z',
+      cancelDeadline: '2026-11-19T00:00:00.000Z',
+    });
+    auth.cancelWithdraw.mockRejectedValueOnce(new Error('offline'));
+    const ui = render(<Login />);
+    await pressAsync(ui.getText('카카오로 시작하기'));
+    await pressAsync(ui.getText('탈퇴 철회하기'));
+    expect(ui.queryText('탈퇴를 철회하지 못했어요. 잠시 후 다시 시도해 주세요.')).not.toBeNull();
+    expect(ui.queryText('탈퇴 신청 상태인 계정이에요')).not.toBeNull();
+    expect(useSession.getState().user).toBeNull();
+    expect(router.dismissTo).not.toHaveBeenCalled();
+    // 다시 누를 수 있다
+    auth.cancelWithdraw.mockResolvedValueOnce(user);
+    await pressAsync(ui.getText('탈퇴 철회하기'));
+    expect(useSession.getState().user?.id).toBe('u1');
+    expect(router.dismissTo).toHaveBeenCalledWith('/home');
+  });
+
+  it('socialLogin 이 예외를 던져도 실패 안내를 띄운다', async () => {
+    auth.socialLogin.mockRejectedValueOnce(new Error('boom'));
+    const ui = render(<Login />);
+    await pressAsync(ui.getText('카카오로 시작하기'));
+    expect(ui.queryText('로그인하지 못했어요. 잠시 뒤 다시 시도해 주세요.')).not.toBeNull();
+    expect(router.dismissTo).not.toHaveBeenCalled();
+  });
 });

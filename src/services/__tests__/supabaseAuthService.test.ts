@@ -56,11 +56,13 @@ function fakeClient() {
 
 let client: ReturnType<typeof fakeClient>;
 let svc: ReturnType<typeof createSupabaseAuthService>;
+let clearLocalSession: jest.Mock;
 beforeEach(() => {
   openAuthSession.mockReset();
   openAuthSession.mockResolvedValue({ type: 'success', url: `${REDIRECT}?code=the-code` });
   client = fakeClient();
-  svc = createSupabaseAuthService(client as unknown as SupabaseClient, { now: () => NOW });
+  clearLocalSession = jest.fn(async () => {});
+  svc = createSupabaseAuthService(client as unknown as SupabaseClient, { now: () => NOW, clearLocalSession });
 });
 
 describe('socialLogin', () => {
@@ -132,19 +134,42 @@ describe('socialLogin', () => {
     expect(client.auth.signOut).not.toHaveBeenCalled();
   });
 
-  it('rpc 오류 → failed', async () => {
+  it('rpc 오류 → failed 이고 이 기기 세션만 끊는다', async () => {
     client.rpc.mockResolvedValue({ data: null, error: { message: 'boom' } });
     expect(await svc.socialLogin('kakao')).toEqual({ ok: false, reason: 'failed' });
+    expect(client.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
   });
 
-  it('프로필이 없으면(모든 칸 null) failed', async () => {
+  it('프로필이 없으면(모든 칸 null) failed 이고 signOut', async () => {
     client.rpc.mockResolvedValue({ data: EMPTY_ROW, error: null });
     expect(await svc.socialLogin('kakao')).toEqual({ ok: false, reason: 'failed' });
+    expect(client.auth.signOut).toHaveBeenCalledTimes(1);
   });
 
-  it('withdrawn 프로필은 failed', async () => {
+  it('withdrawn 프로필은 failed 이고 signOut', async () => {
     client.rpc.mockResolvedValue({ data: row({ status: 'withdrawn' }), error: null });
     expect(await svc.socialLogin('kakao')).toEqual({ ok: false, reason: 'failed' });
+    expect(client.auth.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('코드 교환 뒤 예외가 나면 failed 이고 반쪽 세션을 끊는다', async () => {
+    client.rpc.mockRejectedValue(new Error('network'));
+    expect(await svc.socialLogin('kakao')).toEqual({ ok: false, reason: 'failed' });
+    expect(client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it('코드 교환 전 예외에서는 signOut 하지 않는다', async () => {
+    openAuthSession.mockRejectedValue(new Error('no browser'));
+    await svc.socialLogin('kakao');
+    expect(client.auth.signOut).not.toHaveBeenCalled();
+  });
+
+  it('정리 signOut 이 error 를 돌려주면 저장된 세션을 직접 지운다', async () => {
+    client.rpc.mockResolvedValue({ data: row({ status: 'banned' }), error: null });
+    client.auth.signOut.mockResolvedValueOnce({ error: { name: 'AuthRetryableFetchError' } } as never);
+    expect(await svc.socialLogin('kakao')).toEqual({ ok: false, reason: 'banned' });
+    expect(clearLocalSession).toHaveBeenCalledTimes(1);
   });
 
   it('OAuth 시작 오류·코드 교환 오류·code 없는 콜백 → failed', async () => {
@@ -183,6 +208,24 @@ describe('currentUser', () => {
       client.rpc.mockResolvedValueOnce({ data, error: null });
       expect(await svc.currentUser()).toBeNull();
     }
+  });
+  it('탈퇴 신청(withdrawing) 회원은 그대로 돌려준다 (로그아웃 판단은 restoreSession)', async () => {
+    client.rpc.mockResolvedValue({
+      data: row({ status: 'withdrawing', withdraw_requested_at: '2026-10-20T03:00:00+00:00' }),
+      error: null,
+    });
+    expect(await svc.currentUser()).toMatchObject({ id: 'a1b2c3', status: 'withdrawing' });
+  });
+  it('토큰 재발급이 네트워크 오류면(getSession error) 던진다 — 저장된 회원을 지키도록', async () => {
+    const error = Object.assign(new Error('Failed to fetch'), { name: 'AuthRetryableFetchError', status: 0 });
+    client.auth.getSession.mockResolvedValue({ data: { session: null }, error } as never);
+    await expect(svc.currentUser()).rejects.toThrow('Failed to fetch');
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+  it('재발급 토큰이 거절되면(재시도 불가 오류) 세션이 사라진 것이므로 null', async () => {
+    const error = Object.assign(new Error('Invalid Refresh Token'), { name: 'AuthApiError', status: 400 });
+    client.auth.getSession.mockResolvedValue({ data: { session: null }, error } as never);
+    expect(await svc.currentUser()).toBeNull();
   });
   it('rpc 오류는 던진다 (네트워크 오류로 로그아웃시키지 않도록)', async () => {
     client.rpc.mockResolvedValue({ data: null, error: { message: 'offline' } });
@@ -223,8 +266,20 @@ describe('회원 정보 RPC', () => {
     client.rpc.mockResolvedValue({ data: null, error: { message: 'cannot_cancel_withdraw' } });
     await expect(svc.cancelWithdraw('ignored')).rejects.toThrow('cannot_cancel_withdraw');
   });
-  it('logout 은 signOut 한다', async () => {
+  it('logout 은 이 기기 세션만 끊는다 (scope: local)', async () => {
     await svc.logout();
     expect(client.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(clearLocalSession).not.toHaveBeenCalled();
+  });
+  it('signOut 이 error 를 돌려주면(오프라인 등) 저장된 세션을 직접 지운다', async () => {
+    client.auth.signOut.mockResolvedValueOnce({ error: { name: 'AuthRetryableFetchError' } } as never);
+    await svc.logout();
+    expect(clearLocalSession).toHaveBeenCalledTimes(1);
+  });
+  it('signOut 이 던져도 저장된 세션을 직접 지운다', async () => {
+    client.auth.signOut.mockRejectedValueOnce(new Error('lock timeout'));
+    await svc.logout();
+    expect(clearLocalSession).toHaveBeenCalledTimes(1);
   });
 });
