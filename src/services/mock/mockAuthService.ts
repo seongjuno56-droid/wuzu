@@ -1,206 +1,154 @@
-import { socialLoginId } from '../../features/account/rules';
-import { normalizeEmail } from '../../lib/validators';
-import { AuthService, KeyValueStorage, LoginResult, User } from '../types';
-import { MOCK_KAKAO_PROFILE, StoredUser, seedUsers } from './seed';
+import { socialLoginId, withdrawCancelDeadline } from '../../features/account/rules';
+import type { AuthService, KeyValueStorage, SocialLoginResult, SocialProvider, User } from '../types';
+import { DEFAULT_SOCIAL_KEYS, MOCK_SOCIAL_NAMES, StoredUser, seedUsers } from './seed';
 
-export const MOCK_CODE = '123456';
-export const MAX_SEND = 3;
-export const CODE_TTL_MS = 5 * 60 * 1000;
-const WITHDRAW_GRACE_DAYS = 30;
-const DB_KEY = 'wuzu.mock.db.v1';
+export { MOCK_SOCIAL_KEYS } from './seed';
 
-interface CodeState {
-  sentCount: number;
-  expiresAt: number;
-}
+// 소셜 전용으로 바뀌며 시드 모양이 달라져 키를 올린다 (예전 v1 이메일 계정은 버린다)
+const DB_KEY = 'wuzu.mock.db.v2';
+
 interface Db {
   users: StoredUser[];
-  codes: Record<string, CodeState>;
+  /** 마지막으로 로그인한 회원 (실서버의 저장된 세션 대역) */
+  sessionUserId: string | null;
 }
 
-function toPublic({ password: _p, providerKey: _k, ...user }: StoredUser): User {
+function toPublic({ providerKey: _k, ...user }: StoredUser): User {
   return user;
 }
 
-function loginResultFor(user: StoredUser): LoginResult {
+function resultFor(user: StoredUser, isNew: boolean): SocialLoginResult {
   if (user.status === 'banned') return { ok: false, reason: 'banned' };
   if (user.status === 'withdrawing') {
     const requestedAt = user.withdrawRequestedAt ?? new Date().toISOString();
-    const cancelDeadline = new Date(
-      Date.parse(requestedAt) + WITHDRAW_GRACE_DAYS * 86400000,
-    ).toISOString();
-    return { ok: false, reason: 'withdrawing', userId: user.id, requestedAt, cancelDeadline };
+    return {
+      ok: false,
+      reason: 'withdrawing',
+      userId: user.id,
+      requestedAt,
+      cancelDeadline: withdrawCancelDeadline(requestedAt),
+    };
   }
-  return { ok: true, user: toPublic(user) };
+  return { ok: true, user: toPublic(user), isNew };
 }
 
+/**
+ * mock 인증. 공급자마다 정해진 mock 계정 키(socialKeys)로 로그인하고, 없으면 만든다.
+ * 상태별 흐름은 socialKeys.kakao 를 MOCK_SOCIAL_KEYS.withdrawing / banned 로 바꿔 확인한다.
+ */
 export function createMockAuthService(opts: {
   delayMs: number;
   storage: KeyValueStorage;
+  socialKeys?: Partial<Record<SocialProvider, string>>;
 }): AuthService {
   const { delayMs, storage } = opts;
+  const keys = { ...DEFAULT_SOCIAL_KEYS, ...opts.socialKeys };
   const wait = () => new Promise((r) => setTimeout(r, delayMs));
 
   async function load(): Promise<Db> {
     const raw = await storage.getItem(DB_KEY);
-    const db: Db = raw ? (JSON.parse(raw) as Db) : { users: seedUsers(), codes: {} };
-    // 아이디가 없는 계정 보정: 이메일 가입은 이메일, 간편 로그인은 자동 부여
-    let changed = !raw;
-    for (const u of db.users) {
-      if (!u.loginId) {
-        u.loginId = u.email ?? socialLoginId();
-        changed = true;
-      }
-    }
-    if (changed) await save(db);
+    if (raw) return JSON.parse(raw) as Db;
+    const db: Db = { users: seedUsers(), sessionUserId: null };
+    await save(db);
     return db;
   }
   async function save(db: Db) {
     await storage.setItem(DB_KEY, JSON.stringify(db));
   }
-  const byEmail = (db: Db, email: string) =>
-    db.users.find((u) => u.email === normalizeEmail(email));
+  async function mutate(userId: string, change: (u: StoredUser) => void): Promise<User> {
+    await wait();
+    const db = await load();
+    const user = db.users.find((u) => u.id === userId);
+    if (!user) throw new Error('profile_not_found');
+    change(user);
+    await save(db);
+    return toPublic(user);
+  }
 
   return {
-    async login(email, password) {
-      await wait();
-      const user = byEmail(await load(), email);
-      if (!user || user.password !== password) return { ok: false, reason: 'invalid' };
-      return loginResultFor(user);
-    },
-
-    async socialLogin() {
+    async socialLogin(provider) {
       await wait();
       const db = await load();
-      const user = db.users.find((u) => u.providerKey === MOCK_KAKAO_PROFILE.providerKey);
-      return { result: user ? loginResultFor(user) : null, profile: MOCK_KAKAO_PROFILE };
-    },
-
-    async isEmailTaken(email) {
-      await wait();
-      return !!byEmail(await load(), email);
-    },
-
-    async signup(input) {
-      await wait();
-      const db = await load();
-      const email = input.email ? normalizeEmail(input.email) : null;
-      if (email && byEmail(db, email)) throw new Error('EMAIL_TAKEN');
-      const user: StoredUser = {
-        id: `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-        email,
-        loginId: email ?? socialLoginId(),
-        password: input.password,
-        providerKey: input.providerKey,
-        name: input.name,
-        birth: input.birth,
-        gender: input.gender,
-        phone: input.phone,
-        provider: input.provider,
-        marketingAgreed: input.marketingAgreed,
-        createdAt: new Date().toISOString(),
-        status: 'active',
-      };
-      db.users.push(user);
+      let user = db.users.find((u) => u.provider === provider && u.providerKey === keys[provider]);
+      const isNew = !user;
+      if (!user) {
+        user = {
+          id: `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          providerKey: keys[provider],
+          loginId: socialLoginId(provider),
+          email: null,
+          name: MOCK_SOCIAL_NAMES[provider],
+          provider,
+          marketingAgreed: false,
+          createdAt: new Date().toISOString(),
+          status: 'active',
+        };
+        db.users.push(user);
+      }
+      const result = resultFor(user, isNew);
+      // 정지 계정은 세션을 남기지 않는다 (실서버도 signOut)
+      db.sessionUserId = user.status === 'banned' ? null : user.id;
       await save(db);
+      return result;
+    },
+
+    async currentUser() {
+      await wait();
+      const db = await load();
+      const user = db.users.find((u) => u.id === db.sessionUserId);
+      if (!user || user.status === 'banned') return null;
       return toPublic(user);
+    },
+
+    async logout() {
+      await wait();
+      const db = await load();
+      db.sessionUserId = null;
+      await save(db);
     },
 
     async cancelWithdraw(userId) {
-      await wait();
-      const db = await load();
-      const user = db.users.find((u) => u.id === userId);
-      if (!user) throw new Error('NOT_FOUND');
-      user.status = 'active';
-      delete user.withdrawRequestedAt;
-      await save(db);
-      return toPublic(user);
-    },
-
-    async findId({ name, birth, phone }) {
-      await wait();
-      const db = await load();
-      const user = db.users.find(
-        (u) => u.email && u.name === name && u.birth === birth && u.phone === phone,
-      );
-      return user ? { email: user.email!, createdAt: user.createdAt } : null;
-    },
-
-    async sendCode(email, now = Date.now()) {
-      await wait();
-      const db = await load();
-      const user = byEmail(db, email);
-      if (!user) return { ok: false, reason: 'not_found' };
-      const key = user.email!;
-      // 마지막 인증번호가 만료되면 발송 횟수도 초기화 (5분 후 재발송 가능)
-      const prev = db.codes[key] && now <= db.codes[key].expiresAt ? db.codes[key] : undefined;
-      if (prev && prev.sentCount >= MAX_SEND) return { ok: false, reason: 'limit' };
-      const state = { sentCount: (prev?.sentCount ?? 0) + 1, expiresAt: now + CODE_TTL_MS };
-      db.codes[key] = state;
-      await save(db);
-      return { ok: true, ...state };
-    },
-
-    async verifyCode(email, code, now = Date.now()) {
-      await wait();
-      const state = (await load()).codes[normalizeEmail(email)];
-      return !!state && now <= state.expiresAt && code === MOCK_CODE;
+      return mutate(userId, (user) => {
+        if (user.status !== 'withdrawing') throw new Error('cannot_cancel_withdraw');
+        user.status = 'active';
+        delete user.withdrawRequestedAt;
+      });
     },
 
     async updateProfile(userId, values) {
-      await wait();
-      const db = await load();
-      const user = db.users.find((u) => u.id === userId);
-      if (!user) throw new Error('NOT_FOUND');
-      user.birth = values.birth;
-      user.gender = values.gender;
-      user.marketingAgreed = values.marketingAgreed;
-      await save(db);
-      return toPublic(user);
+      return mutate(userId, (user) => {
+        user.birth = values.birth;
+        user.gender = values.gender;
+        if (user.marketingAgreed !== values.marketingAgreed) {
+          user.marketingUpdatedAt = new Date().toISOString();
+        }
+        user.marketingAgreed = values.marketingAgreed;
+        user.profileUpdatedAt = new Date().toISOString();
+      });
     },
 
     async updateAccount(userId, values) {
-      await wait();
-      const db = await load();
-      const user = db.users.find((u) => u.id === userId);
-      if (!user) throw new Error('NOT_FOUND');
-      user.name = values.name;
-      user.birth = values.birth;
-      user.gender = values.gender;
-      user.profileUpdatedAt = new Date().toISOString();
-      await save(db);
-      return toPublic(user);
+      return mutate(userId, (user) => {
+        user.name = values.name;
+        user.birth = values.birth;
+        user.gender = values.gender;
+        user.profileUpdatedAt = new Date().toISOString();
+      });
     },
 
     async setMarketing(userId, agreed) {
-      await wait();
-      const db = await load();
-      const user = db.users.find((u) => u.id === userId);
-      if (!user) throw new Error('NOT_FOUND');
-      user.marketingAgreed = agreed;
-      user.marketingUpdatedAt = new Date().toISOString();
-      await save(db);
-      return toPublic(user);
+      return mutate(userId, (user) => {
+        user.marketingAgreed = agreed;
+        user.marketingUpdatedAt = new Date().toISOString();
+      });
     },
 
     async requestWithdraw(userId) {
-      await wait();
-      const db = await load();
-      const user = db.users.find((u) => u.id === userId);
-      if (!user) throw new Error('NOT_FOUND');
-      user.status = 'withdrawing';
-      user.withdrawRequestedAt = new Date().toISOString();
-      await save(db);
-    },
-
-    async resetPassword(email, newPassword) {
-      await wait();
-      const db = await load();
-      const user = byEmail(db, email);
-      if (!user) throw new Error('NOT_FOUND');
-      user.password = newPassword;
-      delete db.codes[user.email!];
-      await save(db);
+      await mutate(userId, (user) => {
+        if (user.status !== 'active') throw new Error('invalid_status');
+        user.status = 'withdrawing';
+        user.withdrawRequestedAt = new Date().toISOString();
+      });
     },
   };
 }

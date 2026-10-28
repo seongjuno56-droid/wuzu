@@ -3,7 +3,7 @@
  * (설계: docs/superpowers/specs/2026-10-20-mypage-design.md)
  */
 import { isValidBirth } from '../../lib/format';
-import type { Gender, User } from '../../services/types';
+import type { Gender, SocialProvider, User } from '../../services/types';
 
 const NICKNAME_RE = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
@@ -38,12 +38,22 @@ export function toAccountValues(i: AccountEditInput): { name: string; birth?: st
 
 const ID_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
-/** 간편 로그인(카카오) 아이디: ka_ + 영소문자·숫자 8자 (어드민·DB 관리용) */
-export function socialLoginId(random: () => number = Math.random): string {
+/**
+ * 간편 로그인 아이디: 공급자 앞 두 글자 + _ + 영소문자·숫자 8자 (카카오 ka_, 구글 go_).
+ * 실서버는 가입 트리거(handle_new_user)가 같은 규칙으로 만든다. 여기 것은 mock 용
+ */
+export function socialLoginId(provider: SocialProvider, random: () => number = Math.random): string {
   let id = '';
   for (let i = 0; i < 8; i++) id += ID_CHARS[Math.floor(random() * ID_CHARS.length) % ID_CHARS.length];
-  return `ka_${id}`;
+  return `${provider.slice(0, 2)}_${id}`;
 }
 
 /** 화면 표시용 아이디 */
 export const displayLoginId = (u: Pick<User, 'loginId' | 'email'>) => u.loginId ?? u.email ?? '-';
+
+/** 탈퇴 신청 후 철회할 수 있는 기간 (DB cancel_withdraw·finalize_withdrawals 와 같은 값) */
+export const WITHDRAW_GRACE_DAYS = 30;
+
+/** 탈퇴 철회 기한 = 신청 시각 + 30일 (ISO) */
+export const withdrawCancelDeadline = (requestedAt: string) =>
+  new Date(Date.parse(requestedAt) + WITHDRAW_GRACE_DAYS * 86400000).toISOString();

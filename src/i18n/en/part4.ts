@@ -100,6 +100,7 @@ export const part4: Record<string, string> = {
   '카카오로 시작하기': 'Continue with Kakao',
   카카오맵: 'Kakao Map',
   카카오친구: 'Kakao friend',
+  구글친구: 'Google friend',
   '캔버스 요소': 'Canvas element',
   캘린더: 'Calendar',
   크게: 'Larger',

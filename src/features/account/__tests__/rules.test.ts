@@ -35,9 +35,10 @@ describe('회원정보 수정 검사', () => {
 });
 
 describe('아이디', () => {
-  it('간편 로그인 아이디는 ka_ + 8자 영소문자·숫자', () => {
-    expect(socialLoginId(() => 0)).toBe('ka_aaaaaaaa');
-    expect(socialLoginId()).toMatch(/^ka_[a-z0-9]{8}$/);
+  it('간편 로그인 아이디는 공급자 앞 두 글자(ka_·go_) + 8자 영소문자·숫자', () => {
+    expect(socialLoginId('kakao', () => 0)).toBe('ka_aaaaaaaa');
+    expect(socialLoginId('kakao')).toMatch(/^ka_[a-z0-9]{8}$/);
+    expect(socialLoginId('google')).toMatch(/^go_[a-z0-9]{8}$/);
   });
   it('표시: loginId → 이메일 → -', () => {
     const u = { email: 'a@b.c', provider: 'email' } as User;

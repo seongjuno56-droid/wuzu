@@ -6,12 +6,23 @@ import { createMockNotificationService } from './mock/mockNotificationService';
 import { createMockPaymentService } from './mock/mockPaymentService';
 import { createMockRsvpService } from './mock/mockRsvpService';
 import { createMockWalletService } from './mock/mockWalletService';
+import { createSupabaseClient } from './supabase/client';
+import { createSupabaseAuthService } from './supabase/supabaseAuthService';
+import type { AuthService } from './types';
 
 export * from './types';
-export { CODE_TTL_MS, MAX_SEND, MOCK_CODE } from './mock/mockAuthService';
 
-// 실제 서버 도입 시 이 줄만 교체한다.
-export const authService = createMockAuthService({ delayMs: 400, storage: AsyncStorage });
+// EXPO_PUBLIC_* 는 빌드 때 그대로 박히므로 process.env.이름 으로 직접 읽어야 한다
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+/** Supabase URL·키가 둘 다 있으면 실제 로그인, 아니면 mock (개발·테스트) */
+export const authService: AuthService =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createSupabaseAuthService(createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY))
+    : createMockAuthService({ delayMs: 400, storage: AsyncStorage });
+
+// 아래 서비스는 아직 mock (실서버 도입 시 교체)
 export const invitationService = createMockInvitationService({ delayMs: 300, storage: AsyncStorage });
 export const walletService = createMockWalletService({ delayMs: 300, storage: AsyncStorage });
 export const paymentService = createMockPaymentService();

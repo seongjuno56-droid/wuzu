@@ -15,7 +15,7 @@ export interface User {
   provider: Provider;
   marketingAgreed: boolean;
   createdAt: string; // ISO
-  /** 아이디: 이메일 가입은 이메일, 간편 로그인은 자동 부여 (ka_xxxxxxxx) */
+  /** 아이디: 간편 로그인은 자동 부여 (ka_xxxxxxxx · go_xxxxxxxx). 예전 이메일 계정은 이메일 */
   loginId?: string;
   /** 회원정보(닉네임·생년월일·성별) 최종 수정 시각 */
   profileUpdatedAt?: string;
@@ -25,50 +25,24 @@ export interface User {
   withdrawRequestedAt?: string; // ISO
 }
 
-export type LoginResult =
-  | { ok: true; user: User }
-  | { ok: false; reason: 'invalid' | 'banned' }
-  | {
-      ok: false;
-      reason: 'withdrawing';
-      userId: string;
-      requestedAt: string;
-      cancelDeadline: string;
-    };
+export type SocialProvider = 'kakao' | 'google';
 
-export interface SignupInput {
-  email?: string;
-  password?: string;
-  name: string;
-  birth?: string;
-  gender?: Gender;
-  phone?: string;
-  marketingAgreed: boolean;
-  provider: Provider;
-  /** 소셜 가입 시 공급자 측 계정 키 */
-  providerKey?: string;
-}
+export type SocialLoginResult =
+  | { ok: true; user: User; isNew: boolean }
+  | { ok: false; reason: 'cancelled' | 'failed' | 'banned' }
+  | { ok: false; reason: 'withdrawing'; userId: string; requestedAt: string; cancelDeadline: string };
 
-export interface SocialProfile {
-  providerKey: string;
-  name: string;
-}
-
-export type SendCodeResult =
-  | { ok: true; sentCount: number; expiresAt: number }
-  | { ok: false; reason: 'not_found' | 'limit' };
-
+/**
+ * 회원 인증 (카카오·구글 간편 로그인 전용).
+ * 실서버 구현은 userId 인자를 무시하고 로그인한 본인 기준으로 처리한다.
+ */
 export interface AuthService {
-  login(email: string, password: string): Promise<LoginResult>;
-  /** user가 null이면 신규 가입이 필요한 소셜 계정 */
-  socialLogin(provider: 'kakao'): Promise<{ result: LoginResult | null; profile: SocialProfile }>;
-  isEmailTaken(email: string): Promise<boolean>;
-  signup(input: SignupInput): Promise<User>;
+  /** banned 이면 세션을 스스로 끊는다. withdrawing 을 철회하지 않고 끝낼 때는 화면이 logout() 한다 */
+  socialLogin(provider: SocialProvider): Promise<SocialLoginResult>;
+  /** 앱 시작 때 저장된 세션으로 회원을 다시 읽는다. 세션이 없거나 쓸 수 없는 계정이면 null */
+  currentUser(): Promise<User | null>;
+  logout(): Promise<void>;
   cancelWithdraw(userId: string): Promise<User>;
-  findId(query: { name: string; birth: string; phone: string }): Promise<{ email: string; createdAt: string } | null>;
-  sendCode(email: string, now?: number): Promise<SendCodeResult>;
-  verifyCode(email: string, code: string, now?: number): Promise<boolean>;
-  resetPassword(email: string, newPassword: string): Promise<void>;
   /** 선택 프로필 저장 (값이 undefined 면 비운다) */
   updateProfile(userId: string, values: Pick<User, 'birth' | 'gender' | 'marketingAgreed'>): Promise<User>;
   /** 회원정보 수정 (닉네임·생년월일·성별). 값이 undefined 면 비운다 */
