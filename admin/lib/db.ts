@@ -40,12 +40,17 @@ export function pgPoolDb(pool: pg.Pool): Db {
         await client.query('begin');
         const result = await fn(pgClientDb(client));
         await client.query('commit');
+        client.release();
         return result;
       } catch (err) {
-        await client.query('rollback');
+        // rollback 이 실패해도 원래 오류를 던진다. 그 클라이언트는 상태를 알 수 없으니 풀에서 버린다
+        const rollbackErr = await client.query('rollback').then(
+          () => null,
+          (e: unknown) => (e instanceof Error ? e : new Error(String(e))),
+        );
+        if (rollbackErr) client.release(rollbackErr);
+        else client.release();
         throw err;
-      } finally {
-        client.release();
       }
     },
   };
@@ -79,11 +84,41 @@ export function pgliteDb(pglite: PGlite): Db {
   };
 }
 
-async function openDb(): Promise<Db> {
-  const url = process.env.DATABASE_URL;
-  if (url) {
-    return pgPoolDb(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }));
+/**
+ * 운영 DB 연결 풀. 서버리스 함수마다 풀이 생기고 Supabase 세션 풀러는 연결 수가 적으므로
+ * 연결을 조금만(3개) 쓰고 유휴 연결은 빨리(10초) 닫는다.
+ * 유휴 연결이 끊겨 풀이 error 를 내도 리스너가 없으면 프로세스가 죽으므로 로그만 남긴다.
+ */
+export function createPgPool(url: string): pg.Pool {
+  const pool = new pg.Pool({
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+    max: 3,
+    idleTimeoutMillis: 10_000,
+  });
+  pool.on('error', (err) => {
+    console.error('DB 유휴 연결 오류:', err);
+  });
+  return pool;
+}
+
+export type DbTarget = { kind: 'pg'; url: string } | { kind: 'pglite' };
+
+/**
+ * 어떤 DB 를 쓸지 정한다. DATABASE_URL 이 있으면 그 주소, 없으면 로컬 PGlite.
+ * 운영(NODE_ENV=production)에서 DATABASE_URL 이 빠졌으면 로컬 DB·시드로 가지 않고 바로 멈춘다.
+ */
+export function dbTarget(env: { DATABASE_URL?: string; NODE_ENV?: string }): DbTarget {
+  if (env.DATABASE_URL) return { kind: 'pg', url: env.DATABASE_URL };
+  if (env.NODE_ENV === 'production') {
+    throw new Error('DATABASE_URL 이 없습니다 — 운영에서는 로컬 DB 를 쓰지 않습니다');
   }
+  return { kind: 'pglite' };
+}
+
+async function openDb(): Promise<Db> {
+  const target = dbTarget(process.env);
+  if (target.kind === 'pg') return pgPoolDb(createPgPool(target.url));
   // 로컬: admin/.pglite 파일 DB. 어드민은 admin/ 에서 실행한다
   const { PGlite } = await import('@electric-sql/pglite');
   const pglite = await PGlite.create(path.join(process.cwd(), '.pglite'));
@@ -91,7 +126,7 @@ async function openDb(): Promise<Db> {
   await migrate(db, { withAuthStub: true });
   // 빈 로컬 DB 면 시드(운영자·회원·초대장·원장). seed → admins → db 로 돌아오므로 여기서 불러온다
   const { seedIfEmpty } = await import('./seed');
-  if (await seedIfEmpty(db, url)) {
+  if (await seedIfEmpty(db, process.env.DATABASE_URL)) {
     console.log('로컬 DB 에 시드를 넣었습니다. 로그인: admin@wuzu.local / wuzu-admin-1234');
   }
   return db;
