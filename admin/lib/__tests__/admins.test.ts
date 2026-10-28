@@ -39,8 +39,8 @@ describe('운영자 로그인·세션', () => {
       mustChangePassword: true,
     });
     expect(await login(db, '  Boss@WUZU.kr ', PASSWORD)).toMatchObject({ ok: true, adminId: id });
-    expect(await login(db, 'boss@wuzu.kr', 'wrong-password')).toEqual({ ok: false });
-    expect(await login(db, 'nobody@wuzu.kr', PASSWORD)).toEqual({ ok: false });
+    expect(await login(db, 'boss@wuzu.kr', 'wrong-password')).toEqual({ ok: false, reason: 'invalid' });
+    expect(await login(db, 'nobody@wuzu.kr', PASSWORD)).toEqual({ ok: false, reason: 'invalid' });
 
     const [row] = await db.query<{ last_login_at: Date | null }>(
       `select last_login_at from admins where id = $1`,
@@ -52,7 +52,7 @@ describe('운영자 로그인·세션', () => {
   it('비활성 운영자는 로그인 실패', async () => {
     const db = await newTestDb();
     const id = await addAdmin(db, 'gone@wuzu.kr', { active: false });
-    expect(await login(db, 'gone@wuzu.kr', PASSWORD)).toEqual({ ok: false });
+    expect(await login(db, 'gone@wuzu.kr', PASSWORD)).toEqual({ ok: false, reason: 'invalid' });
     const [row] = await db.query<{ last_login_at: Date | null }>(
       `select last_login_at from admins where id = $1`,
       [id],
@@ -82,6 +82,7 @@ describe('운영자 로그인·세션', () => {
 
     expect(await changePassword(db, id, 'wrong-current', 'new-password-123')).toBe('wrong_current');
     expect(await changePassword(db, id, PASSWORD, '123456789')).toBe('too_short');
+    expect(await changePassword(db, id, PASSWORD, PASSWORD)).toBe('same_as_current');
 
     const [{ n: logsBefore }] = await db.query<{ n: number }>(
       `select count(*)::int as n from admin_audit_logs`,
@@ -95,7 +96,7 @@ describe('운영자 로그인·세션', () => {
       [id],
     );
     expect(row.must_change_password).toBe(false);
-    expect(await login(db, 'boss@wuzu.kr', PASSWORD)).toEqual({ ok: false });
+    expect(await login(db, 'boss@wuzu.kr', PASSWORD)).toEqual({ ok: false, reason: 'invalid' });
     expect(await login(db, 'boss@wuzu.kr', 'new-password-123')).toMatchObject({
       ok: true,
       mustChangePassword: false,
@@ -129,5 +130,73 @@ describe('운영자 로그인·세션', () => {
     expect(row.password_hash).not.toContain('first-password-1');
     expect(await login(db, 'boss@wuzu.kr', 'first-password-1')).toMatchObject({ ok: true, adminId: id });
     await expect(createFirstAdmin(db, 'x@wuzu.kr', '짧음', '123456789')).rejects.toThrow(/10자/);
+  });
+
+  describe('로그인 시도 제한', () => {
+    const T0 = new Date('2026-10-28T00:00:00Z');
+    const after = (minutes: number) => new Date(T0.getTime() + minutes * 60_000);
+
+    async function lockState(db: Db, id: string) {
+      const [row] = await db.query<{ failed_login_count: number; locked_until: Date | null }>(
+        `select failed_login_count, locked_until from admins where id = $1`,
+        [id],
+      );
+      return row;
+    }
+
+    async function failTimes(db: Db, n: number, now = T0) {
+      for (let i = 0; i < n; i++) {
+        expect(await login(db, 'boss@wuzu.kr', 'wrong-password', now)).toEqual({ ok: false, reason: 'invalid' });
+      }
+    }
+
+    it('9번 틀린 뒤 맞는 비밀번호면 성공하고 카운트가 0 으로', async () => {
+      const db = await newTestDb();
+      const id = await addAdmin(db, 'boss@wuzu.kr');
+      await failTimes(db, 9);
+      expect(await lockState(db, id)).toEqual({ failed_login_count: 9, locked_until: null });
+
+      expect(await login(db, 'boss@wuzu.kr', PASSWORD, T0)).toMatchObject({ ok: true, adminId: id });
+      expect(await lockState(db, id)).toEqual({ failed_login_count: 0, locked_until: null });
+    });
+
+    it('10번 틀리면 15분 잠기고, 잠긴 동안은 맞는 비밀번호도 locked', async () => {
+      const db = await newTestDb();
+      const id = await addAdmin(db, 'boss@wuzu.kr');
+      await failTimes(db, 10);
+
+      const state = await lockState(db, id);
+      expect(state.failed_login_count).toBe(0);
+      expect(state.locked_until?.getTime()).toBe(after(15).getTime());
+
+      expect(await login(db, 'boss@wuzu.kr', PASSWORD, T0)).toEqual({ ok: false, reason: 'locked' });
+      expect(await login(db, 'Boss@WUZU.kr', PASSWORD, after(14))).toEqual({ ok: false, reason: 'locked' });
+      // 잠긴 동안의 시도는 카운트를 올리지 않는다
+      expect((await lockState(db, id)).failed_login_count).toBe(0);
+    });
+
+    it('15분이 지나면 다시 로그인할 수 있고 잠금이 풀린다', async () => {
+      const db = await newTestDb();
+      const id = await addAdmin(db, 'boss@wuzu.kr');
+      await failTimes(db, 10);
+
+      expect(await login(db, 'boss@wuzu.kr', PASSWORD, after(15))).toMatchObject({ ok: true, adminId: id });
+      expect(await lockState(db, id)).toEqual({ failed_login_count: 0, locked_until: null });
+    });
+
+    it('잠금이 풀린 뒤 다시 틀리면 1부터 센다', async () => {
+      const db = await newTestDb();
+      const id = await addAdmin(db, 'boss@wuzu.kr');
+      await failTimes(db, 10);
+      await failTimes(db, 1, after(16));
+      expect(await lockState(db, id)).toMatchObject({ failed_login_count: 1 });
+    });
+
+    it('없는 이메일은 locked 가 아니라 invalid', async () => {
+      const db = await newTestDb();
+      for (let i = 0; i < 11; i++) {
+        expect(await login(db, 'nobody@wuzu.kr', PASSWORD, T0)).toEqual({ ok: false, reason: 'invalid' });
+      }
+    });
   });
 });

@@ -38,24 +38,55 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/** 연달아 이만큼 틀리면 잠근다 */
+export const MAX_FAILED_LOGINS = 10;
+/** 잠그는 시간(분) */
+export const LOCK_MINUTES = 15;
+
 export type LoginResult =
   | { ok: true; adminId: string; mustChangePassword: boolean }
-  | { ok: false };
+  | { ok: false; reason: 'invalid' | 'locked' };
 
 /**
  * 이메일·비밀번호 확인. 없는 이메일·비활성 계정도 bcrypt 비교를 한 번 해서
- * 응답 시간으로 계정이 있는지 알 수 없게 한다.
+ * 응답 시간으로 계정이 있는지 알 수 없게 한다(없는 이메일은 늘 invalid).
+ * 잠긴 계정(locked_until > now)은 비밀번호를 보지 않고 locked.
+ * 틀리면 failed_login_count 를 올리고, 10번째(MAX_FAILED_LOGINS)에 15분(LOCK_MINUTES) 잠그며 카운트를 0 으로 돌린다.
+ * 맞으면 카운트 0·잠금 해제. now 는 테스트에서 시간을 정하려고 받는다.
  */
-export async function login(db: Db, email: string, password: string): Promise<LoginResult> {
-  const [row] = await db.query<{ id: string; password_hash: string; active: boolean; must_change_password: boolean }>(
-    `select id, password_hash, active, must_change_password
+export async function login(db: Db, email: string, password: string, now: Date = new Date()): Promise<LoginResult> {
+  const [row] = await db.query<{
+    id: string;
+    password_hash: string;
+    active: boolean;
+    must_change_password: boolean;
+    locked_until: Date | null;
+  }>(
+    `select id, password_hash, active, must_change_password, locked_until
        from admins where email = $1`,
     [normalizeEmail(email)],
   );
-  const matched = await bcrypt.compare(password, row?.password_hash ?? DUMMY_HASH);
-  if (!row || !row.active || !matched) return { ok: false };
+  if (row?.locked_until && row.locked_until.getTime() > now.getTime()) return { ok: false, reason: 'locked' };
 
-  await db.query(`update admins set last_login_at = now() where id = $1`, [row.id]);
+  const matched = await bcrypt.compare(password, row?.password_hash ?? DUMMY_HASH);
+  if (!row || !row.active) return { ok: false, reason: 'invalid' };
+  if (!matched) {
+    // 한 문장으로 올려 동시에 틀려도 카운트를 잃지 않는다. 그 사이 잠겼으면 세지 않는다
+    await db.query(
+      `update admins set
+         failed_login_count = case when failed_login_count + 1 >= $3 then 0 else failed_login_count + 1 end,
+         locked_until = case when failed_login_count + 1 >= $3
+                             then $2::timestamptz + make_interval(mins => $4) else locked_until end
+       where id = $1 and (locked_until is null or locked_until <= $2)`,
+      [row.id, now, MAX_FAILED_LOGINS, LOCK_MINUTES],
+    );
+    return { ok: false, reason: 'invalid' };
+  }
+
+  await db.query(
+    `update admins set last_login_at = $2, failed_login_count = 0, locked_until = null where id = $1`,
+    [row.id, now],
+  );
   return { ok: true, adminId: row.id, mustChangePassword: row.must_change_password };
 }
 
@@ -89,7 +120,7 @@ export async function requireAdmin(opts: { allowPasswordChange?: boolean } = {})
   return admin;
 }
 
-export type ChangePasswordResult = 'ok' | 'wrong_current' | 'too_short';
+export type ChangePasswordResult = 'ok' | 'wrong_current' | 'too_short' | 'same_as_current';
 
 /**
  * 비밀번호 변경. 성공하면 must_change_password 를 끄고 작업 기록을 남긴다.
@@ -108,6 +139,7 @@ export async function changePassword(
   const matched = await bcrypt.compare(current, row?.password_hash ?? DUMMY_HASH);
   if (!row || !matched) return 'wrong_current';
   if (next.length < MIN_PASSWORD_LENGTH) return 'too_short';
+  if (next === current) return 'same_as_current';
 
   const hash = await bcrypt.hash(next, BCRYPT_COST);
   return withAudit(

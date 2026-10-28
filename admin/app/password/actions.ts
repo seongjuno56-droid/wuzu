@@ -17,5 +17,6 @@ export async function changePasswordAction(_prev: PasswordState, formData: FormD
   const result = await changePassword(await getDb(), admin.id, current, next);
   if (result === 'wrong_current') return { error: '현재 비밀번호가 올바르지 않습니다.' };
   if (result === 'too_short') return { error: `새 비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.` };
+  if (result === 'same_as_current') return { error: '지금 비밀번호와 다른 비밀번호를 써 주세요.' };
   redirect('/members');
 }

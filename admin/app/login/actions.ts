@@ -13,7 +13,12 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   const email = String(formData.get('email') ?? '');
   const password = String(formData.get('password') ?? '');
   const result = await login(await getDb(), email, password);
-  if (!result.ok) return { error: '이메일 또는 비밀번호가 올바르지 않습니다.' };
+  if (!result.ok) {
+    if (result.reason === 'locked') {
+      return { error: '로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.' };
+    }
+    return { error: '이메일 또는 비밀번호가 올바르지 않습니다.' };
+  }
 
   (await cookies()).set(SESSION_COOKIE, await signSession(result.adminId), {
     httpOnly: true,
