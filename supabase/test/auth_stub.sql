@@ -4,7 +4,9 @@ create schema if not exists auth;
 
 create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
-  email text
+  email text,
+  raw_user_meta_data jsonb default '{}',
+  raw_app_meta_data jsonb default '{}'
 );
 
 create or replace function auth.uid() returns uuid
@@ -21,3 +23,6 @@ begin
   end if;
 end
 $$;
+
+-- 운영 Supabase 처럼 회원 역할이 RLS 정책 안에서 auth.uid() 를 부를 수 있게 한다
+grant usage on schema auth to anon, authenticated;
