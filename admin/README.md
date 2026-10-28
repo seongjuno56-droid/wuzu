@@ -28,13 +28,16 @@ npm run dev
    [supabase.com](https://supabase.com) 에서 새 프로젝트를 만들고 DB 비밀번호를 안전한 곳에 적어 둡니다. 지역은 서울(Northeast Asia, ap-northeast-2)을 권합니다.
 
 2. **스키마 올리기** (`supabase/migrations` 의 SQL)
-   - 방법 A — 명령어: 저장소 루트에서
+   - 방법 B 를 먼저 권합니다 — 화면: Supabase 대시보드 **SQL Editor** 에 `supabase/migrations/*.sql` 을 **파일 이름 순서대로** 하나씩 붙여 넣고 실행합니다
+     (`20261027000001_core.sql` → `20261028000001_admin_login_lock.sql` → …). 나중에 새 마이그레이션 파일이 생기면 그 파일만 같은 방법으로 순서대로 올립니다.
+   - 방법 A — 명령어: 저장소 루트에서. 이 저장소에는 `supabase/config.toml` 이 없으므로 `supabase init` 을 먼저 한 번 합니다(`config.toml` 만 만들고 기존 `migrations` 는 건드리지 않습니다).
      ```bash
+     npx supabase init
      npx supabase login
      npx supabase link --project-ref <프로젝트 ref>
      npx supabase db push
      ```
-   - 방법 B — 화면: Supabase 대시보드 **SQL Editor** 에 `supabase/migrations/*.sql` 을 파일 이름 순서대로 붙여 넣고 실행합니다.
+     `db push` 는 아직 안 올린 마이그레이션만 이름순으로 올립니다.
    - `supabase/test/auth_stub.sql` 은 로컬·테스트 전용입니다. 운영 DB 에는 올리지 않습니다(Supabase 에 이미 `auth` 가 있습니다).
 
 3. **Vercel 에 어드민을 새 프로젝트로 올리기**
@@ -42,6 +45,7 @@ npm run dev
 
 4. **환경변수 넣기** (Vercel 프로젝트 → Settings → Environment Variables)
    - `DATABASE_URL`: Supabase 대시보드 **Connect** → 연결 문자열 중 **Session pooler**(세션 풀러) 주소. `[YOUR-PASSWORD]` 자리에 1번의 DB 비밀번호를 넣습니다.
+     연결 문자열 뒤에 `sslmode` 를 붙이지 마세요(어드민이 SSL 을 알아서 켭니다). 꼭 붙여야 하면 `?sslmode=no-verify` 로 붙입니다.
    - `ADMIN_SESSION_SECRET`: 32자 이상 임의 문자열. 예:
      ```bash
      node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -56,3 +60,8 @@ npm run dev
    ```
    Windows PowerShell 이면 `$env:DATABASE_URL="<주소>"; npm run create-admin -- <이메일> <이름> <비밀번호>`.
    이 운영자로 배포 주소에 로그인한 뒤, 다른 운영자는 **운영자** 화면에서 추가합니다(처음 로그인할 때 비밀번호를 바꾸게 됩니다).
+
+## 운영 메모
+
+- 로그인 잠금: 한 운영자 계정에서 비밀번호를 연달아 10번 틀리면 그 계정은 15분 동안 로그인할 수 없습니다(맞는 비밀번호도 거절). 15분이 지나면 저절로 풀리고, 급하면 SQL Editor 에서 `update admins set locked_until = null, failed_login_count = 0 where email = '<이메일>';` 로 바로 풀 수 있습니다.
+- 운영(`NODE_ENV=production`)에서 `DATABASE_URL` 이 비어 있으면 로컬 DB 로 가지 않고 "DATABASE_URL 이 없습니다" 오류로 멈춥니다. Vercel 환경변수를 확인하세요.
