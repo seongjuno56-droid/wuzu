@@ -145,6 +145,8 @@ export const part2: Record<string, string> = {
   삭제: 'Delete',
   '삭제가 완료되었습니다.': 'Deleted.',
   '삭제되었거나 주소가 잘못되었어요.': 'It was deleted or the link is wrong.',
+  '페이지를 찾을 수 없어요': 'Page not found',
+  '홈으로': 'Go home',
   삭제하기: 'Delete',
   '삭제하시겠습니까?': 'Delete this?',
   '삭제하지 못했어요.': "Couldn't delete.",
