@@ -49,7 +49,7 @@
 - 카카오·구글만(이메일·네이버 뺌, 애플은 iOS 출시 때). 플레이스토어 먼저, 한국 1순위.
 - 계획 `docs/superpowers/plans/2026-10-29-app-login.md`, 사용자 설정 안내 `docs/setup/app-login.md`.
 - 보고서 https://claude.ai/artifact/RHPL6oj3CkbUMgwVtiWZGf
-- 검증: 앱 jest 422, 어드민 vitest 93 통과, tsc 0. SDK 58 업그레이드는 브랜치 `chore/expo-sdk-58`(아이폰 Expo Go 가 SDK 58 만 지원해서 올림).
+- 검증: 앱 jest 426, 어드민 vitest 93 통과, tsc 0. SDK 58 업그레이드는 브랜치 `chore/expo-sdk-58`(아이폰 Expo Go 가 SDK 58 만 지원해서 올림).
 - 지금 작업 브랜치는 `chore/expo-sdk-58`(`feat/app-login` 에서 땀). 실서버 확인 후 함께 병합.
 - **브랜치는 실서버 확인을 마친 뒤 main 에 병합**하기로 함.
 
@@ -63,7 +63,7 @@
 - [x] 6번 SQL 두 파일 `20261029000001_member_auth.sql`, `20261029000002_deletion_requests.sql` 실행
 - [x] 7번 pg_cron 켜기 → `supabase/manual/schedule_withdraw_finalize.sql` 실행 (다시 실행하지 않는다)
 - [x] 1번 `.env.local` (PC 는 2026-11-04 만듦. 노트북은 파일이 있는지 확인할 것)
-- [ ] **9번 Expo Go** — 카카오는 아이폰에서 통과(2026-11-04), **구글 테스트 차례**
+- [ ] **9번 Expo Go** — 카카오는 아이폰에서 통과(2026-11-04). 그 뒤 PKCE 를 S256 으로 바꿨으니(`webCrypto.ts`) **카카오를 다시 확인하고 구글 테스트**
 - [ ] 8번 Vercel Firewall POST /delete-account 제한
 - [ ] 10번 실서버 확인(가입 트리거, 탈퇴 확정과 auth.users 삭제, cron, /delete-account, 안드로이드 /auth/callback) → HTML 보고서. KOE205 가 나면 카카오 scopes 코드 수정.
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
