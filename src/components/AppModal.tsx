@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { colors, radius, spacing } from '../theme';
 import { Button } from './Button';
@@ -21,47 +21,62 @@ interface Props {
   actions: ModalAction[];
   /** 바깥 영역을 눌러 닫을 때 호출. 없으면 바깥 클릭 무시 */
   onDismiss?: () => void;
+  /** iOS: 키보드가 버튼을 가리지 않게 카드를 올린다 (입력칸이 있고 카드가 낮은 모달용) */
+  avoidKeyboard?: boolean;
 }
 
-export function AppModal({ visible, title, message, art, children, actions, onDismiss }: Props) {
+export function AppModal({ visible, title, message, art, children, actions, onDismiss, avoidKeyboard }: Props) {
   // 버튼 문구가 길면 나란히 두면 줄바꿈되므로 세로로 쌓는다 (주 버튼이 위)
   const stacked = actions.some((a) => a.label.length > 8);
   const ordered = stacked ? [...actions].reverse() : actions;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <Pressable style={styles.dim} onPress={onDismiss} accessibilityLabel="닫기">
-        <Pressable style={styles.card} onPress={() => {}}>
-          {art && <View style={styles.art}>{art}</View>}
-          {title && (
-            <Txt variant="title" align="center">
-              {title}
-            </Txt>
-          )}
-          {message && (
-            <Txt color={colors.muted} align="center">
-              {message}
-            </Txt>
-          )}
-          {children}
-          <View style={[styles.actions, stacked && styles.stacked]}>
-            {ordered.map((a) => (
-              <Button
-                key={a.label}
-                label={a.label}
-                onPress={a.onPress}
-                variant={a.variant ?? 'primary'}
-                size="md"
-                style={stacked ? undefined : styles.action}
-              />
-            ))}
-          </View>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={avoidKeyboard && Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <Pressable
+          style={styles.dim}
+          onPress={() => {
+            Keyboard.dismiss();
+            onDismiss?.();
+          }}
+          accessibilityLabel="닫기"
+        >
+          <Pressable style={styles.card} onPress={() => Keyboard.dismiss()}>
+            {art && <View style={styles.art}>{art}</View>}
+            {title && (
+              <Txt variant="title" align="center">
+                {title}
+              </Txt>
+            )}
+            {message && (
+              <Txt color={colors.muted} align="center">
+                {message}
+              </Txt>
+            )}
+            {children}
+            <View style={[styles.actions, stacked && styles.stacked]}>
+              {ordered.map((a) => (
+                <Button
+                  key={a.label}
+                  label={a.label}
+                  onPress={a.onPress}
+                  variant={a.variant ?? 'primary'}
+                  size="md"
+                  style={stacked ? undefined : styles.action}
+                />
+              ))}
+            </View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   dim: { flex: 1, backgroundColor: colors.dim, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   card: {
     width: '100%',

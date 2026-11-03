@@ -38,6 +38,7 @@ export function OnboardingModal({ visible }: { visible: boolean }) {
   return (
     <AppModal
       visible={visible}
+      avoidKeyboard
       title={'WUZU에 오신 것을 환영합니다.\n아래 정보를 입력해 주세요.'}
       actions={[
         { label: '다음에 하기', variant: 'outline', onPress: () => save({ marketingAgreed: false }) },
