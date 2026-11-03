@@ -42,7 +42,9 @@ export function PaymentSheetHost() {
   };
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={() => !busy && settle('cancelled')}>
+    <Modal visible transparent animationType="slide" onRequestClose={() => {
+      if (!busy) settle('cancelled');
+    }}>
       <Pressable style={styles.dim} onPress={() => !busy && settle('cancelled')} accessibilityLabel="결제 취소">
         <Pressable style={[styles.sheet, google ? styles.google : styles.apple]} onPress={() => {}}>
           <View style={styles.head}>

@@ -9,6 +9,8 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type ScrollViewInstance,
+  type ViewInstance,
 } from 'react-native';
 
 import { fitSlide } from '../../canvas/model';
@@ -32,8 +34,8 @@ export function StoryInvitation({ invitation, ...handlers }: { invitation: ViewI
   const pages = pageOrder(invitation.enabled, invitation.order);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [index, setIndex] = useState(0);
-  const scroller = useRef<ScrollView>(null);
-  const root = useRef<View>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
+  const root = useRef<ViewInstance>(null);
   /** 버튼·키로 넘기는 중인 목표 장 — 그 사이 지나치는 경계에서 번호를 바꾸지 않는다 */
   const target = useRef<number | null>(null);
   const slide = fitSlide(box.width, box.height);

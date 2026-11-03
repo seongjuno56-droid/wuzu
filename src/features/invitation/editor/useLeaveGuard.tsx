@@ -1,4 +1,4 @@
-import { useFocusEffect, useNavigation } from 'expo-router';
+import { useFocusEffect, useNavigation, usePreventRemove } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
@@ -9,33 +9,34 @@ const WEB_BACK = 'web-back' as const;
 
 /**
  * 작성 중(저장 안 된 변경 있음) 화면을 벗어나려 하면 확인 모달을 띄운다.
- * - 앱 뒤로가기(안드로이드 버튼·제스처): beforeRemove
- * - 웹 브라우저 뒤로가기: beforeRemove 로는 막히지 않아, 같은 주소의 기록을 하나 더 쌓아 두고
+ * - 앱 뒤로가기(안드로이드 버튼·제스처): usePreventRemove
+ * - 웹 브라우저 뒤로가기: usePreventRemove 로는 막히지 않아, 같은 주소의 기록을 하나 더 쌓아 두고
  *   뒤로가기로 그 기록이 빠지는 순간(popstate) 다시 쌓으며 모달을 띄운다
- * - 웹 새로고침·탭 닫기: beforeunload (브라우저 기본 확인창)
+ * - 웹 새로고침·탭 닫기: usePreventRemove 가 브라우저 기본 확인창을 띄운다
  * 저장·'초대장 설정' 이동처럼 의도한 이동 전에는 allow() 를 부른다.
  */
 export function useLeaveGuard(dirty: boolean) {
   const navigation = useNavigation();
+  // 렌더에 쓰는 값과, popstate 처럼 렌더 밖에서 바로 읽는 값을 함께 둔다
+  const [allowedState, setAllowedState] = useState(false);
   const allowed = useRef(false);
   // 화면이 다시 포커스를 얻으면(설정에 다녀온 뒤 등) 경고를 다시 켠다
   useFocusEffect(
     useCallback(() => {
       allowed.current = false;
+      setAllowedState(false);
     }, []),
   );
   // 막아 둔 이동 동작 (확인 시 그대로 다시 보낸다)
   const [pending, setPending] = useState<object | typeof WEB_BACK | null>(null);
 
-  useEffect(
-    () =>
-      navigation.addListener('beforeRemove', (e) => {
-        if (!dirty || allowed.current) return;
-        e.preventDefault();
-        setPending(e.data.action);
-      }),
-    [navigation, dirty],
-  );
+  const disablePrevention = usePreventRemove(dirty && !allowedState, ({ data }) => setPending(data.action));
+
+  const allow = () => {
+    allowed.current = true;
+    setAllowedState(true);
+    disablePrevention();
+  };
 
   useEffect(() => {
     if (Platform.OS !== 'web' || !dirty) return;
@@ -46,22 +47,16 @@ export function useLeaveGuard(dirty: boolean) {
       stay();
       setPending(WEB_BACK);
     };
-    const onUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
     window.addEventListener('popstate', onPop);
-    window.addEventListener('beforeunload', onUnload);
     return () => {
       window.removeEventListener('popstate', onPop);
-      window.removeEventListener('beforeunload', onUnload);
     };
   }, [dirty]);
 
   const leave = () => {
     const action = pending;
     setPending(null);
-    allowed.current = true;
+    allow();
     if (action === WEB_BACK) navigation.goBack();
     else if (action) navigation.dispatch(action as Parameters<typeof navigation.dispatch>[0]);
   };
@@ -81,8 +76,6 @@ export function useLeaveGuard(dirty: boolean) {
   return {
     modal,
     /** 이 다음 이동은 경고 없이 허용 */
-    allow: () => {
-      allowed.current = true;
-    },
+    allow,
   };
 }

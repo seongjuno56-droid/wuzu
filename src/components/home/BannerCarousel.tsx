@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { NativeScrollEvent, NativeSyntheticEvent, Platform, ScrollView, StyleSheet, View, type ScrollViewInstance, type ViewInstance } from 'react-native';
 
 import { BANNERS } from '../../data/home';
 import { settledPageIndex } from '../../features/invitation/view/storyNav';
@@ -22,8 +22,8 @@ export function BannerCarousel() {
   const total = BANNERS.length;
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
-  const root = useRef<View>(null);
-  const scroller = useRef<ScrollView>(null);
+  const root = useRef<ViewInstance>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
   /** 이 시각까지는 자동 넘김을 쉰다 */
   const pausedUntil = useRef(0);
 

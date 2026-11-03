@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance, type ViewInstance } from 'react-native';
 
 import { Txt } from '../../../components/Txt';
 import { colors, radius, shadow, spacing } from '../../../theme';
@@ -29,8 +29,8 @@ export function SectionSheet({ section, onClose }: { section: SectionKey; onClos
   const confirm = useEditor((s) => s.confirm);
   const [dragging, setDragging] = useState(false);
   // 목록 끌기가 가장자리에서 시트를 스크롤할 수 있게 위치·크기를 기억한다
-  const scrollRef = useRef<ScrollView>(null);
-  const frameRef = useRef<View>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const frameRef = useRef<ViewInstance>(null);
   const box = useRef({ y: 0, viewH: 0, contentH: 0, top: 0 });
   const [sheetScroll] = useState<SheetScroll>(() => ({
     scrollBy: (dy) => {

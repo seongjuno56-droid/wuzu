@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
+import { GestureResponderEvent, Pressable, StyleSheet, View, type ViewInstance } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
 import { Button } from '../../../components/Button';
@@ -69,8 +69,8 @@ export function CanvasEditor({ initial, content, style, themeId, onDone, onCance
   const [editing, setEditing] = useState<{ el: TextElement; isNew: boolean } | null>(null);
   // 끄는 중 손가락 위치 — 있으면 휴지통을 보이고 다른 도구를 숨긴다
   const [dragAt, setDragAt] = useState<{ x: number; y: number } | null>(null);
-  const stageRef = useRef<View>(null);
-  const trashRef = useRef<View>(null);
+  const stageRef = useRef<ViewInstance>(null);
+  const trashRef = useRef<ViewInstance>(null);
   const trashRect = useRef<Rect | null>(null);
   const [trashBox, setTrashBox] = useState<Rect | null>(null);
   // 놓는 순간 판정은 렌더를 기다리지 않도록 ref 로

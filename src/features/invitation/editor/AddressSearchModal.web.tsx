@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Modal, View } from 'react-native';
+import { Modal, View, type ViewInstance } from 'react-native';
 
 import { parsePostcode, POSTCODE_SCRIPT, PostcodeData } from './address';
 import { AddressSheet, AddressSearchProps } from './AddressSheet';
@@ -28,7 +28,7 @@ function loadScript() {
 
 /** 웹: 다음 우편번호 서비스를 화면 안에 바로 펼친다 */
 export function AddressSearchModal({ visible, onClose, onSelect }: AddressSearchProps) {
-  const box = useRef<View>(null);
+  const box = useRef<ViewInstance>(null);
 
   useEffect(() => {
     if (!visible) return;

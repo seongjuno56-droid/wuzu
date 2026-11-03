@@ -2,7 +2,7 @@
 
 # wuzu(우쥬) 작업 안내 (Claude 용)
 
-결혼식·돌잔치·기업 행사·모임용 모바일 초대장 앱. 회사 어썸피플즈. 앱은 Expo(SDK 57, expo-router, zustand, jest), 어드민은 `admin/`(Next.js, vitest + PGlite). 패키지 `kr.wuzu.app`, scheme `wuzu`.
+결혼식·돌잔치·기업 행사·모임용 모바일 초대장 앱. 회사 어썸피플즈. 앱은 Expo(SDK 58, expo-router, zustand, jest), 어드민은 `admin/`(Next.js, vitest + PGlite). 패키지 `kr.wuzu.app`, scheme `wuzu`.
 
 ## 작업 규칙 (사용자가 정한 것)
 
@@ -27,7 +27,7 @@
 - Windows. python 없음. PowerShell 에서는 `npm` 대신 `npm.cmd`.
 - Prettier 를 파일 전체에 돌리지 않는다.
 - 지갑·초대장 목록·mockRsvp 테스트가 가끔 실패한다(다시 돌리면 통과).
-- 린트 기준값 21 errors / 7 warnings(지금 18 / 2). 늘리지 않는다.
+- 린트 기준값 21 errors / 7 warnings(지금 17 / 2). 늘리지 않는다.
 - SQL 을 사용자에게 줄 때는 `Get-Content -Raw -Encoding UTF8 <파일> | Set-Clipboard` 로 클립보드에 넣어 준다.
 
 ## 서버
@@ -46,7 +46,7 @@
 - 카카오·구글만(이메일·네이버 뺌, 애플은 iOS 출시 때). 플레이스토어 먼저, 한국 1순위.
 - 계획 `docs/superpowers/plans/2026-10-29-app-login.md`, 사용자 설정 안내 `docs/setup/app-login.md`.
 - 보고서 https://claude.ai/artifact/RHPL6oj3CkbUMgwVtiWZGf
-- 검증: 앱 jest 413, 어드민 vitest 93 통과, tsc 0.
+- 검증: 앱 jest 418, 어드민 vitest 93 통과, tsc 0. SDK 58 업그레이드는 브랜치 `chore/expo-sdk-58`(아이폰 Expo Go 가 SDK 58 만 지원해서 올림).
 - **브랜치는 실서버 확인을 마친 뒤 main 에 병합**하기로 함.
 
 **사용자 콘솔 설정 진행 (2026-11-03 기준)** — `docs/setup/app-login.md` 순서와 대응:

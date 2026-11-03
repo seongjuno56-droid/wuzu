@@ -1,5 +1,5 @@
 import { RefObject, useEffect, useRef } from 'react';
-import { Platform, ScrollView, View } from 'react-native';
+import { Platform, type ScrollViewInstance, type ViewInstance } from 'react-native';
 
 import { isTypingTarget, releasePage } from './storyNav';
 
@@ -16,8 +16,8 @@ const SNAP_RESTORE_MS = 450;
  * - isDragging(): 끄는 중 — 그동안 onScroll 의 장 번호 갱신을 멈추게
  */
 export function useMouseSwipe(opts: {
-  root: RefObject<View | null>;
-  scroller: RefObject<ScrollView | null>;
+  root: RefObject<ViewInstance | null>;
+  scroller: RefObject<ScrollViewInstance | null>;
   pageWidth: number;
   count: number;
   onRelease: (page: number) => void;

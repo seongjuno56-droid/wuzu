@@ -14,6 +14,8 @@ export function BgmButton({ bgm }: { bgm: BgmInfo }) {
   const status = useAudioPlayerStatus(player);
 
   useEffect(() => {
+    // 반복 재생은 플레이어 속성으로만 켤 수 있다
+    // eslint-disable-next-line react-hooks/immutability
     player.loop = true;
   }, [player]);
 

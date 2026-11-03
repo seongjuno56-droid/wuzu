@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance, type ViewInstance } from 'react-native';
 
 import { fitSlide } from '../../canvas/model';
 import { Invitation, PageKey } from '../model';
@@ -28,8 +28,8 @@ export function SlideStage({
 }) {
   const look = lookFor(invitation.themeId, invitation.templateId, invitation.paletteId);
   const [box, setBox] = useState({ width: 0, height: 0 });
-  const scroller = useRef<ScrollView>(null);
-  const root = useRef<View>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
+  const root = useRef<ViewInstance>(null);
   // PC 마우스로 끌어 넘기기 — 끈 뒤의 눌림은 입력 시트를 열지 않는다
   const { justDragged, isDragging } = useMouseSwipe({
     root,
