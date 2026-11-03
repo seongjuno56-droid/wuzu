@@ -29,6 +29,9 @@
 - 지갑·초대장 목록·mockRsvp 테스트가 가끔 실패한다(다시 돌리면 통과).
 - 린트 기준값 21 errors / 7 warnings(지금 17 / 2). 늘리지 않는다.
 - SQL 을 사용자에게 줄 때는 `Get-Content -Raw -Encoding UTF8 <파일> | Set-Clipboard` 로 클립보드에 넣어 준다.
+- 사용자 폰은 아이폰이다(안드로이드 없음). Expo Go 는 최신 SDK 만 되고, APK 는 설치 못 한다.
+- Supabase Redirect URLs 의 `exp://**` 는 숫자 IP 주소를 통과시키지 않는다(2026-11-04 직접 시험). 그래서 `--lan` 만으로는 로그인 복귀가 `localhost:3000` 으로 샌다. 테스트는 `npx expo start --tunnel --port 8081`(밖에서도 됨, 주소 공개라 공유 금지) 또는 `REACT_NATIVE_PACKAGER_HOSTNAME=<IP>.nip.io` 로 켠다.
+- `TaskStop` 으로 개발 서버를 꺼도 node 프로세스가 남아 8081 을 잡을 수 있다. 포트 주인을 확인하고 끈다.
 
 ## 서버
 
@@ -46,7 +49,8 @@
 - 카카오·구글만(이메일·네이버 뺌, 애플은 iOS 출시 때). 플레이스토어 먼저, 한국 1순위.
 - 계획 `docs/superpowers/plans/2026-10-29-app-login.md`, 사용자 설정 안내 `docs/setup/app-login.md`.
 - 보고서 https://claude.ai/artifact/RHPL6oj3CkbUMgwVtiWZGf
-- 검증: 앱 jest 418, 어드민 vitest 93 통과, tsc 0. SDK 58 업그레이드는 브랜치 `chore/expo-sdk-58`(아이폰 Expo Go 가 SDK 58 만 지원해서 올림).
+- 검증: 앱 jest 422, 어드민 vitest 93 통과, tsc 0. SDK 58 업그레이드는 브랜치 `chore/expo-sdk-58`(아이폰 Expo Go 가 SDK 58 만 지원해서 올림).
+- 지금 작업 브랜치는 `chore/expo-sdk-58`(`feat/app-login` 에서 땀). 실서버 확인 후 함께 병합.
 - **브랜치는 실서버 확인을 마친 뒤 main 에 병합**하기로 함.
 
 **사용자 콘솔 설정 진행 (2026-11-03 기준)** — `docs/setup/app-login.md` 순서와 대응:
@@ -58,8 +62,8 @@
 - [x] 5번 Redirect URLs: `wuzu://auth/callback`, `exp://**`
 - [x] 6번 SQL 두 파일 `20261029000001_member_auth.sql`, `20261029000002_deletion_requests.sql` 실행
 - [x] 7번 pg_cron 켜기 → `supabase/manual/schedule_withdraw_finalize.sql` 실행 (다시 실행하지 않는다)
-- [ ] 1번 `.env.local` — 사용자 PC 에만 있는 파일. 클라우드 세션(2026-11-03)에는 없어서 확인 못 함. PC 에서 두 키가 채워졌는지 확인할 것
-- [ ] **9번 Expo Go 카카오 로그인 테스트 ← 지금 여기** (그다음 구글)
+- [x] 1번 `.env.local` (PC 는 2026-11-04 만듦. 노트북은 파일이 있는지 확인할 것)
+- [ ] **9번 Expo Go** — 카카오는 아이폰에서 통과(2026-11-04), **구글 테스트 차례**
 - [ ] 8번 Vercel Firewall POST /delete-account 제한
 - [ ] 10번 실서버 확인(가입 트리거, 탈퇴 확정과 auth.users 삭제, cron, /delete-account, 안드로이드 /auth/callback) → HTML 보고서. KOE205 가 나면 카카오 scopes 코드 수정.
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
