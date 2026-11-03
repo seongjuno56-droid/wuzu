@@ -5,12 +5,15 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 
 import { AUTH_STORAGE_KEY } from './authStorage';
+import { installWebCrypto } from './webCrypto';
 
 /**
  * 앱용 Supabase 클라이언트. 키는 publishable(anon) 키만 쓴다 — service_role 키는 절대 앱에 넣지 않는다.
  * 세션은 AsyncStorage 에 저장하고, OAuth 는 PKCE 로 code 를 직접 교환한다(URL 감지 끔).
  */
 export function createSupabaseClient(url: string, anonKey: string): SupabaseClient {
+  // createClient 전에: PKCE 를 S256 으로 만들게 한다
+  installWebCrypto();
   const client = createClient(url, anonKey, {
     auth: {
       storage: AsyncStorage,

@@ -43,7 +43,8 @@ export function useLeaveGuard(dirty: boolean) {
     const stay = () => window.history.pushState({ wuzuLeaveGuard: true }, '', window.location.href);
     stay();
     const onPop = () => {
-      if (allowed.current) return;
+      // 다른 화면(설정 등)에서 돌아와 표시해 둔 기록에 닿은 것은 이 화면을 떠나는 게 아니다
+      if (allowed.current || window.history.state?.wuzuLeaveGuard) return;
       stay();
       setPending(WEB_BACK);
     };
