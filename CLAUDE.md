@@ -32,7 +32,7 @@
 
 ## 서버
 
-- Supabase 프로젝트 `wuzu`(서울). 운영 DB 에 올린 마이그레이션: `20261027000001_core.sql`, `20261028000001_admin_login_lock.sql`, `20261029000001_member_auth.sql`(2026-10-30).
+- Supabase 프로젝트 `wuzu`(서울). 운영 DB 에 올린 마이그레이션: `20261027000001_core.sql`, `20261028000001_admin_login_lock.sql`, `20261029000001_member_auth.sql`(2026-10-30), `20261029000002_deletion_requests.sql`(2026-11-03 사용자 확인). pg_cron 탈퇴 확정 예약 걸림.
 - GitHub 비공개 저장소 `seongjuno56-droid/wuzu`, 원격 origin.
 - Vercel `wuzu-admin`(팀 sjport, Root Directory `admin`) https://wuzu-admin.vercel.app — Production 브랜치를 `main` 으로 바꾸라고 안내함(바꿨는지 미확인).
 
@@ -49,17 +49,17 @@
 - 검증: 앱 jest 413, 어드민 vitest 93 통과, tsc 0.
 - **브랜치는 실서버 확인을 마친 뒤 main 에 병합**하기로 함.
 
-**사용자 콘솔 설정 진행 (2026-10-30 기준)** — `docs/setup/app-login.md` 순서와 대응:
+**사용자 콘솔 설정 진행 (2026-11-03 기준)** — `docs/setup/app-login.md` 순서와 대응:
 
-- [x] 6번 SQL 첫 파일 `20261029000001_member_auth.sql` 실행
-- [ ] 6번 SQL 둘째 파일 `20261029000002_deletion_requests.sql` (클립보드로 줬음, 실행 여부 확인할 것)
-- [ ] 7번 pg_cron 켜기 → `supabase/manual/schedule_withdraw_finalize.sql` **한 번만** 실행
-- [ ] 4번 Email 공급자 끄기 (Allow new users to sign up 은 켜 둠)
-- [ ] 5번 Redirect URLs: `wuzu://auth/callback`, `exp://**`
-- [ ] 0번 Callback URL 복사
-- [ ] 2번 구글 OAuth(Web application) → Supabase Google
-- [ ] 3번 카카오: **비즈 앱 전환**(어썸피플즈 사업자등록번호), 이메일 선택 동의, Allow users without an email 켬
-- [ ] 1번 `.env.local`
+- [x] 0번 Callback URL 복사
+- [x] 2번 구글 OAuth(Web application) → Supabase Google
+- [x] 3번 카카오: **비즈 앱 전환**(어썸피플즈 사업자등록번호), 이메일 선택 동의, Allow users without an email 켬
+- [x] 4번 Email 공급자 끄기 (Allow new users to sign up 은 켜 둠)
+- [x] 5번 Redirect URLs: `wuzu://auth/callback`, `exp://**`
+- [x] 6번 SQL 두 파일 `20261029000001_member_auth.sql`, `20261029000002_deletion_requests.sql` 실행
+- [x] 7번 pg_cron 켜기 → `supabase/manual/schedule_withdraw_finalize.sql` 실행 (다시 실행하지 않는다)
+- [ ] 1번 `.env.local` — 사용자 PC 에만 있는 파일. 클라우드 세션(2026-11-03)에는 없어서 확인 못 함. PC 에서 두 키가 채워졌는지 확인할 것
+- [ ] **9번 Expo Go 카카오 로그인 테스트 ← 지금 여기** (그다음 구글)
 - [ ] 8번 Vercel Firewall POST /delete-account 제한
 - [ ] 10번 실서버 확인(가입 트리거, 탈퇴 확정과 auth.users 삭제, cron, /delete-account, 안드로이드 /auth/callback) → HTML 보고서. KOE205 가 나면 카카오 scopes 코드 수정.
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
