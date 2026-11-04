@@ -37,7 +37,7 @@
 
 - Supabase 프로젝트 `wuzu`(서울). 운영 DB 에 올린 마이그레이션: `20261027000001_core.sql`, `20261028000001_admin_login_lock.sql`, `20261029000001_member_auth.sql`(2026-10-30), `20261029000002_deletion_requests.sql`(2026-11-03 사용자 확인). pg_cron 탈퇴 확정 예약 걸림.
 - GitHub 비공개 저장소 `seongjuno56-droid/wuzu`, 원격 origin.
-- Vercel `wuzu-admin`(팀 sjport, Root Directory `admin`) https://wuzu-admin.vercel.app — Production 브랜치를 `main` 으로 바꾸라고 안내함(바꿨는지 미확인). Hobby 요금제라 Rate Limit 규칙은 1개. 운영 어드민 비밀번호는 2026-11-04 재설정함.
+- Vercel `wuzu-admin`(팀 sjport, Root Directory `admin`) https://wuzu-admin.vercel.app — Production 브랜치는 `main`(2026-11-04 변경 확인). Hobby 요금제라 Rate Limit 규칙은 1개. 운영 어드민 비밀번호는 2026-11-04 재설정함.
 
 ## 단계와 진행 상황
 
@@ -51,7 +51,7 @@
 - 보고서 https://claude.ai/artifact/RHPL6oj3CkbUMgwVtiWZGf
 - 검증: 앱 jest 426, 어드민 vitest 93 통과, tsc 0. SDK 58 업그레이드는 브랜치 `chore/expo-sdk-58`(아이폰 Expo Go 가 SDK 58 만 지원해서 올림).
 - 지금 작업 브랜치는 `chore/expo-sdk-58`(`feat/app-login` 에서 땀). 실서버 확인 후 함께 병합.
-- **브랜치는 실서버 확인을 마친 뒤 main 에 병합**하기로 함.
+- main 병합 완료(2026-11-04). 안드로이드와 EAS 빌드의 `wuzu://` 복귀는 출시 전에 확인할 것.
 
 **사용자 콘솔 설정 진행 (2026-11-03 기준)** — `docs/setup/app-login.md` 순서와 대응:
 
@@ -65,7 +65,7 @@
 - [x] 1번 `.env.local` (PC 는 2026-11-04 만듦. 노트북은 파일이 있는지 확인할 것)
 - [x] 9번 Expo Go 카카오·구글 로그인 (2026-11-04 아이폰, 터널, PKCE S256 적용 후 통과)
 - [x] 8번 Vercel Firewall: Hobby 라 규칙 1개뿐이어서 `form rate limit` 에 합침(/login, /delete-account + POST, 60초 5번). GET 은 막히지 않고 POST 6번째부터 429 확인(2026-11-04)
-- [x] 10번 실서버 확인(2026-11-04): 가입 트리거, 탈퇴 확정과 재가입, cron, /delete-account(미리보기 배포) 통과. 안드로이드 /auth/callback 은 안드로이드 폰이 없어 못 봄. **다음은 `chore/expo-sdk-58` 의 main 병합 결정**
+- [x] 10번 실서버 확인(2026-11-04): 가입 트리거, 탈퇴 확정과 재가입, cron, /delete-account(미리보기 배포) 통과. 안드로이드 /auth/callback 은 안드로이드 폰이 없어 못 봄. `main` 병합·운영 배포 완료(`6add700`), 운영 `/delete-account` 열림과 POST 제한 확인. **다음은 1-C**. 앱 전반 테스트(사진·음악·순서 바꾸기)는 사용자 확인 대기
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
 
 ### 미뤄 둔 것
