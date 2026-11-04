@@ -64,8 +64,8 @@
 - [x] 7번 pg_cron 켜기 → `supabase/manual/schedule_withdraw_finalize.sql` 실행 (다시 실행하지 않는다)
 - [x] 1번 `.env.local` (PC 는 2026-11-04 만듦. 노트북은 파일이 있는지 확인할 것)
 - [x] 9번 Expo Go 카카오·구글 로그인 (2026-11-04 아이폰, 터널, PKCE S256 적용 후 통과)
-- [ ] 8번 Vercel Firewall POST /delete-account 제한 ← 다음 차례
-- [ ] 10번 실서버 확인(가입 트리거, 탈퇴 확정과 auth.users 삭제, cron, /delete-account, 안드로이드 /auth/callback) → HTML 보고서. KOE205 가 나면 카카오 scopes 코드 수정.
+- [x] 8번 Vercel Firewall: Hobby 라 규칙 1개뿐이어서 `form rate limit` 에 합침(/login, /delete-account + POST, 60초 5번). GET 은 막히지 않고 POST 6번째부터 429 확인(2026-11-04)
+- [ ] 10번 실서버 확인(가입 트리거, 탈퇴 확정과 auth.users 삭제, cron, /delete-account, 안드로이드 /auth/callback) → HTML 보고서. KOE205 가 나면 카카오 scopes 코드 수정. ← 다음 차례. `/delete-account` 는 main 에 없어 운영 주소에서 /login 으로 넘어간다(병합 전에는 미리보기 배포로 확인).
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
 
 ### 미뤄 둔 것
