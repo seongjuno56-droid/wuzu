@@ -170,6 +170,30 @@ describe('본인 초대장 저장·조회', () => {
     expect(await list(db, a)).toEqual([]);
   });
 
+  it('1MB 를 넘는 초대장은 저장·수정 주문이 거부된다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const big = (n: number) => sample({ content: { theme: 'wedding', pad: 'x'.repeat(n) } });
+    const MB = 1024 * 1024;
+
+    // 새로 만들기
+    await expect(save(db, a, null, big(MB))).rejects.toThrow(/INVALID/);
+    expect(await list(db, a)).toEqual([]);
+
+    // 한도 안이면 되고, 고쳐 저장할 때도 같은 한도다
+    const ok = await save(db, a, null, big(MB - 2000));
+    await expect(save(db, a, ok.id, big(MB))).rejects.toThrow(/INVALID/);
+
+    // 활성화 중 수정 주문
+    const active = await newActive(db, a);
+    expect(await order(db, a, { kind: 'edit', invitation: { ...big(MB), id: active.id } })).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
+    expect((await get(db, a, active.id))?.content).toEqual(active.content);
+    expect((await order(db, a, { kind: 'edit', invitation: { ...big(MB - 2000), id: active.id } })).ok).toBe(true);
+  });
+
   it('목록은 내 초대장만 최근 수정순이다', async () => {
     const db = await newTestDb();
     const a = await member(db, 'A');

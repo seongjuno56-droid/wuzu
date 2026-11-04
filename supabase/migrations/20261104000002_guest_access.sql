@@ -9,7 +9,7 @@
 --   not_found    활성화 중이 아니거나(만료·숨김·작성 중·삭제) 대상이 없다. 어느 경우인지 구별해 주지 않는다
 --   closed       이 초대장이 그 항목을 받지 않는다(꺼 둠, 그런 항목이 없는 테마, 응답 마감)
 --   invalid      입력 검사 위반
---   rate_limited 초대장당 분당 30건, 또는 방명록·응답 각 5000건을 넘었다
+--   rate_limited 분당 30건(쓰기 칸·시도 칸 따로), 또는 방명록·응답 각 5000건을 넘었다
 --   wrong_password 방명록 비밀번호가 틀렸다
 
 -- 하객이 자기 응답을 다시 읽고 고칠 때 쓰는 토큰의 해시. 만든 사람이 직접 넣은 행은 null 이라 어떤 토큰으로도 닿지 못한다
@@ -19,11 +19,15 @@ alter table rsvp_responses add column guest_token_hash text;
 create index guestbook_entries_invitation_idx on guestbook_entries (invitation_id, created_at desc);
 create index rsvp_responses_invitation_idx on rsvp_responses (invitation_id, created_at desc);
 
--- 초대장당 지금 분의 쓰기 횟수. 초대장마다 한 행만 두어 쌓이지 않는다
+-- 초대장당 지금 분의 횟수. 칸마다 한 행만 두어 쌓이지 않는다.
+-- write: 새 글·새 응답. attempt: 비밀번호·토큰을 내미는 요청(방명록 삭제, 자기 응답 고치기).
+-- 칸을 나눠서 비밀번호를 맞히려는 시도가 다른 하객의 새 글을 막지 못하고, 도배가 자기 글 지우기를 막지 못한다
 create table guest_write_rate (
-  invitation_id uuid primary key references invitations(id) on delete cascade,
+  invitation_id uuid not null references invitations(id) on delete cascade,
+  bucket text not null check (bucket in ('write', 'attempt')),
   window_start timestamptz not null,
-  n int not null
+  n int not null,
+  primary key (invitation_id, bucket)
 );
 alter table guest_write_rate enable row level security;
 
@@ -56,6 +60,21 @@ as $$
   select char_length(p) + char_length(regexp_replace(p, '[^\U00010000-\U0010FFFF]', '', 'g'));
 $$;
 
+-- content·design 에서 하객에게 보일 부분만 남긴다. 늘 켜진 칸(테마 공통 값, 기본 정보, 일시·장소, 인사말, 오시는 길, 표지)과
+-- enabled 가 true 인 항목뿐이다. 칸 이름은 테마와 상관없이 OptionalSection·PageKey 와 같다(src/features/invitation/model.ts).
+-- 허용 목록이라 새 항목이 생겨도 저절로 나가지 않는다. 늘 켜진 항목이 새로 생기면 이 목록에 더한다.
+-- 화면은 pageOrder 로 켠 장만 그리고 BGM 도 enabled.bgm 을 먼저 보므로 빠진 칸을 읽지 않는다
+create function public.visible_invitation_part(p jsonb, p_enabled jsonb) returns jsonb
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(jsonb_object_agg(e.key, e.value), '{}'::jsonb)
+    from jsonb_each(p) e
+   where e.key in ('theme', 'cover', 'basic', 'ceremony', 'greeting', 'directions')
+      or p_enabled -> e.key = 'true'::jsonb;
+$$;
+
 -- 하객에게 주는 초대장. 앱 Invitation 중 화면에 쓰는 값만 허용 목록으로 고른다.
 -- 소유자·번호·방명록 확인 시각·입력 완료 표시·제작일은 내보내지 않는다. status·banned·expiresAt 은 화면의 screenStatus 가 읽는다
 create function public.invitation_guest_json(i public.invitations) returns jsonb
@@ -75,10 +94,10 @@ as $$
     'expiresAt', public.iso_utc(i.expires_at),
     'enabled', i.enabled,
     'order', i.page_order,
-    'content', i.content,
+    'content', public.visible_invitation_part(i.content, i.enabled),
     'viewMode', i.view_mode,
     'paletteId', i.palette_id,
-    'design', i.design
+    'design', public.visible_invitation_part(i.design, i.enabled)
   );
 $$;
 
@@ -147,7 +166,8 @@ as $$
 $$;
 
 -- 앱 validateRsvp + mock clean. 저장할 값을 돌려주고, 위반이면 null.
--- 받는 항목은 테마가 정한다. 받지 않는 칸은 길이 검사가 없으므로 입력을 버리고 기본값을 넣는다(도배로 저장량이 늘지 않게)
+-- 받는 항목은 테마가 정한다. 받지 않는 칸은 길이 검사가 없으므로 입력을 버리고 기본값을 넣는다(도배로 저장량이 늘지 않게).
+-- 정규식을 돌리기 전에 바이트 수로 거른다. 앞뒤 공백을 넉넉히 봐도 400바이트를 넘는 이름·소속·연락처는 없다
 create function public.clean_rsvp_input(p jsonb, p_theme text) returns jsonb
 language plpgsql
 immutable
@@ -169,6 +189,10 @@ begin
     return null;
   end if;
 
+  if octet_length(p ->> 'name') > 400 then
+    return null;
+  end if;
+
   v_attending := (p ->> 'attending')::boolean;
   v_name := public.js_trim(p ->> 'name');
   if v_name = '' or public.js_length(v_name) > 10 then
@@ -178,6 +202,9 @@ begin
   if p_theme = 'corporate' then
     if jsonb_typeof(p -> 'org') is distinct from 'string'
        or jsonb_typeof(p -> 'phone') is distinct from 'string' then
+      return null;
+    end if;
+    if octet_length(p ->> 'org') > 400 or octet_length(p ->> 'phone') > 400 then
       return null;
     end if;
     v_org := public.js_trim(p ->> 'org');
@@ -210,11 +237,13 @@ begin
 end;
 $$;
 
--- 이번 쓰기를 세고, 분당 한도 안이면 true. 세는 행을 잠그므로 같은 초대장의 하객 쓰기는 트랜잭션 끝까지 차례로 돈다.
--- 그래서 뒤따르는 5000건 검사도 동시 요청에 뚫리지 않고, 비밀번호 해시 계산도 초대장당 분당 30번을 넘지 않는다.
+-- 이번 요청을 세고, 분당 한도 안이면 true. 세는 행을 잠그므로 같은 칸의 요청은 트랜잭션 끝까지 차례로 돈다.
+-- 그래서 write 칸 뒤의 5000건 검사가 동시 요청에 뚫리지 않는다. 단 그 검사는 이 함수와 다른 문장이어야 한다:
+-- 한 문장 안이면 잠금을 기다리기 전의 스냅샷으로 세어 그사이 들어온 행을 놓친다.
+-- 비밀번호 해시 계산도 attempt 칸 덕분에 초대장당 분당 30번을 넘지 않는다.
 -- 예외를 던지지 않고 값으로 알리므로 횟수가 되돌려지지 않는다
 -- 부르는 쪽은 초대장 행을 먼저 for key share 로 잡는다. 초대장 삭제의 cascade 와 서로 기다리는 일을 막고, 숨김·기간 변경은 막지 않는다
-create function public.take_guest_write(p_id uuid) returns boolean
+create function public.take_guest_write(p_id uuid, p_bucket text) returns boolean
 language plpgsql
 volatile
 set search_path = ''
@@ -223,9 +252,9 @@ declare
   v_limit constant int := 30;
   v_window timestamptz := date_trunc('minute', now());
 begin
-  insert into public.guest_write_rate as t (invitation_id, window_start, n)
-  values (p_id, v_window, 1)
-  on conflict (invitation_id) do update
+  insert into public.guest_write_rate as t (invitation_id, bucket, window_start, n)
+  values (p_id, p_bucket, v_window, 1)
+  on conflict (invitation_id, bucket) do update
      set window_start = greatest(t.window_start, excluded.window_start),
          n = case when t.window_start < excluded.window_start then 1 else t.n + 1 end
    where t.window_start < excluded.window_start or t.n < v_limit;
@@ -235,6 +264,7 @@ $$;
 
 revoke execute on function public.js_trim(text) from public, anon, authenticated;
 revoke execute on function public.js_length(text) from public, anon, authenticated;
+revoke execute on function public.visible_invitation_part(jsonb, jsonb) from public, anon, authenticated;
 revoke execute on function public.invitation_guest_json(public.invitations) from public, anon, authenticated;
 revoke execute on function public.guestbook_entry_json(public.guestbook_entries) from public, anon, authenticated;
 revoke execute on function public.rsvp_response_json(public.rsvp_responses) from public, anon, authenticated;
@@ -242,7 +272,7 @@ revoke execute on function public.invitation_has_guestbook(public.invitations) f
 revoke execute on function public.invitation_takes_rsvp(public.invitations) from public, anon, authenticated;
 revoke execute on function public.rsvp_deadline_passed(text, timestamptz) from public, anon, authenticated;
 revoke execute on function public.clean_rsvp_input(jsonb, text) from public, anon, authenticated;
-revoke execute on function public.take_guest_write(uuid) from public, anon, authenticated;
+revoke execute on function public.take_guest_write(uuid, text) from public, anon, authenticated;
 
 -- ── 하객 RPC: 로그인 없이 부른다 ──
 
@@ -258,6 +288,10 @@ declare
   i public.invitations;
   v_status text;
 begin
+  -- slug 는 12자다. 주소로 들어오는 값이라 긴 값은 찾아보지 않는다
+  if octet_length(p_slug) > 64 then
+    return jsonb_build_object('state', 'not_found');
+  end if;
   select * into i from public.invitations where slug = p_slug;
   if not found then
     return jsonb_build_object('state', 'not_found');
@@ -272,20 +306,26 @@ begin
 end;
 $$;
 
--- 방명록 목록(최신순). 활성화 중이 아니거나 방명록을 껐으면 빈 배열이다
+-- 방명록 목록: 보이는 글 중 최신 200건(anon 이 반복해서 받아도 응답 크기가 일정하게).
+-- 활성화 중이 아니거나 방명록을 껐으면 빈 배열이다. 전체는 만든 사람의 owner_list_guestbook 으로 본다
 create function public.guest_list_guestbook(p_id uuid) returns jsonb
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select coalesce(jsonb_agg(public.guestbook_entry_json(e) order by e.created_at desc, e.id), '[]'::jsonb)
-    from public.invitations i
-    join public.guestbook_entries e on e.invitation_id = i.id
-   where i.id = p_id
-     and not e.hidden
-     and public.invitation_screen_status(i) = 'active'
-     and public.invitation_has_guestbook(i);
+  select coalesce(jsonb_agg(v.j order by v.created_at desc, v.id), '[]'::jsonb)
+    from (
+      select public.guestbook_entry_json(e) as j, e.created_at, e.id
+        from public.invitations i
+        join public.guestbook_entries e on e.invitation_id = i.id
+       where i.id = p_id
+         and not e.hidden
+         and public.invitation_screen_status(i) = 'active'
+         and public.invitation_has_guestbook(i)
+       order by e.created_at desc, e.id
+       limit 200
+    ) v;
 $$;
 
 -- 방명록 쓰기: {ok:true, entry} | {ok:false, reason}. 내용은 앱처럼 그대로 저장하고 이름만 다듬는다
@@ -298,7 +338,7 @@ declare
   v_cap constant int := 5000;
   i public.invitations;
   e public.guestbook_entries;
-  v_name text := public.js_trim(p_name);
+  v_name text;
 begin
   select * into i from public.invitations where id = p_id for key share;
   if not found or public.invitation_screen_status(i) <> 'active' then
@@ -308,14 +348,26 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'closed');
   end if;
 
-  if v_name is null or v_name = '' or public.js_length(v_name) > 10
-     or p_password is null or public.js_length(p_password) not between 4 and 20
-     or p_content is null or public.js_trim(p_content) = '' or public.js_length(p_content) > 300 then
+  -- 정규식을 돌리기 전에 바이트 수로 거른다. UTF-16 한 단위는 최대 3바이트라 비밀번호 20은 60, 내용 300은 900바이트를 넘지 않는다.
+  -- 이름은 앞뒤 공백을 다듬은 뒤의 길이를 보므로 넉넉히 400바이트까지 받는다
+  if p_name is null or octet_length(p_name) > 400
+     or p_password is null or octet_length(p_password) > 60
+     or p_content is null or octet_length(p_content) > 900 then
     return jsonb_build_object('ok', false, 'reason', 'invalid');
   end if;
 
-  if not public.take_guest_write(i.id)
-     or (select count(*) from public.guestbook_entries where invitation_id = i.id) >= v_cap then
+  v_name := public.js_trim(p_name);
+  if v_name = '' or public.js_length(v_name) > 10
+     or public.js_length(p_password) not between 4 and 20
+     or public.js_trim(p_content) = '' or public.js_length(p_content) > 300 then
+    return jsonb_build_object('ok', false, 'reason', 'invalid');
+  end if;
+
+  if not public.take_guest_write(i.id, 'write') then
+    return jsonb_build_object('ok', false, 'reason', 'rate_limited');
+  end if;
+  -- take_guest_write 의 잠금을 얻은 뒤의 스냅샷으로 세야 하므로 문장을 나눈다
+  if (select count(*) from public.guestbook_entries where invitation_id = i.id) >= v_cap then
     return jsonb_build_object('ok', false, 'reason', 'rate_limited');
   end if;
 
@@ -327,7 +379,7 @@ end;
 $$;
 
 -- 비밀번호로 방명록 지우기: {ok:true} | {ok:false, reason}.
--- 틀린 시도도 분당 한도에 넣어 4자리 비밀번호를 맞히는 시도를 늦춘다. 숨긴 글은 운영자 몫이라 없는 글로 본다
+-- 틀린 시도도 attempt 칸에 세어 4자리 비밀번호를 맞히는 시도를 늦춘다. 숨긴 글은 운영자 몫이라 없는 글로 본다
 create function public.guest_remove_guestbook(p_id uuid, p_entry uuid, p_password text) returns jsonb
 language plpgsql
 security definer
@@ -352,10 +404,10 @@ begin
   end if;
 
   -- 앱에서 쓸 수 없는 길이는 해시를 계산하지 않고 끝낸다
-  if p_password is null or public.js_length(p_password) not between 4 and 20 then
+  if p_password is null or octet_length(p_password) > 60 or public.js_length(p_password) not between 4 and 20 then
     return jsonb_build_object('ok', false, 'reason', 'wrong_password');
   end if;
-  if not public.take_guest_write(i.id) then
+  if not public.take_guest_write(i.id, 'attempt') then
     return jsonb_build_object('ok', false, 'reason', 'rate_limited');
   end if;
   if extensions.crypt(p_password, e.password_hash) <> e.password_hash then
@@ -396,11 +448,15 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'invalid');
   end if;
 
-  if not public.take_guest_write(i.id) then
-    return jsonb_build_object('ok', false, 'reason', 'rate_limited');
-  end if;
-
   if p_response is not null then
+    -- 발급한 토큰은 16진수 64자다. 길이가 다르면 맞을 수 없으니 세지도 않는다
+    if p_token is null or octet_length(p_token) <> 64 then
+      return jsonb_build_object('ok', false, 'reason', 'not_found');
+    end if;
+    -- 행 수가 늘지 않고 토큰을 내미는 요청이라 attempt 칸에 센다
+    if not public.take_guest_write(i.id, 'attempt') then
+      return jsonb_build_object('ok', false, 'reason', 'rate_limited');
+    end if;
     update public.rsvp_responses
        set name = v_clean ->> 'name',
            attending = (v_clean ->> 'attending')::boolean,
@@ -423,6 +479,10 @@ begin
     );
   end if;
 
+  if not public.take_guest_write(i.id, 'write') then
+    return jsonb_build_object('ok', false, 'reason', 'rate_limited');
+  end if;
+  -- take_guest_write 의 잠금을 얻은 뒤의 스냅샷으로 세야 하므로 문장을 나눈다
   if (select count(*) from public.rsvp_responses where invitation_id = i.id) >= v_cap then
     return jsonb_build_object('ok', false, 'reason', 'rate_limited');
   end if;
@@ -461,6 +521,7 @@ as $$
     join public.rsvp_responses r on r.invitation_id = i.id
    where i.id = p_id
      and r.id = p_response
+     and octet_length(p_token) = 64
      and r.guest_token_hash = encode(sha256(convert_to(p_token, 'UTF8')), 'hex')
      and public.invitation_screen_status(i) = 'active';
 $$;
@@ -519,25 +580,30 @@ as $$
      and i.owner_id = auth.uid();
 $$;
 
--- 명단에 직접 넣기. 마감·활성화와 상관없다. NOT_FOUND(없거나 남의 것) / INVALID
+-- 명단에 직접 넣기. 마감·활성화와 상관없다. NOT_FOUND(없거나 남의 것) / INVALID / RATE_LIMITED(5000건).
+-- 초대장 행을 for update 로 잠가 하객 쓰기(for key share)와 차례로 돌게 하고, 잠금을 얻은 뒤 다음 문장에서 센다
 create function public.owner_rsvp_add(p_id uuid, p_input jsonb) returns jsonb
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
+  v_cap constant int := 5000;
   p public.profiles := public.lock_my_profile();
   i public.invitations;
   r public.rsvp_responses;
   v_clean jsonb;
 begin
-  select * into i from public.invitations where id = p_id and owner_id = p.id;
+  select * into i from public.invitations where id = p_id and owner_id = p.id for update;
   if not found then
     raise exception 'NOT_FOUND';
   end if;
   v_clean := public.clean_rsvp_input(p_input, i.theme_id);
   if v_clean is null then
     raise exception 'INVALID';
+  end if;
+  if (select count(*) from public.rsvp_responses where invitation_id = i.id) >= v_cap then
+    raise exception 'RATE_LIMITED';
   end if;
   insert into public.rsvp_responses (invitation_id, name, attending, org, phone, companions, source)
   values (

@@ -145,6 +145,13 @@ const member = (db: Db, name = '회원') => addMember(db, { name });
 /** 지금 쓰기 창을 미래로 옮긴다. 테스트 도중 분이 바뀌어 횟수가 초기화되지 않게 */
 const freezeWindow = (db: Db, id: string) =>
   db.query(`update guest_write_rate set window_start = now() + interval '1 hour' where invitation_id = $1`, [id]);
+/** 분당 칸을 한도까지 채운다 */
+const fillBucket = (db: Db, id: string, bucket: 'write' | 'attempt') =>
+  db.query(
+    `insert into guest_write_rate(invitation_id, bucket, window_start, n) values ($1, $2, now() + interval '1 hour', 30)
+     on conflict (invitation_id, bucket) do update set window_start = excluded.window_start, n = 30`,
+    [id, bucket],
+  );
 
 describe('하객 읽기', () => {
   it('활성화 중 초대장만 내용을 준다. 작성 중·없는 주소·숨김·삭제는 not_found, 만료는 expired 이고 내용이 없다', async () => {
@@ -221,6 +228,87 @@ describe('하객 읽기', () => {
     expect(JSON.stringify(invitation)).not.toContain(a);
   });
 
+  it('꺼 둔 항목의 내용과 디자인은 하객에게 나가지 않고, 켠 항목은 그대로다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const fullContent = {
+      theme: 'wedding',
+      basic: { groom: { name: '신랑' } },
+      ceremony: { venue: '예식장' },
+      greeting: { content: '인사말' },
+      account: { message: '안내', groom: { bank: '우주은행', number: '110-999-888777' } },
+      gallery: { photos: ['r2://gallery-photo'] },
+      guestbook: { style: 1 },
+      ending: { content: '엔딩 비밀 문구' },
+      bgm: { uri: 'r2://secret-bgm', fileName: 'song.mp3' },
+    };
+    const design = {
+      cover: { mode: 'canvas', canvas: { text: '표지' } },
+      gallery: { mode: 'canvas', canvas: { text: '갤러리 디자인' } },
+      account: { mode: 'canvas', canvas: { text: '110-999-888777' } },
+      ending: { mode: 'canvas', canvas: { text: '엔딩 디자인' } },
+    };
+    const inv = await newActive(
+      db,
+      a,
+      sample({
+        content: fullContent,
+        design,
+        enabled: { account: false, gallery: true, guestbook: true, bgm: false },
+      }),
+    );
+    const { invitation } = await view(db, inv.slug);
+    const body = JSON.stringify(invitation);
+    expect(body).not.toContain('110-999-888777');
+    expect(body).not.toContain('우주은행');
+    expect(body).not.toContain('secret-bgm');
+    expect(body).not.toContain('엔딩 비밀 문구');
+    expect(body).not.toContain('엔딩 디자인');
+    expect(invitation!.content).toEqual({
+      theme: 'wedding',
+      basic: fullContent.basic,
+      ceremony: fullContent.ceremony,
+      greeting: fullContent.greeting,
+      gallery: fullContent.gallery,
+      guestbook: fullContent.guestbook,
+    });
+    expect(invitation!.design).toEqual({ cover: design.cover, gallery: design.gallery });
+
+    // 만든 사람의 저장본은 그대로다
+    const mine = await asMember(db, a, () =>
+      rpc<{ content: unknown; design: unknown }>(db, `get_my_invitation($1::uuid)`, [inv.id]),
+    );
+    expect(mine.content).toEqual(fullContent);
+    expect(mine.design).toEqual(design);
+
+    // 켜면 나간다
+    await db.query(`update invitations set enabled = '{"account": true}' where id = $1`, [inv.id]);
+    expect(JSON.stringify((await view(db, inv.slug)).invitation)).toContain('110-999-888777');
+  });
+
+  it('테마별로 켜고 끄는 항목이 모두 걸러지고 늘 켜진 항목은 남는다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const part = { x: 1 };
+    const themes: [string, string[], string[]][] = [
+      ['wedding', ['basic', 'ceremony', 'greeting'], ['account', 'gallery', 'guestbook', 'ending', 'bgm']],
+      ['dol', ['basic', 'ceremony', 'greeting'], ['profile', 'timeline', 'account', 'gallery', 'guestbook', 'ending', 'bgm']],
+      ['corporate', ['basic', 'ceremony', 'greeting', 'directions'], ['program', 'speakers', 'rsvp', 'contact', 'ending', 'bgm']],
+      ['meetup', ['basic', 'ceremony', 'greeting'], ['program', 'notices', 'gallery', 'guestbook', 'rsvp', 'account', 'ending', 'bgm']],
+    ];
+    for (const [theme, fixed, optional] of themes) {
+      const c: Record<string, unknown> = { theme };
+      for (const k of [...fixed, ...optional]) c[k] = part;
+      const off = await newActive(db, a, sample({ themeId: theme, content: c, enabled: {} }));
+      expect(Object.keys((await view(db, off.slug)).invitation!.content as object).sort(), theme).toEqual(
+        ['theme', ...fixed].sort(),
+      );
+      const enabled = Object.fromEntries(optional.map((k) => [k, true]));
+      const on = await newActive(db, a, sample({ themeId: theme, content: c, enabled }));
+      expect((await view(db, on.slug)).invitation!.content, theme).toEqual(c);
+    }
+  });
+
   it('정지·탈퇴 신청 회원의 초대장도 열린다', async () => {
     const db = await newTestDb();
     const a = await member(db);
@@ -263,6 +351,32 @@ describe('방명록', () => {
 
     // 숨긴 글은 비밀번호를 맞춰도 지울 수 없다
     expect(await removeEntry(db, inv.id, second.entry.id, '1234')).toEqual(FAIL('not_found'));
+  });
+
+  it('하객 목록은 보이는 글 중 최신 200건만, 만든 사람 목록은 전부 준다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const inv = await newActive(db, a);
+    await db.query(
+      `insert into guestbook_entries(invitation_id, name, password_hash, content, created_at)
+       select $1, '글' || g, 'x', '내용', now() - g * interval '1 minute' from generate_series(1, 201) g`,
+      [inv.id],
+    );
+    // 가장 최신이어도 숨긴 글은 200건에 들지 않는다
+    await db.query(
+      `insert into guestbook_entries(invitation_id, name, password_hash, content, hidden) values ($1, '숨김', 'x', '내용', true)`,
+      [inv.id],
+    );
+    const list = await listEntries(db, inv.id);
+    expect(list).toHaveLength(200);
+    expect(list[0].name).toBe('글1');
+    expect(list[199].name).toBe('글200');
+    expect(list.map((e) => e.name)).not.toContain('글201');
+    expect(list.map((e) => e.name)).not.toContain('숨김');
+
+    const all = await asMember(db, a, () => rpc<Entry[]>(db, `owner_list_guestbook($1::uuid)`, [inv.id]));
+    expect(all).toHaveLength(201);
+    expect(all[200].name).toBe('글201');
   });
 
   it('비밀번호가 틀리면 삭제 안 되고 wrong_password, 해시로 저장된다', async () => {
@@ -589,19 +703,15 @@ describe('작성 제한', () => {
     const inv = await newActive(db, a, meetup());
     const other = await newActive(db, a, meetup());
 
-    // 방명록과 응답이 같은 칸을 쓴다
-    const firstEntry = await addEntry(db, inv.id, '하객', '1234');
-    if (!firstEntry.ok) throw new Error('작성 실패');
+    // 방명록과 새 응답이 같은 칸을 쓴다
+    expect((await addEntry(db, inv.id, '하객', '1234')).ok).toBe(true);
     await freezeWindow(db, inv.id);
-    const firstResp = await okSubmit(db, inv.id);
-    for (let i = 2; i < 30; i++) {
+    for (let i = 1; i < 30; i++) {
       expect((await submit(db, inv.id, meetupInput())).ok, String(i)).toBe(true);
     }
     const rows = await count(db, 'rsvp_responses');
     expect(await submit(db, inv.id, meetupInput())).toEqual(limited);
     expect(await addEntry(db, inv.id)).toEqual(limited);
-    expect(await removeEntry(db, inv.id, firstEntry.entry.id, '1234')).toEqual(limited);
-    expect(await submit(db, inv.id, meetupInput(), firstResp.response.id, firstResp.token)).toEqual(limited);
     expect(await count(db, 'rsvp_responses')).toBe(rows);
     expect(await count(db, 'guestbook_entries')).toBe(1);
 
@@ -620,17 +730,96 @@ describe('작성 제한', () => {
     expect((await submit(db, inv.id, meetupInput())).ok).toBe(true);
   });
 
-  it('틀린 비밀번호도 쓰기로 센다(비밀번호 맞히기를 늦춘다)', async () => {
+  it('비밀번호·토큰 시도 칸이 차도 새 글과 새 응답은 된다', async () => {
     const db = await newTestDb();
     const a = await member(db);
-    const inv = await newActive(db, a);
+    const limited = FAIL('rate_limited');
+    const inv = await newActive(db, a, meetup());
     const added = await addEntry(db, inv.id, '하객', '1234');
+    const resp = await okSubmit(db, inv.id);
     if (!added.ok) throw new Error('작성 실패');
-    await freezeWindow(db, inv.id);
-    await db.query(`update guest_write_rate set n = 29 where invitation_id = $1`, [inv.id]);
+
+    await fillBucket(db, inv.id, 'attempt');
+    expect(await removeEntry(db, inv.id, added.entry.id, '1234')).toEqual(limited);
+    expect(await submit(db, inv.id, meetupInput({ name: '고침' }), resp.response.id, resp.token)).toEqual(limited);
+    expect(await count(db, 'guestbook_entries')).toBe(1);
+    expect((await getResponse(db, inv.id, resp.response.id, resp.token))?.name).toBe('김하객');
+
+    expect((await addEntry(db, inv.id)).ok).toBe(true);
+    expect((await submit(db, inv.id, meetupInput())).ok).toBe(true);
+  });
+
+  it('쓰기 칸이 차도 비밀번호 삭제와 자기 응답 고치기는 된다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const limited = FAIL('rate_limited');
+    const inv = await newActive(db, a, meetup());
+    const added = await addEntry(db, inv.id, '하객', '1234');
+    const resp = await okSubmit(db, inv.id);
+    if (!added.ok) throw new Error('작성 실패');
+
+    await fillBucket(db, inv.id, 'write');
+    expect(await addEntry(db, inv.id)).toEqual(limited);
+    expect(await submit(db, inv.id, meetupInput())).toEqual(limited);
+
+    expect((await submit(db, inv.id, meetupInput({ name: '고침' }), resp.response.id, resp.token)).ok).toBe(true);
+    expect(await removeEntry(db, inv.id, added.entry.id, '1234')).toEqual({ ok: true });
+  });
+
+  it('틀린 비밀번호·토큰도 시도 칸에 세어 30번째 뒤로는 rate_limited 다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const inv = await newActive(db, a, meetup());
+    const added = await addEntry(db, inv.id, '하객', '1234');
+    const resp = await okSubmit(db, inv.id);
+    if (!added.ok) throw new Error('작성 실패');
+
     expect(await removeEntry(db, inv.id, added.entry.id, '9999')).toEqual(FAIL('wrong_password'));
+    await freezeWindow(db, inv.id);
+    await db.query(`update guest_write_rate set n = 28 where invitation_id = $1 and bucket = 'attempt'`, [inv.id]);
+    expect(await removeEntry(db, inv.id, added.entry.id, '9999')).toEqual(FAIL('wrong_password'));
+    expect(await submit(db, inv.id, meetupInput({ name: '고침' }), resp.response.id, 'f'.repeat(64))).toEqual(FAIL('not_found'));
     expect(await removeEntry(db, inv.id, added.entry.id, '1234')).toEqual(FAIL('rate_limited'));
     expect(await count(db, 'guestbook_entries')).toBe(1);
+  });
+
+  it('아주 긴 입력은 오류 없이 invalid·not_found·wrong_password 로 끝난다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const inv = await newActive(db, a, meetup());
+    const corp = await newActive(db, a, corporate());
+    const added = await addEntry(db, inv.id, '하객', '1234');
+    if (!added.ok) throw new Error('작성 실패');
+    const huge = '가'.repeat(2_000_000);
+    const blank = '\u3000'.repeat(2_000_000);
+
+    // 없는 초대장: 입력을 다듬기 전에 끝난다
+    expect(await addEntry(db, OTHER_ID, huge, huge, huge)).toEqual(FAIL('not_found'));
+    expect(await removeEntry(db, OTHER_ID, added.entry.id, huge)).toEqual(FAIL('not_found'));
+    expect(await submit(db, OTHER_ID, meetupInput({ name: huge }))).toEqual(FAIL('not_found'));
+    expect(await view(db, huge)).toEqual({ state: 'not_found' });
+
+    for (const [name, password, text] of [
+      [huge, '1234', '내용'],
+      [blank, '1234', '내용'],
+      ['이름', huge, '내용'],
+      ['이름', '1234', huge],
+      ['이름', '1234', blank],
+    ]) {
+      expect(await addEntry(db, inv.id, name, password, text)).toEqual(FAIL('invalid'));
+    }
+    expect(await removeEntry(db, inv.id, added.entry.id, huge)).toEqual(FAIL('wrong_password'));
+    expect(await submit(db, inv.id, meetupInput({ name: huge }))).toEqual(FAIL('invalid'));
+    expect(await submit(db, inv.id, meetupInput({ name: blank }))).toEqual(FAIL('invalid'));
+    expect(await submit(db, corp.id, corporateInput({ org: huge }))).toEqual(FAIL('invalid'));
+    expect(await submit(db, corp.id, corporateInput({ phone: huge }))).toEqual(FAIL('invalid'));
+
+    const resp = await okSubmit(db, inv.id);
+    expect(await getResponse(db, inv.id, resp.response.id, huge)).toBeNull();
+    expect(await submit(db, inv.id, meetupInput(), resp.response.id, huge)).toEqual(FAIL('not_found'));
+
+    // 앱에서 허용되는 최대 길이는 그대로 된다
+    expect((await addEntry(db, inv.id, '😀'.repeat(5), '가'.repeat(20), '가'.repeat(300))).ok).toBe(true);
   });
 
   it('방명록·응답이 각 5000건이면 새 글은 rate_limited, 자기 응답 고치기와 삭제는 된다', async () => {
@@ -752,6 +941,26 @@ describe('본인 전용', () => {
     expect(await asMember(db, a, () => rpc<Response[]>(db, `owner_rsvp_list($1::uuid)`, [inv.id]))).toHaveLength(1);
   });
 
+  it('만든 사람이 직접 넣기도 5000건이면 RATE_LIMITED 이고, 지우면 다시 된다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const inv = await newActive(db, a, meetup());
+    await db.query(
+      `insert into rsvp_responses(invitation_id, name, attending, source)
+       select $1, '하객', true, 'guest' from generate_series(1, 4999)`,
+      [inv.id],
+    );
+    const add = () =>
+      asMember(db, a, () =>
+        rpc<Response>(db, `owner_rsvp_add($1::uuid, $2::jsonb)`, [inv.id, JSON.stringify(meetupInput())]),
+      );
+    const last = await add();
+    await expect(add()).rejects.toThrow(/RATE_LIMITED/);
+    expect(await count(db, 'rsvp_responses')).toBe(5000);
+    await asMember(db, a, () => rpc(db, `owner_rsvp_remove($1::uuid, $2::uuid)`, [inv.id, last.id]));
+    expect((await add()).source).toBe('manual');
+  });
+
   it('방명록 관리: 만든 사람만 비밀번호 없이 보고 지운다', async () => {
     const db = await newTestDb();
     const a = await member(db, 'A');
@@ -840,6 +1049,7 @@ const INTERNAL = [
   'invitation_guest_json',
   'guestbook_entry_json',
   'rsvp_response_json',
+  'visible_invitation_part',
   'invitation_has_guestbook',
   'invitation_takes_rsvp',
   'clean_rsvp_input',
@@ -890,7 +1100,7 @@ async function expectPermissions(db: Db, a: string): Promise<void> {
     `delete from rsvp_responses`,
     `delete from guest_write_rate`,
     `update rsvp_responses set name = 'x'`,
-    `insert into guest_write_rate(invitation_id, window_start, n) values ('${OTHER_ID}', now(), 0)`,
+    `insert into guest_write_rate(invitation_id, bucket, window_start, n) values ('${OTHER_ID}', 'write', now(), 0)`,
     `insert into guestbook_entries(invitation_id, name, password_hash, content) values ('${OTHER_ID}', 'x', 'x', 'x')`,
     `insert into rsvp_responses(invitation_id, name, attending, source) values ('${OTHER_ID}', 'x', true, 'guest')`,
   ]) {
@@ -898,7 +1108,7 @@ async function expectPermissions(db: Db, a: string): Promise<void> {
     await expect(asMember(db, a, () => db.query(sql)), sql).rejects.toThrow(/permission denied/);
   }
   // 내부 함수는 부를 수 없다
-  for (const call of [`take_guest_write('${OTHER_ID}')`, `js_trim('x')`, `clean_rsvp_input('{}', 'meetup')`]) {
+  for (const call of [`take_guest_write('${OTHER_ID}', 'write')`, `js_trim('x')`, `clean_rsvp_input('{}', 'meetup')`]) {
     await expect(asAnon(db, () => db.query(`select ${call}`)), call).rejects.toThrow(/permission denied/);
     await expect(asMember(db, a, () => db.query(`select ${call}`)), call).rejects.toThrow(/permission denied/);
   }

@@ -74,7 +74,8 @@ as $$
 $$;
 
 -- 앱이 보낸 초대장 내용이 표에 넣을 수 있는 모양인지. 이름은 앱 isValidInvitationName 과 같이 1~30자.
--- status·viewMode·enabled·order·design·completed 는 없으면 기본값으로 저장한다(옛 저장본 보정과 같다)
+-- status·viewMode·enabled·order·design·completed 는 없으면 기본값으로 저장한다(옛 저장본 보정과 같다).
+-- 파일은 R2 로 가고 여기에는 주소만 들어오므로 전체 1MB 를 넘지 않는다(저장 함수와 수정 주문이 모두 이 검사를 거친다)
 create function public.valid_invitation_data(p jsonb) returns boolean
 language sql
 immutable
@@ -82,6 +83,7 @@ set search_path = ''
 as $$
   select coalesce(
     jsonb_typeof(p) = 'object'
+    and octet_length(p::text) <= 1048576
     and p ->> 'themeId' in ('wedding', 'dol', 'corporate', 'meetup')
     and jsonb_typeof(p -> 'templateId') = 'string'
     and p ->> 'templateId' <> ''
