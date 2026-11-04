@@ -37,7 +37,7 @@
 
 - Supabase 프로젝트 `wuzu`(서울). 운영 DB 에 올린 마이그레이션: `20261027000001_core.sql`, `20261028000001_admin_login_lock.sql`, `20261029000001_member_auth.sql`(2026-10-30), `20261029000002_deletion_requests.sql`(2026-11-03 사용자 확인). pg_cron 탈퇴 확정 예약 걸림.
 - GitHub 비공개 저장소 `seongjuno56-droid/wuzu`, 원격 origin.
-- Vercel `wuzu-admin`(팀 sjport, Root Directory `admin`) https://wuzu-admin.vercel.app — Production 브랜치를 `main` 으로 바꾸라고 안내함(바꿨는지 미확인).
+- Vercel `wuzu-admin`(팀 sjport, Root Directory `admin`) https://wuzu-admin.vercel.app — Production 브랜치를 `main` 으로 바꾸라고 안내함(바꿨는지 미확인). Hobby 요금제라 Rate Limit 규칙은 1개. 운영 어드민 비밀번호는 2026-11-04 재설정함.
 
 ## 단계와 진행 상황
 
@@ -65,7 +65,7 @@
 - [x] 1번 `.env.local` (PC 는 2026-11-04 만듦. 노트북은 파일이 있는지 확인할 것)
 - [x] 9번 Expo Go 카카오·구글 로그인 (2026-11-04 아이폰, 터널, PKCE S256 적용 후 통과)
 - [x] 8번 Vercel Firewall: Hobby 라 규칙 1개뿐이어서 `form rate limit` 에 합침(/login, /delete-account + POST, 60초 5번). GET 은 막히지 않고 POST 6번째부터 429 확인(2026-11-04)
-- [ ] 10번 실서버 확인(가입 트리거, 탈퇴 확정과 auth.users 삭제, cron, /delete-account, 안드로이드 /auth/callback) → HTML 보고서. KOE205 가 나면 카카오 scopes 코드 수정. ← 다음 차례. `/delete-account` 는 main 에 없어 운영 주소에서 /login 으로 넘어간다(병합 전에는 미리보기 배포로 확인).
+- [x] 10번 실서버 확인(2026-11-04): 가입 트리거, 탈퇴 확정과 재가입, cron, /delete-account(미리보기 배포) 통과. 안드로이드 /auth/callback 은 안드로이드 폰이 없어 못 봄. **다음은 `chore/expo-sdk-58` 의 main 병합 결정**
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
 
 ### 미뤄 둔 것
