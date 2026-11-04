@@ -59,12 +59,12 @@
 - [x] 2번 구글 OAuth(Web application) → Supabase Google
 - [x] 3번 카카오: **비즈 앱 전환**(어썸피플즈 사업자등록번호), 이메일 선택 동의, Allow users without an email 켬
 - [x] 4번 Email 공급자 끄기 (Allow new users to sign up 은 켜 둠)
-- [x] 5번 Redirect URLs: `wuzu://auth/callback`, `exp://**`
+- [x] 5번 Redirect URLs: `wuzu://auth/callback`, `exp://**`, `exps://**`(터널은 exps 로 돌아온다)
 - [x] 6번 SQL 두 파일 `20261029000001_member_auth.sql`, `20261029000002_deletion_requests.sql` 실행
 - [x] 7번 pg_cron 켜기 → `supabase/manual/schedule_withdraw_finalize.sql` 실행 (다시 실행하지 않는다)
 - [x] 1번 `.env.local` (PC 는 2026-11-04 만듦. 노트북은 파일이 있는지 확인할 것)
-- [ ] **9번 Expo Go** — 카카오는 아이폰에서 통과(2026-11-04). 그 뒤 PKCE 를 S256 으로 바꿨으니(`webCrypto.ts`) **카카오를 다시 확인하고 구글 테스트**
-- [ ] 8번 Vercel Firewall POST /delete-account 제한
+- [x] 9번 Expo Go 카카오·구글 로그인 (2026-11-04 아이폰, 터널, PKCE S256 적용 후 통과)
+- [ ] 8번 Vercel Firewall POST /delete-account 제한 ← 다음 차례
 - [ ] 10번 실서버 확인(가입 트리거, 탈퇴 확정과 auth.users 삭제, cron, /delete-account, 안드로이드 /auth/callback) → HTML 보고서. KOE205 가 나면 카카오 scopes 코드 수정.
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
 
@@ -79,5 +79,6 @@
 ## 사용자 결정 모음
 
 - 가입 지급 50레터(2단계). 환불은 남은 레터 100%(7일·미사용 전액). 도메인은 새로 삼(이름 미정). 인앱결제 먼저, PG 는 나중. 운영자 5명 같은 권한.
+- 계정 통합(2026-11-04): Supabase 자동 통합 유지. 이메일이 같으면 한 계정, 다르면 계정 2개로 둔다. "이미 가입" 안내·직접 연결은 만들지 않는다. 가입 시 본인인증(CI)도 넣지 않는다. 2단계에서 레터 지급을 만들 때 무료 레터를 받을 때만 본인인증을 요구할지 다시 정한다(이메일이 다르면 50레터를 두 번 받을 수 있음).
 - 비용: 개발은 무료. 출시 때 Supabase Pro 월 25달러, Vercel Pro 월 20달러.
 - 픽처히어(`photobooth-map`)는 별도 프로젝트.
