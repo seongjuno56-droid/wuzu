@@ -185,7 +185,7 @@
 - [ ] **Step 1: 실패하는 테스트**: `제목의 <script>·따옴표·&·줄바꿈을 이스케이프한다`, `기존 head 뒤에 og:title·og:description·og:image·og:url·twitter:card 를 넣는다`, `이미지가 없으면 기본 이미지`, `없는 초대장·활성화 전·숨김은 초대장 정보를 넣지 않는 기본 태그`, `만료도 내용을 넣지 않는다`, `Supabase 호출이 실패해도 기본 태그로 정적 화면을 돌려준다`.
 - [ ] **Step 2:** FAIL 확인.
 - [ ] **Step 3:** 구현. `vercel.json` 의 rewrite 로 `/i/:slug` 를 `/api/guest-page?slug=:slug` 에 보낸다. Function 은 `guest_invitation` RPC 만 부르고 빌드된 `index.html`(`includeFiles` 로 포함)에 태그를 넣는다. `linkThumb`(`r2://`)는 공개 주소로 바꾼다. 응답에 짧은 캐시를 둔다.
-- [ ] **Step 4:** 공개 경로 제한: `/i/*`, `/privacy`, 정적 자산만. 다른 주소는 안내 페이지로 보낸다.
+- [ ] **Step 4:** `vercel.json` 에 `buildCommand` 와 `outputDirectory` 를 **둘 다** 넣는다. 하나라도 빠지면 저장소 파일이 공개될 수 있다. 공개 경로 제한: `/i/*`, `/privacy`, 정적 자산만. 다른 주소는 안내 페이지로 보낸다.
 - [ ] **Step 5:** `npm run build:guest-web` 으로 빌드하고, 하객 화면이 실제로 받는 JS·글꼴·이미지를 측정한다. LTE 제한 설정에서 표지까지 3초가 안 되면 번들 줄이기(샘플 사진 제외, 필요한 글꼴만, 경로 분리)를 하고 다시 측정한다. 수치를 설계 문서 "확인 결과" 절에 적는다.
 - [ ] **Step 6:** `docs/setup/guest-link.md` 에 Vercel 배포와 환경 변수를 더하고. 배포 뒤 카카오톡 카드에서 JPEG 800×400 이 잘리지 않는지 사용자와 확인하고, 커밋한다.
 
@@ -212,6 +212,6 @@
 **Files:** Modify `docs/setup/guest-link.md`, `CLAUDE.md`, 설계 문서
 
 - [ ] **Step 1:** 사용자가 마이그레이션 4개를 순서대로 실행하고 Edge Function 과 Vercel `wuzu-guest` 를 배포한다. SQL 은 클립보드로 준다.
-- [ ] **Step 2:** 설계 문서 10장의 8개 항목을 실제로 확인한다. 익명 호출은 publishable 키로 직접 시도해 결과를 남긴다.
+- [ ] **Step 2:** 설계 문서 10장의 8개 항목을 실제로 확인한다. 배포 주소에서 `/package.json`·`/CLAUDE.md` 같은 저장소 파일이 열리지 않는지, 아이폰에서 올린 사진의 실제 파일 형식이 WebP 인지(아니면 대체 결정 기록), `purge-media` 가 R2 파일을 실제로 지우는지도 본다. 익명 호출은 publishable 키로 직접 시도해 결과를 남긴다.
 - [ ] **Step 3:** 찾은 문제를 고치고 다시 확인한다. 안드로이드를 못 보면 못 봤다고 적는다.
 - [ ] **Step 4:** HTML 보고서를 낸다(개인정보 처리방침 수정 문구, 측정값, 못 본 것 포함). `CLAUDE.md` 진행 상황을 고치고 커밋·push 한다. main 병합은 사용자에게 묻는다.
