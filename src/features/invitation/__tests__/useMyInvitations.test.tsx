@@ -48,13 +48,21 @@ describe('useMyInvitations 새로고침 실패', () => {
     expect(toast).toHaveBeenCalledTimes(1);
   });
 
-  it('처음 불러오기가 실패하면 빈 목록으로 보이지 않고 불러오는 중(null)으로 남는다', async () => {
+  it('처음 불러오기가 실패하면 빈 목록이 아니라 failed 이고, 다시 부르면 풀린다', async () => {
     list.mockRejectedValueOnce(new Error('Network request failed'));
     const { seen, Probe } = mount();
     await act(async () => {
       create(<Probe />);
     });
     expect(seen.current?.list).toBeNull();
-    expect(toast).toHaveBeenCalledTimes(1);
+    expect(seen.current?.failed).toBe(true);
+    expect(toast).not.toHaveBeenCalled();
+
+    list.mockResolvedValueOnce([]);
+    await act(async () => {
+      await seen.current?.reload();
+    });
+    expect(seen.current?.list).toEqual([]);
+    expect(seen.current?.failed).toBe(false);
   });
 });

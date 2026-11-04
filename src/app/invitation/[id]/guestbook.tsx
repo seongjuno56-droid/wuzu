@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
 import { Header } from '../../../components/Header';
+import { LoadFailed } from '../../../components/LoadFailed';
 import { Screen } from '../../../components/Screen';
 import { toast } from '../../../components/Toast';
 import { Txt } from '../../../components/Txt';
@@ -26,7 +27,23 @@ export default function GuestbookManage() {
   // 들어올 때의 확인 시각 기준으로 '신규'를 보여준다 (보는 중에 사라지지 않게)
   const [seenAt, setSeenAt] = useState<string | undefined>(undefined);
 
-  // 실패하면 보이던 목록을 그대로 둔다
+  const [failed, setFailed] = useState(false);
+  const loaded = useRef(false);
+
+  // 처음 들어올 때: 확인 시각과 목록을 함께 읽는다. 하나라도 실패하면 모든 글이 신규로 보이지 않게 [다시 시도] 로
+  const open = useCallback(async () => {
+    try {
+      const inv = await invitationService.get(id);
+      const list = await invitationService.listGuestbook(id);
+      setSeenAt(inv?.guestbookSeenAt);
+      setEntries(list);
+      loaded.current = true;
+    } catch {
+      setFailed(true);
+    }
+  }, [id]);
+
+  // 삭제 뒤 새로고침: 실패하면 보이던 목록을 그대로 둔다
   const load = useCallback(async () => {
     try {
       setEntries(await invitationService.listGuestbook(id));
@@ -36,16 +53,12 @@ export default function GuestbookManage() {
   }, [id]);
 
   useEffect(() => {
-    invitationService
-      .get(id)
-      .then((inv) => setSeenAt(inv?.guestbookSeenAt))
-      .catch(() => {}) // 신규 표시만 빠진다
-      .then(load);
+    open();
     return () => {
-      // 다음에 신규 표시가 남을 뿐이라 실패해도 안내하지 않는다
-      invitationService.markGuestbookSeen(id, new Date().toISOString()).catch(() => {});
+      // 보지 못한 글을 확인한 것으로 만들지 않는다. 다음에 신규 표시가 남을 뿐이라 실패해도 안내하지 않는다
+      if (loaded.current) invitationService.markGuestbookSeen(id, new Date().toISOString()).catch(() => {});
     };
-  }, [id, load]);
+  }, [id, open]);
 
   const close = (
     <Header
@@ -61,7 +74,12 @@ export default function GuestbookManage() {
 
   return (
     <Screen header={close} background={colors.surface} contentStyle={styles.content}>
-      {entries === null ? (
+      {entries === null && failed ? (
+        <LoadFailed message="방명록을 불러오지 못했어요." onRetry={() => {
+            setFailed(false);
+            open();
+          }} />
+      ) : entries === null ? (
         <ActivityIndicator style={styles.loading} color={colors.inkSoft} />
       ) : entries.length === 0 ? (
         <View style={styles.empty}>
@@ -118,6 +136,9 @@ export default function GuestbookManage() {
               setRemoving(null);
               if (r === 'ok') {
                 toast('삭제가 완료되었습니다.');
+                load();
+              } else if (r === 'not_found') {
+                toast('이미 삭제된 글이에요.');
                 load();
               } else toast('삭제하지 못했어요.');
             },

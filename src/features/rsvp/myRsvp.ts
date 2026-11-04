@@ -41,6 +41,9 @@ export async function submitWithMyRsvp(
   const saved = await mine.get(args.invitationId);
   let r = await service.submit(saved ? { ...args, id: saved.id, token: saved.token } : args);
   if (!r.ok && r.reason === 'not_found' && saved) r = await service.submit(args);
-  if (r.ok) await mine.set(args.invitationId, { id: r.response.id, token: r.token ?? saved?.token ?? '' });
+  if (r.ok) {
+    // 응답은 이미 서버에 들어갔다. 기기 저장이 실패해도 실패로 돌리지 않는다(다시 보내면 응답이 겹친다)
+    await mine.set(args.invitationId, { id: r.response.id, token: r.token ?? saved?.token ?? '' }).catch(() => {});
+  }
   return r;
 }

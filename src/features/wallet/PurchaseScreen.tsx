@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
+import { LoadFailed } from '../../components/LoadFailed';
 import { Screen } from '../../components/Screen';
 import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
@@ -56,6 +57,8 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
   const balance = useWallet((s) => s.balance);
   const refresh = useWallet((s) => s.refresh);
   const [inv, setInv] = useState<Invitation | null | undefined>(undefined);
+  const [failed, setFailed] = useState(false);
+  const loaded = useRef(false);
   const [days, setDays] = useState<ExtendDays | 0>(0);
   const flow = usePurchaseFlow({
     onDone: () => {
@@ -64,15 +67,24 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
     },
   });
 
+  const load = useCallback(async () => {
+    setFailed(false);
+    try {
+      setInv(await invitationService.get(invitationId));
+      loaded.current = true;
+    } catch {
+      // 다시 읽기 실패는 보이던 내용을 두고 안내만 한다
+      if (loaded.current) toast('초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+      else setFailed(true);
+    }
+  }, [invitationId]);
+
   // 충전하고 돌아오면 잔액만 새로 읽고 선택값은 유지
   useFocusEffect(
     useCallback(() => {
       refresh();
-      invitationService
-        .get(invitationId)
-        .then(setInv)
-        .catch(() => toast('초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
-    }, [invitationId, refresh]),
+      load();
+    }, [load, refresh]),
   );
 
   const title = mode === 'activate' ? '초대장 활성화' : '기간 연장 구매';
@@ -91,7 +103,11 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
   if (inv === undefined) {
     return (
       <Screen header={close}>
-        <ActivityIndicator style={styles.loading} color={colors.inkSoft} />
+        {failed ? (
+          <LoadFailed message="초대장을 불러오지 못했어요." onRetry={load} />
+        ) : (
+          <ActivityIndicator style={styles.loading} color={colors.inkSoft} />
+        )}
       </Screen>
     );
   }

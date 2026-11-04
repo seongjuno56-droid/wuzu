@@ -74,6 +74,14 @@ describe('submitWithMyRsvp', () => {
     expect(await mine.get('i')).toEqual({ id: 'r1', token: 't1' });
   });
 
+  it('서버 제출 성공 뒤 기기 저장이 실패해도 성공을 돌려준다', async () => {
+    const { storage } = memory();
+    const mine = createMyRsvp({ ...storage, setItem: async () => Promise.reject(new Error('저장 실패')) });
+    const s = service({ ok: true, response, token: 'tok', created: true });
+    const r = await submitWithMyRsvp(mine, s, args);
+    expect(r.ok).toBe(true);
+  });
+
   it('저장값이 없으면 not_found 를 다시 내지 않는다', async () => {
     const mine = createMyRsvp(memory().storage);
     const s = service({ ok: false, reason: 'not_found' });

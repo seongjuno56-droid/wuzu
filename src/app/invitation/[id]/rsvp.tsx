@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
 import { Header } from '../../../components/Header';
+import { LoadFailed } from '../../../components/LoadFailed';
 import { Screen } from '../../../components/Screen';
 import { toast } from '../../../components/Toast';
 import { Txt } from '../../../components/Txt';
@@ -17,11 +18,22 @@ import { colors, radius, spacing } from '../../../theme';
 /** 참석 응답 명단 (만든 사람): 합계, 직접 넣기·고치기·지우기 (설계 6장) */
 export default function RsvpManage() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [inv, setInv] = useState<Invitation | null>(null);
+  const [inv, setInv] = useState<Invitation | null | undefined>(undefined);
+  const [failed, setFailed] = useState(false);
   const [rows, setRows] = useState<RsvpResponse[] | null>(null);
   const [editing, setEditing] = useState<RsvpResponse | 'new' | null>(null);
   const [removing, setRemoving] = useState<RsvpResponse | null>(null);
-  // 실패하면 보이던 명단을 그대로 둔다
+  // 처음 들어올 때: 초대장과 명단을 함께 읽는다. 테마를 모르면 폼 칸을 정할 수 없어 초대장이 없으면 추가·고치기를 열지 않는다
+  const open = useCallback(async () => {
+    try {
+      const i = await invitationService.get(id);
+      setInv(i);
+      if (i) setRows(await rsvpService.list(id));
+    } catch {
+      setFailed(true);
+    }
+  }, [id]);
+  // 쓰기 뒤 새로고침: 실패하면 보이던 명단을 그대로 둔다
   const load = useCallback(async () => {
     try {
       setRows(await rsvpService.list(id));
@@ -30,12 +42,8 @@ export default function RsvpManage() {
     }
   }, [id]);
   useEffect(() => {
-    invitationService
-      .get(id)
-      .then(setInv)
-      .catch(() => toast('초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'))
-      .then(load);
-  }, [id, load]);
+    open();
+  }, [open]);
   const themeId = inv?.themeId ?? 'corporate';
   const companions = rsvpFields(themeId).includes('companions');
   const totals = rsvpTotals(rows ?? []);
@@ -55,7 +63,16 @@ export default function RsvpManage() {
 
   return (
     <Screen header={header} background={colors.surface} contentStyle={styles.content}>
-      {rows === null ? (
+      {failed ? (
+        <LoadFailed message="명단을 불러오지 못했어요." onRetry={() => {
+            setFailed(false);
+            open();
+          }} />
+      ) : inv === null ? (
+        <View style={styles.empty}>
+          <Txt color={colors.muted}>초대장을 찾을 수 없어요.</Txt>
+        </View>
+      ) : rows === null ? (
         <ActivityIndicator style={styles.loading} color={colors.inkSoft} />
       ) : (
         <>
@@ -118,27 +135,29 @@ export default function RsvpManage() {
           )}
         </>
       )}
-      <RsvpFormModal
-        visible={!!editing}
-        themeId={themeId}
-        initial={initial}
-        title={editing === 'new' ? '응답 추가' : '응답 고치기'}
-        submitLabel={editing === 'new' ? '추가' : '고치기'}
-        onClose={() => setEditing(null)}
-        onSubmit={async (input) => {
-          try {
-            if (editing === 'new') await rsvpService.addManual(id, themeId, input);
-            else if (editing) await rsvpService.update(id, themeId, editing.id, input);
-          } catch (e) {
-            const message = e instanceof Error ? e.message : '';
-            if (message === 'INVALID') return 'invalid';
-            if (message === 'RATE_LIMITED') return 'rate_limited';
-            throw e; // 폼이 안내한다. 입력 내용은 그대로 둔다
-          }
-          await load();
-          return 'ok';
-        }}
-      />
+      {inv && (
+        <RsvpFormModal
+          visible={!!editing}
+          themeId={themeId}
+          initial={initial}
+          title={editing === 'new' ? '응답 추가' : '응답 고치기'}
+          submitLabel={editing === 'new' ? '추가' : '고치기'}
+          onClose={() => setEditing(null)}
+          onSubmit={async (input) => {
+            try {
+              if (editing === 'new') await rsvpService.addManual(id, themeId, input);
+              else if (editing) await rsvpService.update(id, themeId, editing.id, input);
+            } catch (e) {
+              const message = e instanceof Error ? e.message : '';
+              if (message === 'INVALID') return 'invalid';
+              if (message === 'RATE_LIMITED') return 'rate_limited';
+              throw e; // 폼이 안내한다. 입력 내용은 그대로 둔다
+            }
+            await load();
+            return 'ok';
+          }}
+        />
+      )}
       <AppModal
         visible={!!removing}
         title="삭제하시겠습니까?"

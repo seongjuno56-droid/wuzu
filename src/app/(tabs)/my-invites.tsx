@@ -7,6 +7,7 @@ import { AppModal } from '../../components/AppModal';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { LetterBadge } from '../../components/LetterBadge';
+import { LoadFailed } from '../../components/LoadFailed';
 import { Screen } from '../../components/Screen';
 import { SelectSheet } from '../../components/SelectSheet';
 import { toast } from '../../components/Toast';
@@ -45,7 +46,7 @@ function FilterButton({ label, onPress }: { label: string; onPress: () => void }
 
 export default function MyInvites() {
   const user = useSession((s) => s.user);
-  const { list, reload } = useMyInvitations();
+  const { list, failed, reload } = useMyInvitations();
   useLocale((s) => s.locale); // 연도 라벨이 언어를 따르도록
   const [filter, setFilter] = useState<InviteFilter>({ year: 'all', status: 'all' });
   const [sheet, setSheet] = useState<'year' | 'status' | null>(null);
@@ -145,7 +146,9 @@ export default function MyInvites() {
         <FilterButton label={filter.status === 'all' ? '상태' : STATUS_LABEL[filter.status]} onPress={() => setSheet('status')} />
       </View>
 
-      {list === null ? (
+      {list === null && failed ? (
+        <LoadFailed message="초대장 목록을 불러오지 못했어요." onRetry={reload} />
+      ) : list === null ? (
         <ActivityIndicator style={styles.loading} color={colors.inkSoft} />
       ) : shown.length === 0 ? (
         <View style={styles.empty}>

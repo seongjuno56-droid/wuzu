@@ -184,4 +184,10 @@ export const part4: Record<string, string> = {
   '지금은 응답할 수 없는 초대장이에요.': "You can't respond to this invitation right now.",
   '초대장 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't load your invitations. Please try again shortly.",
   '초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't load the invitation. Please try again shortly.",
+  '다시 시도': 'Try again',
+  '초대장 목록을 불러오지 못했어요.': "Couldn't load your invitations.",
+  '방명록을 불러오지 못했어요.': "Couldn't load the guestbook.",
+  '명단을 불러오지 못했어요.': "Couldn't load the list.",
+  '초대장을 불러오지 못했어요.': "Couldn't load the invitation.",
+  '이미 삭제된 글이에요.': 'This message was already deleted.',
 };

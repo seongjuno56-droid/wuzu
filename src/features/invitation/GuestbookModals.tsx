@@ -138,7 +138,7 @@ function AllSheet({ onClose, entries, isOwner, onRemove }: Omit<Props, 'view' | 
       return;
     }
     close();
-    toast('삭제가 완료되었습니다.');
+    toast(result === 'not_found' ? '이미 삭제된 글이에요.' : '삭제가 완료되었습니다.');
   };
 
   return (

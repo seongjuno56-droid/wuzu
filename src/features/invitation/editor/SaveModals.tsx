@@ -25,14 +25,18 @@ export function SaveNameModal(props: {
   }
   const valid = isValidInvitationName(name);
   const max = LIMITS.invitationName.max;
+  // 저장 중에 닫으면 편집을 이어 가다 저장 완료가 그 내용을 덮어쓴다. 끝날 때까지 닫지 않는다
+  const cancel = () => {
+    if (!saving) onCancel();
+  };
 
   return (
     <AppModal
       visible={visible}
       title={kind === 'final' ? '초대장 저장' : '초대장 임시저장'}
-      onDismiss={onCancel}
+      onDismiss={cancel}
       actions={[
-        { label: '취소', variant: 'outline', onPress: onCancel },
+        { label: '취소', variant: 'outline', onPress: cancel },
         { label: saving ? '저장 중…' : '저장', onPress: () => valid && !saving && onSave(name.trim()) },
       ]}
     >

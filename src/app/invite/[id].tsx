@@ -143,7 +143,8 @@ export default function InvitationScreen() {
             entry.id,
             isOwner && user ? { ownerId: user.id } : { password: password ?? '' },
           );
-          if (result === 'ok') await loadGuestbook();
+          // 이미 지워진 글도 목록에서 사라지게 새로 읽는다
+          if (result === 'ok' || result === 'not_found') await loadGuestbook();
           return result;
         }}
       />
@@ -166,6 +167,7 @@ export default function InvitationScreen() {
             setMine(r.response);
             // 하객 응답의 초대장에는 ownerId 가 없다 (빈 값)
             if (r.created && invitation.ownerId) {
+              // 응답은 이미 서버에 들어갔다. 알림은 부가 기능이라 실패해도 실패로 안내하지 않는다(다시 보내면 응답이 겹친다)
               await notificationService.add(
                 rsvpNotice({
                   name: r.response.name,
@@ -173,7 +175,7 @@ export default function InvitationScreen() {
                   ownerId: invitation.ownerId,
                   at: new Date().toISOString(),
                 }),
-              );
+              ).catch(() => {});
             }
             toast('응답을 보냈어요');
             return 'ok';
