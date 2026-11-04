@@ -1,10 +1,16 @@
 import { PGlite } from '@electric-sql/pglite';
+import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import { pgliteDb, type Db } from '../lib/db';
 import { migrate } from '../lib/migrate';
 
+/** 아무것도 올리지 않은 새 메모리 PGlite. 운영 Supabase 처럼 pgcrypto 를 쓸 수 있다 */
+export async function newEmptyDb(): Promise<Db> {
+  return pgliteDb(await PGlite.create({ extensions: { pgcrypto } }));
+}
+
 /** 테스트마다 새 메모리 PGlite 에 auth 흉내와 마이그레이션을 올린다 */
 export async function newTestDb(): Promise<Db> {
-  const db = pgliteDb(await PGlite.create());
+  const db = await newEmptyDb();
   await migrate(db, { withAuthStub: true });
   return db;
 }

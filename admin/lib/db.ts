@@ -121,7 +121,8 @@ async function openDb(): Promise<Db> {
   if (target.kind === 'pg') return pgPoolDb(createPgPool(target.url));
   // 로컬: admin/.pglite 파일 DB. 어드민은 admin/ 에서 실행한다
   const { PGlite } = await import('@electric-sql/pglite');
-  const pglite = await PGlite.create(path.join(process.cwd(), '.pglite'));
+  const { pgcrypto } = await import('@electric-sql/pglite/contrib/pgcrypto');
+  const pglite = await PGlite.create(path.join(process.cwd(), '.pglite'), { extensions: { pgcrypto } });
   const db = pgliteDb(pglite);
   await migrate(db, { withAuthStub: true });
   // 빈 로컬 DB 면 시드(운영자·회원·초대장·원장). seed → admins → db 로 돌아오므로 여기서 불러온다
