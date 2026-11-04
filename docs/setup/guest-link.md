@@ -15,8 +15,8 @@
 | Public Development URL (`https://pub-….r2.dev`) | 앱·하객 웹 환경 변수 | 됨 (공개 주소) |
 
 - R2 키는 **채팅, 저장소, 앱, `.env.local` 어디에도 넣지 않습니다.** 앱에 넣으면 앱을 받은 누구나 꺼내 볼 수 있습니다.
-- 비밀 값을 알려 달라는 단계는 없습니다. 끝나면 "넣었음" 이라고만 알려 주세요.
-- 실수로 밖에 나갔다면 그 토큰을 없애고 새로 만들어 바꿔 넣으면 됩니다.
+- 비밀 값을 알려 달라는 단계는 없습니다. 뒤 단계에서 값을 넣은 뒤 "넣었음" 이라고만 알려 주세요.
+- 실수로 밖에 나갔다면 그 토큰을 없애고 **(화면 확인)** 새로 만들어 바꿔 넣으면 됩니다.
 
 ## 1회차: Cloudflare R2
 
@@ -46,7 +46,7 @@
 
 8. **Create bucket** 을 누릅니다.
 9. 이름에 `wuzu-media` 를 넣습니다.
-10. **Location** 에서 **Asia-Pacific** (`apac`) 을 고릅니다.
+10. **Location** 은 기본값 **Automatic** 을 그대로 둡니다. 화면에는 **None** 으로 보일 수 있습니다 **(화면 확인)**. 지역 목록과 **Specify jurisdiction** 은 고르지 않습니다.
 11. 저장 등급(Storage Class) 칸이 보이면 **Standard** 로 둡니다 **(화면 확인)**. 무료 사용량은 Standard 에만 적용됩니다.
 12. 아래쪽 **Create bucket** 을 누릅니다.
 
@@ -76,13 +76,13 @@
 24. 버킷 범위를 특정 버킷으로 좁혀 `wuzu-media` 만 고릅니다 **(화면 확인)**.
 25. 만료 기간을 고르는 칸이 있으면 만료 없음(**Forever**)을 고릅니다 **(화면 확인)**. 만료되면 그날부터 사진 올리기가 멈춥니다.
 26. **Create Account API token** 을 누릅니다.
-27. **Access Key ID** 와 **Secret Access Key** 를 복사해 비밀번호 관리자나 저장소 밖 메모에 잠시 둡니다. **채팅에 붙이지 마세요.**
+27. **Access Key ID** 와 **Secret Access Key** 를 복사해 비밀번호 관리자에 잠시 둡니다. 비밀번호 관리자가 없으면 이 컴퓨터에만 있는 저장소 밖 메모 파일에 둡니다. **채팅에 붙이지 마세요. Secret Access Key 를 동기화되는 메모나 클라우드 메모에 두지 마세요.**
 28. Account ID 를 복사해 같은 곳에 둡니다. 검색(`Ctrl + K`)에 `Copy account ID` 를 입력해 고르면 복사됩니다. 안 되면 **Workers & Pages** → **Account Details** 의 **Account ID** 옆 복사 버튼을 누릅니다.
 
-- 27·28번 값은 뒤에 Supabase Edge Function 비밀값에 넣습니다. 넣는 순서는 그 단계가 준비되면 이 문서에 더합니다. 다 넣은 뒤 메모는 지웁니다.
-- Secret Access Key 를 잃어버리면 20번 화면에서 그 토큰을 없애고 21번부터 새로 만듭니다.
+- **Access Key ID**, **Secret Access Key**, **Account ID** 는 뒤에 Supabase Edge Function 비밀값에 넣습니다. 넣는 순서는 그 단계가 준비되면 이 문서에 더합니다. 다 넣은 뒤 임시로 적어 둔 값은 지웁니다.
+- Secret Access Key 를 잃어버리면 **R2** → **Overview** → **Account Details** → **API Tokens** → **Manage** 로 가서 그 토큰을 없앱니다 **(화면 확인)**. 그다음 같은 화면에서 **Create Account API token** 을 누르고, 권한 **Object Read & Write**, 버킷 `wuzu-media` 로 새로 만듭니다. Supabase Edge Function 비밀값에 이미 넣었다면 새 값으로 바꿔 넣습니다.
 
-**여기까지 하면 "1회차 됨" 과 18번 주소를 보내 주세요.**
+**여기까지 하면 "1회차 됨" 과 `https://pub-….r2.dev` 주소를 보내 주세요.**
 
 ## 2회차: Vercel `wuzu-guest`
 
@@ -109,7 +109,7 @@
 15. 빌드가 **실패(Error)** 로 끝나는 것을 확인합니다. **실패가 정상입니다.** 프로젝트는 만들어졌고 아무것도 공개되지 않았습니다.
 16. 앞으로 저장소에 push 할 때마다 같은 실패 알림이 올 수 있습니다. 하객 웹 코드가 들어갈 때까지 무시해도 됩니다.
 
-- 빌드가 **성공(Ready)** 으로 나오면 11번이 빠진 것입니다. 바로 **Settings** → **General** → **Pause Project** 를 누르고 Claude 에게 알려 주세요.
+- 빌드가 **성공(Ready)** 으로 나오면 11번이 빠진 것입니다. 바로 **Settings** → **General** → **Pause Project** 를 누릅니다. 창이 열리면 프로젝트 이름 `wuzu-guest` 를 입력하고 **Pause Project** 를 한 번 더 누른 뒤 Claude 에게 알려 주세요.
 
 ### 공개 범위 확인
 
@@ -140,4 +140,4 @@
 - Edge Function 배포와 R2 비밀값 입력
 - 마이그레이션 실행과 예약 작업
 - 환경 변수 (앱 `.env.local`, Vercel `wuzu-guest`)
-- `wuzu-guest` 실제 배포 (`vercel.json` 이 11번의 `exit 1` 을 대신합니다), 하객 주소 확인과 카카오톡 카드 확인
+- `wuzu-guest` 실제 배포 (`vercel.json` 이 2회차 11번의 `exit 1` 을 대신합니다), 하객 주소 확인과 카카오톡 카드 확인
