@@ -4,9 +4,9 @@
 
 **Goal:** 활성화한 초대장을 웹 링크로 공유하면 카카오톡에 썸네일이 나오고, 누르면 사진까지 든 초대장이 앱 없이 열린다.
 
-**Architecture:** 초대장·방명록·참석 응답은 Supabase 로 옮기고, 하객은 익명 RPC 로만 접근한다. 파일은 저장할 때 Edge Function 이 준 서명 주소로 R2 에 직접 올린다. 하객 웹은 Expo 웹 빌드를 Cloudflare Pages 에 올리고, `/i/<slug>` 의 Pages Function 이 미리보기 태그를 넣는다.
+**Architecture:** 초대장·방명록·참석 응답은 Supabase 로 옮기고, 하객은 익명 RPC 로만 접근한다. 파일은 저장할 때 Edge Function 이 준 서명 주소로 R2 에 직접 올린다. 하객 웹은 Expo 웹 빌드를 Vercel 새 프로젝트 `wuzu-guest` 에 올리고, `/i/<slug>` 를 Vercel Function 으로 돌려 미리보기 태그를 넣는다.
 
-**Tech Stack:** Expo SDK 58, expo-router, zustand, jest / Supabase Postgres, Edge Functions(Deno), pg_cron / Cloudflare R2, Pages Functions / 어드민 Next.js, vitest + PGlite
+**Tech Stack:** Expo SDK 58, expo-router, zustand, jest / Supabase Postgres, Edge Functions(Deno), pg_cron / Cloudflare R2, Vercel Functions / 어드민 Next.js, vitest + PGlite
 
 **Spec:** `docs/superpowers/specs/2026-11-04-guest-link-and-media-design.md`. 상위 설계 `2026-10-27-server-and-admin-design.md`.
 
@@ -18,7 +18,7 @@
 - SQL 은 사용자가 대시보드에서 실행한다. `Get-Content -Raw -Encoding UTF8 <파일> | Set-Clipboard` 로 넣어 준다. 운영 DB 변경, 비밀값 입력은 사용자가 한다.
 - 비밀값(R2 키, service_role)은 앱·저장소·채팅에 넣지 않는다. 앱에는 공개 값만: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_GUEST_WEB_URL`, `EXPO_PUBLIC_MEDIA_BASE_URL`.
 - 환경 변수가 없으면 지금처럼 mock 으로 돈다. 테스트는 mock 과 PGlite 로 한다.
-- 도메인은 이번 범위가 아니다. `pages.dev`·`r2.dev` 로 확인한다. 도메인이 바뀌어도 환경 변수만 고치면 되어야 한다.
+- 도메인은 이번 범위가 아니다. `vercel.app`·`r2.dev` 로 확인한다. 도메인이 바뀌어도 환경 변수만 고치면 되어야 한다.
 - 사진: WebP, 본 이미지 긴 변 1080px·썸네일 긴 변 400px. GIF 5MB, 동영상 15초·20MB. 링크 썸네일: 800×400 JPEG.
 - 하객 읽기·쓰기는 회원 표와 조인하지 않는다. 정지 회원의 초대장도 열린다.
 - slug 는 첫 활성화 때 발급하고 바뀌지 않는다. 작성 중·활성화 전에는 없다.
@@ -48,23 +48,20 @@
 | `src/features/invitation/linkThumb.ts` | 링크 썸네일 고르기·대체 |
 | `src/features/invitation/GuestInvitationScreen.tsx` | 하객 화면 공통 |
 | `src/app/i/[slug].tsx`, `src/app/privacy.tsx` | 공개 웹 경로 |
-| `web/functions/i/[slug].ts`, `web/functions/_lib/og.ts`, `web/_routes.json` | Pages Function |
+| `api/guest-page.ts`, `api/_lib/og.ts`, `vercel.json` (저장소 맨 위) | 하객 웹 Vercel 설정과 미리보기 Function |
 | `docs/setup/guest-link.md` | 사용자 설정 안내 |
 
 ---
 
-### Task 1: 미리 확인과 Cloudflare 설정
+### Task 1: 미리 확인과 R2·Vercel 설정
 
-구현이 달라질 수 있는 세 가지를 먼저 확인한다. 결과는 설계 문서 끝 "확인 결과" 절에 적는다.
+구현이 달라질 수 있는 두 가지를 먼저 확인한다. 결과는 설계 문서 끝 "확인 결과" 절에 적는다.
 
-**Files:** Create `docs/setup/guest-link.md`, Create `web/spike/` (확인 후 삭제), Modify 설계 문서
+**Files:** Create `docs/setup/guest-link.md`, Modify 설계 문서
 
-- [ ] **Step 1:** `docs/setup/guest-link.md` 에 Cloudflare 가입, R2 버킷 `wuzu-media` 생성, Public Development URL 켜기, R2 API 토큰, Pages 프로젝트 생성을 버튼 이름까지 적는다. 사이트별 회차로 나누고, 되돌릴 수 없는 설정을 강조한다.
-- [ ] **Step 2:** 사용자가 1회차를 마치면 Pages 전용 약관에서 무료 상업 이용을 확인한다. 막혀 있으면 멈추고 사용자에게 알린다.
-- [ ] **Step 3:** 아이폰 Expo Go 에서 `SaveFormat.WEBP` 저장을 시험한다. 실패하면 그 플랫폼은 JPEG 로 대체한다는 결정을 적는다.
-- [ ] **Step 4:** `/i/*` Function 을 작은 시험 프로젝트로 배포하고, 다음을 확인한다: 미리보기 태그를 카카오톡이 읽는지, WebP 가 아닌 JPEG 800×400 이 카드에 잘리지 않는지, Function 실패·한도 때 정적 화면으로 넘어갈 방법이 있는지.
-- [ ] **Step 5:** 한도를 넘었을 때 초대장이 열리게 할 수 없으면 대안(유료 전환, 봇 요청만 Function 처리)과 비용을 사용자에게 알리고 결정을 받는다.
-- [ ] **Step 6:** 시험 파일을 지우고 설정 안내·설계 문서를 커밋한다.
+- [ ] **Step 1:** `docs/setup/guest-link.md` 에 Cloudflare 가입, R2 버킷 `wuzu-media` 생성, Public Development URL 켜기, R2 API 토큰, Vercel 새 프로젝트 `wuzu-guest`(팀 sjport, 이 저장소, Root Directory 는 저장소 맨 위) 생성을 버튼 이름까지 적는다. 사이트별 회차로 나누고, 되돌릴 수 없는 설정을 강조한다.
+- [ ] **Step 2:** 아이폰 Expo Go 에서 `SaveFormat.WEBP` 저장을 시험한다. 실패하면 그 플랫폼은 JPEG 로 대체한다는 결정을 적는다.
+- [ ] **Step 3:** 설정 안내·설계 문서를 커밋한다. 카카오톡 카드 실제 확인은 Task 9·11 에서 한다.
 
 ### Task 2: 본인 초대장 서버
 
@@ -181,16 +178,16 @@
 
 ### Task 9: 공개 웹과 미리보기
 
-**Files:** Create `web/functions/i/[slug].ts`, `web/functions/_lib/og.ts`, `web/_routes.json`, `web/_redirects`, `web/functions/README.md`, `scripts/build-guest-web.mjs`, `assets/link-default.jpg`(800×400). Modify `package.json`, `app.json`. Test `src/services/__tests__/og.test.ts`
+**Files:** Create `api/guest-page.ts`, `api/_lib/og.ts`, `vercel.json`, `scripts/build-guest-web.mjs`, `assets/link-default.jpg`(800×400). Modify `package.json`, `app.json`. Test `src/services/__tests__/og.test.ts`
 
 **Interfaces:** Produces — `renderOg(html: string, meta: { title: string; description: string; image: string; url: string }): string`.
 
 - [ ] **Step 1: 실패하는 테스트**: `제목의 <script>·따옴표·&·줄바꿈을 이스케이프한다`, `기존 head 뒤에 og:title·og:description·og:image·og:url·twitter:card 를 넣는다`, `이미지가 없으면 기본 이미지`, `없는 초대장·활성화 전·숨김은 초대장 정보를 넣지 않는 기본 태그`, `만료도 내용을 넣지 않는다`, `Supabase 호출이 실패해도 기본 태그로 정적 화면을 돌려준다`.
 - [ ] **Step 2:** FAIL 확인.
-- [ ] **Step 3:** 구현. Function 은 `guest_invitation` RPC 만 부르고 정적 `index.html` 에 태그를 넣는다. `linkThumb`(`r2://`)는 공개 주소로 바꾼다. Task 1 결정대로 한도 동작을 처리한다.
+- [ ] **Step 3:** 구현. `vercel.json` 의 rewrite 로 `/i/:slug` 를 `/api/guest-page?slug=:slug` 에 보낸다. Function 은 `guest_invitation` RPC 만 부르고 빌드된 `index.html`(`includeFiles` 로 포함)에 태그를 넣는다. `linkThumb`(`r2://`)는 공개 주소로 바꾼다. 응답에 짧은 캐시를 둔다.
 - [ ] **Step 4:** 공개 경로 제한: `/i/*`, `/privacy`, 정적 자산만. 다른 주소는 안내 페이지로 보낸다.
 - [ ] **Step 5:** `npm run build:guest-web` 으로 빌드하고, 하객 화면이 실제로 받는 JS·글꼴·이미지를 측정한다. LTE 제한 설정에서 표지까지 3초가 안 되면 번들 줄이기(샘플 사진 제외, 필요한 글꼴만, 경로 분리)를 하고 다시 측정한다. 수치를 설계 문서 "확인 결과" 절에 적는다.
-- [ ] **Step 6:** `docs/setup/guest-link.md` 에 Pages 배포와 환경 변수를 더하고 커밋한다.
+- [ ] **Step 6:** `docs/setup/guest-link.md` 에 Vercel 배포와 환경 변수를 더하고. 배포 뒤 카카오톡 카드에서 JPEG 800×400 이 잘리지 않는지 사용자와 확인하고, 커밋한다.
 
 ### Task 10: 삭제와 어드민 제어, 파기 예약
 
@@ -214,7 +211,7 @@
 
 **Files:** Modify `docs/setup/guest-link.md`, `CLAUDE.md`, 설계 문서
 
-- [ ] **Step 1:** 사용자가 마이그레이션 4개를 순서대로 실행하고 함수·Pages 를 배포한다. SQL 은 클립보드로 준다.
+- [ ] **Step 1:** 사용자가 마이그레이션 4개를 순서대로 실행하고 Edge Function 과 Vercel `wuzu-guest` 를 배포한다. SQL 은 클립보드로 준다.
 - [ ] **Step 2:** 설계 문서 10장의 8개 항목을 실제로 확인한다. 익명 호출은 publishable 키로 직접 시도해 결과를 남긴다.
 - [ ] **Step 3:** 찾은 문제를 고치고 다시 확인한다. 안드로이드를 못 보면 못 봤다고 적는다.
 - [ ] **Step 4:** HTML 보고서를 낸다(개인정보 처리방침 수정 문구, 측정값, 못 본 것 포함). `CLAUDE.md` 진행 상황을 고치고 커밋·push 한다. main 병합은 사용자에게 묻는다.
