@@ -168,3 +168,13 @@ wuzu 의 핵심 가치는 만든 초대장을 사람들에게 보내는 것이�
 - 응답 토큰의 저장 방식.
 - 미리보기 설명 문구.
 - 작업 순서. 단, Cloudflare Function 한도 동작과 WebP 저장 가능 여부는 먼저 시험한다.
+
+## 확인 결과
+
+2026-11-04 Task 1 기록. 실기기 시험 없이 문서로 확인한 내용이다.
+
+- **WebP 저장**: `SaveFormat.WEBP` 는 Expo SDK 58 `expo-image-manipulator` 문서에 있지만 플랫폼별 동작은 미확인이다. 코드에서 WebP 저장이 실패하면 JPEG 로 대체하고, Task 11 에서 아이폰으로 확인한다.
+- **속도**: JS·글꼴·이미지 크기 (Task 9 측정 후 기록), LTE 표지 표시 시간 (Task 9 측정 후 기록).
+- **카카오톡 카드**: Task 9·11 에서 실제로 확인한다.
+- **Function 한도**: 11장의 Cloudflare Function 한도 시험은 하객 웹 호스팅이 Vercel 로 바뀌어 필요 없다.
+- **`wuzu-guest` 첫 배포**: 저장소 맨 위에 `build` 스크립트·`public`·`vercel.json` 이 없다. Vercel 문서상 Framework Preset 이 Other 이면 맨 위 폴더를 출력으로 삼으므로, 그대로 배포하면 저장소 파일이 공개될 수 있다. 그래서 설정 안내에서 Build Command 를 `exit 1` 로 덮어써 Task 9 전까지 빌드를 실패시킨다. Task 9 의 `vercel.json` 에는 `buildCommand` 와 `outputDirectory` 가 반드시 있어야 한다.
