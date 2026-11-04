@@ -24,15 +24,17 @@ export default function RsvpManage() {
   const [editing, setEditing] = useState<RsvpResponse | 'new' | null>(null);
   const [removing, setRemoving] = useState<RsvpResponse | null>(null);
   // 처음 들어올 때: 초대장과 명단을 함께 읽는다. 테마를 모르면 폼 칸을 정할 수 없어 초대장이 없으면 추가·고치기를 열지 않는다
-  const open = useCallback(async () => {
-    try {
-      const i = await invitationService.get(id);
-      setInv(i);
-      if (i) setRows(await rsvpService.list(id));
-    } catch {
-      setFailed(true);
-    }
-  }, [id]);
+  const open = useCallback(
+    () =>
+      invitationService
+        .get(id)
+        .then(async (i) => {
+          setInv(i);
+          if (i) setRows(await rsvpService.list(id));
+        })
+        .catch(() => setFailed(true)),
+    [id],
+  );
   // 쓰기 뒤 새로고침: 실패하면 보이던 명단을 그대로 둔다
   const load = useCallback(async () => {
     try {
@@ -64,10 +66,13 @@ export default function RsvpManage() {
   return (
     <Screen header={header} background={colors.surface} contentStyle={styles.content}>
       {failed ? (
-        <LoadFailed message="명단을 불러오지 못했어요." onRetry={() => {
+        <LoadFailed
+          message="명단을 불러오지 못했어요."
+          onRetry={() => {
             setFailed(false);
             open();
-          }} />
+          }}
+        />
       ) : inv === null ? (
         <View style={styles.empty}>
           <Txt color={colors.muted}>초대장을 찾을 수 없어요.</Txt>

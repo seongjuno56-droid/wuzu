@@ -31,17 +31,19 @@ export default function GuestbookManage() {
   const loaded = useRef(false);
 
   // 처음 들어올 때: 확인 시각과 목록을 함께 읽는다. 하나라도 실패하면 모든 글이 신규로 보이지 않게 [다시 시도] 로
-  const open = useCallback(async () => {
-    try {
-      const inv = await invitationService.get(id);
-      const list = await invitationService.listGuestbook(id);
-      setSeenAt(inv?.guestbookSeenAt);
-      setEntries(list);
-      loaded.current = true;
-    } catch {
-      setFailed(true);
-    }
-  }, [id]);
+  const open = useCallback(
+    () =>
+      invitationService
+        .get(id)
+        .then(async (inv) => {
+          const list = await invitationService.listGuestbook(id);
+          setSeenAt(inv?.guestbookSeenAt);
+          setEntries(list);
+          loaded.current = true;
+        })
+        .catch(() => setFailed(true)),
+    [id],
+  );
 
   // 삭제 뒤 새로고침: 실패하면 보이던 목록을 그대로 둔다
   const load = useCallback(async () => {
@@ -75,10 +77,13 @@ export default function GuestbookManage() {
   return (
     <Screen header={close} background={colors.surface} contentStyle={styles.content}>
       {entries === null && failed ? (
-        <LoadFailed message="방명록을 불러오지 못했어요." onRetry={() => {
+        <LoadFailed
+          message="방명록을 불러오지 못했어요."
+          onRetry={() => {
             setFailed(false);
             open();
-          }} />
+          }}
+        />
       ) : entries === null ? (
         <ActivityIndicator style={styles.loading} color={colors.inkSoft} />
       ) : entries.length === 0 ? (
