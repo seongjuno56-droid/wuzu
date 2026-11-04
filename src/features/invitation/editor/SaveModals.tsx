@@ -12,10 +12,12 @@ export function SaveNameModal(props: {
   kind: 'draft' | 'final';
   initialName: string;
   saving: boolean;
+  /** 파일을 올리는 동안의 진행 (올린 수 / 전체) */
+  progress?: { done: number; total: number } | null;
   onCancel: () => void;
   onSave: (name: string) => void;
 }) {
-  const { visible, kind, initialName, saving, onCancel, onSave } = props;
+  const { visible, kind, initialName, saving, progress, onCancel, onSave } = props;
   const [name, setName] = useState(initialName);
   // 모달이 열릴 때(또는 초기 이름이 바뀔 때) 입력값을 맞춘다
   const [synced, setSynced] = useState({ visible, initialName });
@@ -50,6 +52,11 @@ export function SaveNameModal(props: {
       <Txt variant="tiny" color={colors.faint} align="right">
         ({name.length}/{max})
       </Txt>
+      {saving && !!progress && (
+        <Txt variant="tiny" color={colors.muted} align="center">
+          {`사진을 올리는 중이에요 (${progress.done}/${progress.total})`}
+        </Txt>
+      )}
       {kind === 'final' && (
         <Txt variant="tiny" color={colors.muted} align="center">
           저장 후 나의 초대장에서 활성화하면 링크로 보낼 수 있어요.

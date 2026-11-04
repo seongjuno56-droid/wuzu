@@ -127,9 +127,9 @@ describe('문서 조작', () => {
 });
 
 describe('미디어 검사', () => {
-  it('GIF 10MB 초과 거부', () => {
-    expect(checkGif({ size: 10 * 1024 * 1024 })).toBeNull();
-    expect(checkGif({ size: 10 * 1024 * 1024 + 1 })).toBe('size');
+  it('GIF 5MB 초과 거부', () => {
+    expect(checkGif({ size: 5 * 1024 * 1024 })).toBeNull();
+    expect(checkGif({ size: 5 * 1024 * 1024 + 1 })).toBe('size');
   });
   it('동영상: 확장자 → 길이 → 용량 순으로 검사', () => {
     expect(checkVideo({ name: 'a.avi', size: 1, durationMs: 1000 })).toBe('extension');

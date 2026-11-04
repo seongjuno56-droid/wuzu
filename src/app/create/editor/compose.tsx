@@ -31,7 +31,8 @@ import { useDraft } from '../../../features/invitation/useDraft';
 import { EDIT_COST } from '../../../features/wallet/pricing';
 import { usePurchaseFlow } from '../../../features/wallet/usePurchaseFlow';
 import { useWallet } from '../../../features/wallet/useWallet';
-import { invitationService } from '../../../services';
+import { invitationService, mediaUploader } from '../../../services';
+import { MediaUploadError, saveWithMedia } from '../../../services/media/uploadDraftMedia';
 import { colors, radius, spacing } from '../../../theme';
 
 /**
@@ -58,6 +59,7 @@ export default function EditorCompose() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [saveKind, setSaveKind] = useState<'draft' | 'final' | null>(null);
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [saved, setSaved] = useState(false);
   const [incomplete, setIncomplete] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -110,12 +112,23 @@ export default function EditorCompose() {
   const save = async (name: string) => {
     setSaving(true);
     try {
-      const result = await invitationService.save({ ...draft, name, status: savedStatus(saveKind ?? 'draft') });
+      const result = await saveWithMedia(
+        { ...draft, name, status: savedStatus(saveKind ?? 'draft') },
+        {
+          save: (inv) => invitationService.save(inv),
+          upload: mediaUploader,
+          onId: (id) => useEditor.getState().setDraftId(id),
+          onProgress: (done, total) => setProgress({ done, total }),
+        },
+      );
       markSaved(result);
       setSaveKind(null);
       setSaved(true);
     } catch (e) {
-      if (e instanceof Error && e.message === 'PAID_EDIT_REQUIRED') {
+      if (e instanceof MediaUploadError) {
+        // 편집 내용은 그대로. 이미 올린 파일은 다시 올리지 않는다
+        toast('사진을 올리지 못했어요. 다시 시도해 주세요.');
+      } else if (e instanceof Error && e.message === 'PAID_EDIT_REQUIRED') {
         // 그사이 활성화된 초대장 — 최신 저장본을 기준으로 '수정(레터)' 모드로 바꾼다. 편집 내용은 그대로
         setSaveKind(null);
         const latest = await invitationService.get(draft.id).catch(() => null);
@@ -128,6 +141,7 @@ export default function EditorCompose() {
       }
     } finally {
       setSaving(false);
+      setProgress(null);
     }
   };
 
@@ -306,6 +320,7 @@ export default function EditorCompose() {
         kind={saveKind ?? 'draft'}
         initialName={draft.name}
         saving={saving}
+        progress={progress}
         onCancel={() => setSaveKind(null)}
         onSave={save}
       />

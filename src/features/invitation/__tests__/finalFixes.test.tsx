@@ -20,8 +20,8 @@ describe('최종 검토 지적', () => {
   });
   it('로고는 PNG 를 그대로 두고(투명 배경), 틀 안에 잘리지 않게 그린다', () => {
     expect(saveFormatFor({ mimeType: 'image/png', fileName: 'logo.png' }, true)).toBe('png');
-    expect(saveFormatFor({ mimeType: 'image/png', fileName: 'a.png' }, false)).toBe('jpeg');
-    expect(saveFormatFor({ mimeType: 'image/jpeg', fileName: 'a.jpg' }, true)).toBe('jpeg');
+    expect(saveFormatFor({ mimeType: 'image/png', fileName: 'a.png' }, false)).toBe('webp');
+    expect(saveFormatFor({ mimeType: 'image/jpeg', fileName: 'a.jpg' }, true)).toBe('webp');
     expect(photoFit('logo')).toBe('contain');
     expect(photoFit('coverPhoto')).toBe('cover');
   });

@@ -190,4 +190,7 @@ export const part4: Record<string, string> = {
   '명단을 불러오지 못했어요.': "Couldn't load the list.",
   '초대장을 불러오지 못했어요.': "Couldn't load the invitation.",
   '이미 삭제된 글이에요.': 'This message was already deleted.',
+  '사진을 올리지 못했어요. 다시 시도해 주세요.': "Couldn't upload your photos. Please try again.",
+  '사진을 올리고 있어요.': 'Uploading your photos.',
+  '사진을 올리는 중이에요 ({0}/{1})': 'Uploading photos ({0}/{1})',
 };

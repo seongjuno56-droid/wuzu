@@ -1,12 +1,10 @@
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
 import { toast } from '../../components/Toast';
+import { encodePhoto, PHOTO_MAX_SIDE } from '../invitation/media';
 import { IMAGE_EXTENSIONS } from '../invitation/model';
 import { checkGif, checkVideo, isGifFile, needsSessionUrl } from './model';
-
-const MAX_SIDE = 1280;
 
 export type PickedVisual = { kind: 'image' | 'gif'; uri: string; aspect: number };
 
@@ -16,19 +14,10 @@ export async function sessionUrl(uri: string): Promise<string> {
   return URL.createObjectURL(blob);
 }
 
-/** 사진 압축 저장: 긴 변 1280px. 투명 PNG 는 PNG 유지, 나머지는 JPEG 70% */
+/** 사진 압축 저장: 긴 변 1080px. 투명 PNG 는 PNG 유지, 나머지는 WebP. 변환하지 못하면 원본을 두고 올릴 때 다시 줄인다 */
 export async function storeImage(uri: string, opts: { width: number; height: number; png: boolean }): Promise<string> {
   try {
-    const ctx = ImageManipulator.manipulate(uri);
-    if (Math.max(opts.width, opts.height) > MAX_SIDE) {
-      ctx.resize(opts.width >= opts.height ? { width: MAX_SIDE } : { height: MAX_SIDE });
-    }
-    const ref = await ctx.renderAsync();
-    const web = Platform.OS === 'web';
-    const format = opts.png ? SaveFormat.PNG : SaveFormat.JPEG;
-    const result = await ref.saveAsync({ compress: 0.7, format, base64: web });
-    if (web && result.base64) return `data:image/${opts.png ? 'png' : 'jpeg'};base64,${result.base64}`;
-    return result.uri;
+    return await encodePhoto(uri, { maxSide: PHOTO_MAX_SIDE, format: opts.png ? 'png' : 'webp' });
   } catch {
     return uri;
   }
@@ -51,7 +40,7 @@ export async function pickCanvasVisual(): Promise<PickedVisual | null> {
 
   if (isGifFile({ name: a.fileName, mimeType: a.mimeType, uri: a.uri })) {
     if (checkGif({ size: a.fileSize })) {
-      toast('GIF는 10MB 이하로 올려주세요.');
+      toast('GIF는 5MB 이하로 올려주세요.');
       return null;
     }
     // GIF 는 압축하면 움직임이 사라지므로 그대로 둔다
@@ -68,7 +57,7 @@ export async function pickCanvasVisual(): Promise<PickedVisual | null> {
   return { kind: 'image', uri: await storeImage(a.uri, { width: a.width, height: a.height, png }), aspect };
 }
 
-/** 앨범에서 동영상 한 개 (15초·30MB·mp4/mov) */
+/** 앨범에서 동영상 한 개 (15초·20MB·mp4/mov) */
 export async function pickCanvasVideo(): Promise<{ uri: string; aspect: number; durationMs: number } | null> {
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsMultipleSelection: false });
   if (result.canceled || !result.assets.length) return null;
@@ -83,7 +72,7 @@ export async function pickCanvasVideo(): Promise<{ uri: string; aspect: number; 
     return null;
   }
   if (check === 'size') {
-    toast('30MB 이하로 올려주세요.');
+    toast('20MB 이하로 올려주세요.');
     return null;
   }
   const uri = needsSessionUrl('video', a.uri, Platform.OS) ? await sessionUrl(a.uri) : a.uri;

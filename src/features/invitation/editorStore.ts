@@ -45,6 +45,8 @@ interface EditorState {
   /** [템플릿 원래대로]: 형식으로 되돌림 */
   resetDesign: (page: PageKey) => void;
   markSaved: (saved: Invitation) => void;
+  /** 서버 id 만 받아 둔다(편집 내용은 그대로). 파일 올리기가 실패해도 다시 저장하면 같은 행을 고치도록 */
+  setDraftId: (id: string) => void;
 }
 
 /**
@@ -146,4 +148,6 @@ export const useEditor = create<EditorState>()((set, get) => ({
     }),
 
   markSaved: (saved) => set({ draft: saved, dirty: false, origin: saved }),
+
+  setDraftId: (id) => set((s) => (s.draft ? { draft: { ...s.draft, id } } : s)),
 }));

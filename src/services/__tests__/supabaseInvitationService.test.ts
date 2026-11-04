@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Invitation } from '../../features/invitation/model';
 import { createInvitation } from '../../features/invitation/themes';
-import { createSupabaseInvitationService } from '../supabase/supabaseInvitationService';
+import { createSupabaseInvitationService, SAVE_TIMEOUT_MS } from '../supabase/supabaseInvitationService';
 
 const UUID = '11111111-2222-4333-8444-555555555555';
 const ENTRY = '99999999-2222-4333-8444-555555555555';
@@ -37,6 +37,81 @@ describe('Supabase 초대장 서비스', () => {
     const { rpc, service } = fake({ save_my_invitation: { data: draft({ id: UUID }) } });
     await service.save(draft({ id: UUID }));
     expect(rpc.mock.calls[0][1]).toMatchObject({ p_id: UUID });
+  });
+
+  describe('파일 주소 경계', () => {
+    const saved = process.env.EXPO_PUBLIC_MEDIA_BASE_URL;
+    beforeEach(() => {
+      process.env.EXPO_PUBLIC_MEDIA_BASE_URL = 'https://media.example';
+    });
+    afterAll(() => {
+      process.env.EXPO_PUBLIC_MEDIA_BASE_URL = saved;
+    });
+    const meetup = (photo: string | null, linkThumb: string | null = null): Invitation => {
+      const inv = createInvitation({ id: UUID, ownerId: 'u1', themeId: 'meetup', templateId: 'meetup-1' });
+      const basic = (inv.content as never as { basic: object }).basic;
+      return { ...inv, linkThumb, content: { ...inv.content, basic: { ...basic, photo } } as Invitation['content'] };
+    };
+    const photoOf = (inv?: Invitation) => (inv?.content as never as { basic: { photo: string | null } }).basic.photo;
+
+    it('저장은 공개 주소를 r2 값으로 보내고, 돌려받은 값은 공개 주소로 바꾼다', async () => {
+      const ref = 'r2://invitations/a/b.webp';
+      const url = 'https://media.example/invitations/a/b.webp';
+      const { rpc, service } = fake({ save_my_invitation: { data: meetup(ref, 'r2://invitations/a/t.jpg') } });
+      const out = await service.save(meetup(url, 'https://media.example/invitations/a/t.jpg'));
+      const sent = rpc.mock.calls[0][1]!.p_data as Invitation;
+      expect(photoOf(sent)).toBe(ref);
+      expect(sent.linkThumb).toBe('r2://invitations/a/t.jpg');
+      expect(photoOf(out)).toBe(url);
+      expect(out.linkThumb).toBe('https://media.example/invitations/a/t.jpg');
+    });
+
+    it('목록·하나·이름 바꾸기·주문·하객 읽기 모두 공개 주소로 돌려준다', async () => {
+      const ref = meetup('r2://k.webp');
+      const url = 'https://media.example/k.webp';
+      const { service } = fake({
+        list_my_invitations: { data: [ref] },
+        get_my_invitation: { data: ref },
+        rename_my_invitation: { data: ref },
+        apply_invitation_order: { data: { ok: true, invitation: ref } },
+        guest_invitation: { data: { state: 'active', invitation: ref } },
+      });
+      expect(photoOf((await service.list('u1'))[0])).toBe(url);
+      expect(photoOf((await service.get(UUID))!)).toBe(url);
+      expect(photoOf(await service.rename(UUID, '새 이름'))).toBe(url);
+      const r = await service.applyOrder({ kind: 'activate', invitationId: UUID, extendDays: 0 });
+      expect(r.ok && photoOf(r.invitation)).toBe(url);
+      expect(photoOf((await service.getBySlug('s')).invitation)).toBe(url);
+    });
+
+    it('수정 주문도 r2 값으로 보낸다', async () => {
+      const { rpc, service } = fake({ apply_invitation_order: { data: { ok: true, invitation: meetup('r2://k.webp') } } });
+      await service.applyOrder({ kind: 'edit', invitation: meetup('https://media.example/k.webp') });
+      const p = rpc.mock.calls[0][1]!.p_order as { invitation: Invitation };
+      expect(photoOf(p.invitation)).toBe('r2://k.webp');
+    });
+
+    it('기기 주소는 저장에도 수정 주문에도 나가지 않는다', async () => {
+      const { rpc, service } = fake();
+      await expect(service.save(meetup('file:///a.webp'))).rejects.toThrow('LOCAL_MEDIA');
+      await expect(service.applyOrder({ kind: 'edit', invitation: meetup('data:image/jpeg;base64,AA') })).rejects.toThrow('LOCAL_MEDIA');
+      expect(rpc).not.toHaveBeenCalled();
+    });
+
+    it('저장·수정 요청이 멈추면 시간 제한으로 던진다', async () => {
+      jest.useFakeTimers();
+      try {
+        const rpc = jest.fn(() => new Promise(() => {}));
+        const service = createSupabaseInvitationService({ rpc } as unknown as SupabaseClient);
+        const a = expect(service.save(draft())).rejects.toThrow('TIMEOUT');
+        const b = expect(service.applyOrder({ kind: 'edit', invitation: draft({ id: UUID }) })).rejects.toThrow('TIMEOUT');
+        await jest.advanceTimersByTimeAsync(SAVE_TIMEOUT_MS);
+        await a;
+        await b;
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   it('PAID_EDIT_REQUIRED 를 그대로 던진다', async () => {

@@ -79,8 +79,8 @@
 27. **Access Key ID** 와 **Secret Access Key** 를 복사해 비밀번호 관리자에 잠시 둡니다. 비밀번호 관리자가 없으면 이 컴퓨터에만 있는 저장소 밖 메모 파일에 둡니다. **채팅에 붙이지 마세요. Secret Access Key 를 동기화되는 메모나 클라우드 메모에 두지 마세요.**
 28. Account ID 를 복사해 같은 곳에 둡니다. 검색(`Ctrl + K`)에 `Copy account ID` 를 입력해 고르면 복사됩니다. 안 되면 **Workers & Pages** → **Account Details** 의 **Account ID** 옆 복사 버튼을 누릅니다.
 
-- **Access Key ID**, **Secret Access Key**, **Account ID** 는 뒤에 Supabase Edge Function 비밀값에 넣습니다. 넣는 순서는 그 단계가 준비되면 이 문서에 더합니다. 다 넣은 뒤 임시로 적어 둔 값은 지웁니다.
-- Secret Access Key 를 잃어버리면 **R2** → **Overview** → **Account Details** → **API Tokens** → **Manage** 로 가서 그 토큰을 없앱니다 **(화면 확인)**. 그다음 같은 화면에서 **Create Account API token** 을 누르고, 권한 **Object Read & Write**, 버킷 `wuzu-media` 로 새로 만듭니다. Supabase Edge Function 비밀값에 이미 넣었다면 새 값으로 바꿔 넣습니다.
+- **Access Key ID**, **Secret Access Key**, **Account ID** 는 뒤에 Supabase Edge Function 비밀값에 넣습니다. 넣는 순서는 아래 **3회차** 에 있습니다. 다 넣은 뒤 임시로 적어 둔 값은 지웁니다.
+- Secret Access Key 를 잃어버리면 **R2** → **Overview** → **Account Details** → **API Tokens** → **Manage** 로 가서 그 토큰을 없앱니다 **(화면 확인)**. 그다음 같은 화면에서 **Create Account API token** 을 누르고, 이름 `wuzu-supabase`, 권한 **Object Read & Write**, 버킷 `wuzu-media`, 만료 없음(**Forever**)으로 새로 만듭니다. 새 토큰은 **Access Key ID 와 Secret Access Key 가 둘 다 새 값입니다.** Supabase Edge Function 비밀값에 이미 넣었다면 `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` 두 개를 모두 바꿔 넣습니다.
 
 **여기까지 하면 "1회차 됨" 과 `https://pub-….r2.dev` 주소를 보내 주세요.**
 
@@ -118,6 +118,65 @@
 
 **여기까지 하면 "2회차 됨" 이라고 보내 주세요.**
 
+## 3회차: 파일 올리기 함수 (Supabase Edge Function)
+
+앱이 사진을 R2 에 올릴 때 쓰는 서명 주소를 내주는 함수 `sign-upload` 를 올립니다. 1회차를 끝낸 뒤에 합니다.
+
+> **순서를 지키세요.** 표(마이그레이션) → 비밀값 → 함수 배포 → 앱 환경 변수 순서입니다. 표가 없으면 서명이 모두 실패합니다.
+
+### 표 만들기
+
+1. Supabase 대시보드에서 프로젝트 `wuzu` 를 엽니다.
+2. 왼쪽 메뉴 **SQL Editor** 를 누릅니다.
+3. Claude 가 클립보드에 넣어 준 `supabase/migrations/20261104000003_media_files.sql` 내용을 붙여 넣습니다. **앞 번호 파일(`20261104000001`, `20261104000002`)을 먼저 실행해야 합니다.**
+4. **Run** 을 누릅니다. **한 번만** 실행합니다. 다시 실행하면 "이미 있다" 오류가 납니다.
+
+### 비밀값 넣기
+
+> 이 값들은 **이 화면에만** 넣습니다. 채팅, 저장소, 앱, `.env.local` 에 넣지 않습니다.
+
+5. 왼쪽 메뉴 **Edge Functions** → **Secrets** 를 누릅니다. (주소: `supabase.com/dashboard/project/_/functions/secrets`)
+6. **Add new secrets** 칸의 **Key**, **Value** 에 아래 네 줄을 넣습니다. 한 줄을 넣고 **Add another** 를 누르면 다음 줄이 생깁니다.
+
+| Key | Value |
+|---|---|
+| `R2_ACCOUNT_ID` | 1회차 28번의 Account ID |
+| `R2_ACCESS_KEY_ID` | 1회차 27번의 Access Key ID |
+| `R2_SECRET_ACCESS_KEY` | 1회차 27번의 Secret Access Key |
+| `R2_BUCKET` | `wuzu-media` |
+
+7. **Save** 를 누릅니다.
+8. 임시로 적어 둔 값을 지웁니다. Secret Access Key 를 다시 볼 수는 없습니다. 잃어버리면 1회차 맨 아래 안내대로 토큰을 새로 만듭니다.
+
+### 함수 배포
+
+컴퓨터의 PowerShell 에서 합니다. 저장소 폴더(`invite app`)에서 실행합니다.
+
+9. `npx supabase login` 을 실행합니다. 브라우저가 열리면 로그인하고 승인합니다.
+10. 프로젝트 ID 를 복사합니다. Supabase 대시보드 **Project Settings** → **General** 의 **Project ID** 입니다 **(화면 확인)**.
+11. 아래 명령을 실행합니다. `<프로젝트 ID>` 를 10번 값으로 바꿉니다.
+
+```powershell
+npx supabase functions deploy sign-upload --no-verify-jwt --project-ref <프로젝트 ID>
+```
+
+- `--no-verify-jwt` 를 빠뜨리지 마세요. 함수가 로그인을 직접 확인하므로 앞단 검사를 끕니다. 로그인하지 않은 요청은 함수가 401 로 거절합니다.
+- Docker 가 없다는 오류가 나면 끝에 `--use-api` 를 붙여 다시 실행합니다.
+
+12. 대시보드 **Edge Functions** 목록에 `sign-upload` 가 보이는지 확인합니다.
+
+### 앱 환경 변수
+
+13. 앱 폴더의 `.env.local` 에 한 줄을 더합니다. 값은 1회차 18번의 공개 주소입니다. 비밀 값이 아닙니다.
+
+```
+EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
+```
+
+14. 개발 서버를 켜 둔 상태였다면 껐다 켭니다. 환경 변수는 시작할 때 읽습니다.
+
+**여기까지 하면 "3회차 됨" 이라고 보내 주세요.**
+
 ## 실제 하객에게 링크를 보내기 전에: Hobby → Pro
 
 > **꼭 해야 함.** 개발 중에는 무료 Hobby 로 둡니다. **실제 하객에게 링크가 나가기 전에** 팀 `sjport` 를 Pro 로 올립니다.
@@ -137,7 +196,6 @@
 
 아래는 해당 코드가 준비되면 이 문서에 더합니다. 지금은 할 일이 없습니다.
 
-- Edge Function 배포와 R2 비밀값 입력
-- 마이그레이션 실행과 예약 작업
-- 환경 변수 (앱 `.env.local`, Vercel `wuzu-guest`)
+- 나머지 마이그레이션 실행과 예약 작업, 파일 삭제 함수 `purge-media`
+- 환경 변수 (앱 `.env.local` 의 나머지, Vercel `wuzu-guest`)
 - `wuzu-guest` 실제 배포 (`vercel.json` 이 2회차 11번의 `exit 1` 을 대신합니다), 하객 주소 확인과 카카오톡 카드 확인

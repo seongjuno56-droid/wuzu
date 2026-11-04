@@ -76,5 +76,5 @@ export async function fromPasteEvent(e: ClipboardEvent): Promise<PasteResult> {
 export const PASTE_MESSAGE = {
   empty: '붙여넣을 내용이 없어요.',
   unsupported: 'Ctrl+V로 붙여넣어 주세요.',
-  tooLarge: 'GIF는 10MB 이하로 올려주세요.',
+  tooLarge: 'GIF는 5MB 이하로 올려주세요.',
 } as const;

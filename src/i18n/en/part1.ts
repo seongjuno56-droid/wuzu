@@ -269,7 +269,7 @@ export const part1: Record<string, string> = {
   '2026년 12월 5일 토요일 저녁 7시': 'Saturday, December 5, 2026 at 7 PM',
   '2026년 12월 5일 토요일, 저녁 7시': 'Saturday, December 5, 2026, 7 PM',
   '2단': '2 columns',
-  '30MB 이하로 올려주세요.': 'Please upload a file of 30MB or less.',
+  '20MB 이하로 올려주세요.': 'Please upload a file of 20MB or less.',
   '3단': '3 columns',
   '3층 그랜드볼룸': '3F Grand Ballroom',
   '3층, 그랜드 홀': '3F, Grand Hall',
@@ -278,7 +278,7 @@ export const part1: Record<string, string> = {
   'BGM 선택': 'Choose BGM',
   'BGM 설정': 'Background music',
   'Ctrl+V로 붙여넣어 주세요.': 'Please paste with Ctrl+V.',
-  'GIF는 10MB 이하로 올려주세요.': 'GIFs must be 10MB or less.',
+  'GIF는 5MB 이하로 올려주세요.': 'GIFs must be 5MB or less.',
   'GIF는 3개까지 넣을 수 있어요.': 'You can add up to 3 GIFs.',
   "Google Play 결제로 충전한 레터 구매내역은 'Google Play 스토어 > 계정 > 결제 및 정기 결제 > 예산 및 기록'에서 확인이 가능합니다.":
     "Letters bought through Google Play can be found in 'Google Play Store > Account > Payments & subscriptions > Budget & history'.",

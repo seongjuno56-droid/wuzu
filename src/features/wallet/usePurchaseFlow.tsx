@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 
 import { AppModal } from '../../components/AppModal';
 import { toast } from '../../components/Toast';
-import { SpendOrder, walletService } from '../../services';
+import { mediaUploader, SpendOrder, walletService } from '../../services';
 import { useSession } from '../../store/session';
 import type { Invitation } from '../invitation/model';
 import { confirmWithBiometrics } from './confirm';
@@ -20,6 +20,7 @@ export function usePurchaseFlow({ onDone }: { onDone: (invitation: Invitation) =
   const [confirm, setConfirm] = useState<{ order: SpendOrder; title: string; message?: string } | null>(null);
   const [lacking, setLacking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
 
   const running = useRef(false);
 
@@ -33,9 +34,25 @@ export function usePurchaseFlow({ onDone }: { onDone: (invitation: Invitation) =
         toast('인증이 취소되었어요.');
         return;
       }
+      let target = order;
+      if (order.kind === 'edit' && mediaUploader) {
+        // 레터를 쓰기 전에 파일부터 올린다. 실패하면 차감도 저장도 없고 편집 내용은 그대로다
+        setUploading({ done: 0, total: 0 });
+        try {
+          target = {
+            kind: 'edit',
+            invitation: await mediaUploader(order.invitation, (done, total) => setUploading({ done, total })),
+          };
+        } catch {
+          toast('사진을 올리지 못했어요. 다시 시도해 주세요.');
+          return;
+        } finally {
+          setUploading(null);
+        }
+      }
       setBusy(true);
       try {
-        const r = await walletService.spend(userId, order);
+        const r = await walletService.spend(userId, target);
         if (r.ok) {
           useWallet.getState().set(r.balance);
           done = r.invitation;
@@ -68,6 +85,12 @@ export function usePurchaseFlow({ onDone }: { onDone: (invitation: Invitation) =
 
   const modals = (
     <>
+      <AppModal
+        visible={!!uploading}
+        title="사진을 올리고 있어요."
+        message={uploading?.total ? `${uploading.done}/${uploading.total}` : undefined}
+        actions={[]}
+      />
       <AppModal
         visible={!!confirm}
         title={confirm?.title}

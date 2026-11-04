@@ -6,8 +6,10 @@ import { createMockNotificationService } from './mock/mockNotificationService';
 import { createMockPaymentService } from './mock/mockPaymentService';
 import { createMockRsvpService } from './mock/mockRsvpService';
 import { createMockWalletService } from './mock/mockWalletService';
+import type { MediaUploader } from './media/uploadDraftMedia';
 import { clearAuthStorage } from './supabase/authStorage';
 import { createSupabaseClient } from './supabase/client';
+import { createMediaUploader } from './supabase/mediaUploader';
 import { createSupabaseAuthService } from './supabase/supabaseAuthService';
 import { createSupabaseInvitationService } from './supabase/supabaseInvitationService';
 import { createSupabaseRsvpService } from './supabase/supabaseRsvpService';
@@ -33,6 +35,8 @@ export const invitationService: InvitationService = supabase
 export const rsvpService: RsvpService = supabase
   ? createSupabaseRsvpService(supabase)
   : createMockRsvpService({ delayMs: 200, storage: AsyncStorage });
+/** 파일 올리기. mock 은 파일을 기기에 두므로 없다 */
+export const mediaUploader: MediaUploader | null = supabase ? createMediaUploader(supabase) : null;
 
 // 아래 서비스는 아직 mock (실서버 도입 시 교체). 지갑은 잔액만 mock 이고 초대장 변경은 실서버로 간다
 export const walletService = createMockWalletService({
