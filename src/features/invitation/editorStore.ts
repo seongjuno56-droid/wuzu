@@ -47,6 +47,10 @@ interface EditorState {
   markSaved: (saved: Invitation) => void;
 }
 
+/**
+ * 저장 전 임시 id. mock 은 이 값을 그대로 저장하고, 실서버는 UUID 가 아니면 새 초대장으로 보아 서버 id·번호를 새로 준다.
+ * 저장 뒤 markSaved 가 초안을 서버 저장본으로 바꾸므로 임시 id 는 남지 않는다
+ */
 const newId = () => `inv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 export const useEditor = create<EditorState>()((set, get) => ({

@@ -1,8 +1,9 @@
-import { applyOrder, LEDGER_TITLE, LETTER_PRODUCTS, orderCost, orderLines, SIGNUP_LETTERS } from '../../features/wallet/pricing';
+import { LEDGER_TITLE, LETTER_PRODUCTS, orderCost, orderLines, SIGNUP_LETTERS } from '../../features/wallet/pricing';
 import { newInvitationNumber } from '../../features/invitation/model';
-import type { KeyValueStorage, LedgerEntry, SpendOrder, WalletService } from '../types';
+import type { InvitationService, KeyValueStorage, LedgerEntry, SpendOrder, WalletService } from '../types';
 import { purchaseNotification } from '../../features/notifications/model';
 import { createInvitationStore } from './invitationStore';
+import { createMockInvitationService } from './mockInvitationService';
 import { createMockNotificationService } from './mockNotificationService';
 
 const WALLET_KEY = 'wuzu.mock.wallet.v1';
@@ -12,7 +13,16 @@ interface WalletDb {
   ledger: LedgerEntry[];
 }
 
-export function createMockWalletService(opts: { delayMs: number; storage: KeyValueStorage; now?: () => Date }): WalletService {
+/**
+ * 레터 잔액은 2단계(인앱결제) 전까지 기기의 mock 이다. 초대장 변경은 invitations 로 넘긴다:
+ * 실서버 모드면 서버가 소유자를 확인한다. 없으면 같은 저장소의 mock 초대장을 쓴다.
+ */
+export function createMockWalletService(opts: {
+  delayMs: number;
+  storage: KeyValueStorage;
+  now?: () => Date;
+  invitations?: Pick<InvitationService, 'applyOrder'>;
+}): WalletService {
   const { delayMs, storage } = opts;
   const now = opts.now ?? (() => new Date());
   const wait = () => new Promise((r) => setTimeout(r, delayMs));
@@ -42,6 +52,14 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
     }
   };
   const targetId = (order: SpendOrder) => (order.kind === 'edit' ? order.invitation.id : order.invitationId);
+  const mockInvitations = createMockInvitationService({ delayMs: 0, storage, now });
+  const applyOrder: (userId: string, order: SpendOrder) => ReturnType<InvitationService['applyOrder']> = opts.invitations
+    ? (_userId, order) => opts.invitations!.applyOrder(order)
+    : async (userId, order) => {
+        const inv = (await invitations.load()).invitations.find((i) => i.id === targetId(order));
+        if (!inv || inv.ownerId !== userId) return { ok: false, reason: 'not_found' };
+        return mockInvitations.applyOrder(order);
+      };
 
   return {
     async balance(userId) {
@@ -60,19 +78,17 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
 
     async spend(userId, order) {
       await wait();
-      const [db, invDb] = await Promise.all([load(), invitations.load()]);
-      const idx = invDb.invitations.findIndex((i) => i.id === targetId(order));
-      const inv = invDb.invitations[idx];
-      if (!inv || inv.ownerId !== userId) return { ok: false, reason: 'not_found' };
-      const next = applyOrder(inv, order, now());
-      if (next === 'blocked' || next === 'invalid') return { ok: false, reason: next };
       const cost = orderCost(order);
-      const balance = balanceOf(db, userId);
-      if (balance < cost) return { ok: false, reason: 'insufficient' };
+      if (balanceOf(await load(), userId) < cost) return { ok: false, reason: 'insufficient' };
 
-      const saved = { ...next, updatedAt: now().toISOString() };
-      invDb.invitations[idx] = saved;
-      db.balances[userId] = balance - cost;
+      // 거절되거나 던지면(정지 회원·네트워크) 여기서 끝나 레터가 그대로다
+      const applied = await applyOrder(userId, order);
+      if (!applied.ok) return applied;
+      const saved = applied.invitation;
+
+      // 서버를 기다리는 사이 충전됐을 수 있어 다시 읽는다
+      const db = await load();
+      db.balances[userId] = balanceOf(db, userId) - cost;
       const record = entry({
         userId,
         invitationId: saved.id,
@@ -84,7 +100,6 @@ export function createMockWalletService(opts: { delayMs: number; storage: KeyVal
         total: -cost,
       });
       db.ledger.push(record);
-      await invitations.save(invDb);
       await save(db);
       // 구매 알림의 번호는 이력No 가 아니라 초대장No
       await notify(purchaseNotification({ ...record, number: saved.number }));

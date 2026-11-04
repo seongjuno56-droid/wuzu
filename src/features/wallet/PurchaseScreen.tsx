@@ -68,7 +68,10 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
   useFocusEffect(
     useCallback(() => {
       refresh();
-      invitationService.get(invitationId).then(setInv);
+      invitationService
+        .get(invitationId)
+        .then(setInv)
+        .catch(() => toast('초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
     }, [invitationId, refresh]),
   );
 

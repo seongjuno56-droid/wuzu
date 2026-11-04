@@ -1,10 +1,10 @@
 import { Invitation } from '../../features/invitation/model';
 import { createInvitation } from '../../features/invitation/themes';
-import { DAY_MS } from '../../features/wallet/pricing';
+import { DAY_MS, orderCost } from '../../features/wallet/pricing';
 import { createMockInvitationService } from '../mock/mockInvitationService';
 import { createMockNotificationService } from '../mock/mockNotificationService';
 import { createMockWalletService } from '../mock/mockWalletService';
-import { KeyValueStorage } from '../types';
+import { InvitationService, KeyValueStorage } from '../types';
 
 function memoryStorage(): KeyValueStorage {
   const map = new Map<string, string>();
@@ -137,5 +137,49 @@ describe('알림 기록 실패 격리', () => {
     const r = await w.spend('u1', { kind: 'activate', invitationId: 'a', extendDays: 0 });
     expect(r.ok).toBe(true);
     await expect(w.charge('u1', 'letters_10')).resolves.toBe(160);
+  });
+});
+
+describe('지갑과 초대장 변경의 순서', () => {
+  const order = { kind: 'activate', invitationId: 'a', extendDays: 0 } as const;
+  const make = (applyOrder: InvitationService['applyOrder']) =>
+    createMockWalletService({ delayMs: 0, storage, now: () => now, invitations: { applyOrder } });
+
+  it('mock 지갑 spend 는 잔액이 모자라면 applyOrder 를 부르지 않는다', async () => {
+    // 200레터로 살 수 있는 만큼 산 뒤에 한 번 더 산다
+    const big = { kind: 'activate', invitationId: 'a', extendDays: 180 } as const;
+    const applyOrder = jest.fn(async () => ({ ok: true as const, invitation: final('a') }));
+    const w = make(applyOrder);
+    while ((await w.balance('u1')) >= orderCost(big)) await w.spend('u1', big);
+    applyOrder.mockClear();
+    expect(await w.spend('u1', big)).toEqual({ ok: false, reason: 'insufficient' });
+    expect(applyOrder).not.toHaveBeenCalled();
+  });
+
+  it('applyOrder 실패면 레터를 차감하지 않는다', async () => {
+    const w = make(async () => ({ ok: false, reason: 'blocked' }));
+    expect(await w.spend('u1', order)).toEqual({ ok: false, reason: 'blocked' });
+    expect(await w.balance('u1')).toBe(200);
+    expect(await w.history('u1')).toEqual([]);
+  });
+
+  it('applyOrder 가 던지면(정지 회원·네트워크) 그대로 던지고 차감하지 않는다', async () => {
+    const w = make(async () => {
+      throw new Error('account_unavailable');
+    });
+    await expect(w.spend('u1', order)).rejects.toThrow('account_unavailable');
+    expect(await w.balance('u1')).toBe(200);
+    expect(await w.history('u1')).toEqual([]);
+  });
+
+  it('성공하면 받은 초대장(서버 id·번호)으로 차감·기록한다', async () => {
+    const saved = final('server-id', { number: '98765432109' });
+    const applyOrder = jest.fn(async () => ({ ok: true as const, invitation: saved }));
+    const w = make(applyOrder);
+    const r = await w.spend('u1', order);
+    expect(applyOrder).toHaveBeenCalledWith(order);
+    expect(r).toMatchObject({ ok: true, invitation: saved, balance: 200 - orderCost(order) });
+    const [record] = await w.history('u1');
+    expect(record).toMatchObject({ invitationId: 'server-id', invitationNumber: '98765432109' });
   });
 });

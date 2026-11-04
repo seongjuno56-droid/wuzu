@@ -22,6 +22,8 @@ export function createMockRsvpService(opts: {
     phone: input.phone.trim(),
     companions: input.attending ? input.companions : 0,
   });
+  // 실서버는 난수 토큰을 주지만 mock 은 토큰을 검사하지 않는다
+  const tokenFor = (id: string) => `mock-${id}`;
   const newRow = (invitationId: string, input: RsvpInput, source: RsvpResponse['source']): RsvpResponse => {
     const at = now().toISOString();
     return {
@@ -54,11 +56,11 @@ export function createMockRsvpService(opts: {
       if (idx >= 0) {
         rows[idx] = { ...rows[idx], ...clean(input), updatedAt: now().toISOString() };
         await save(rows);
-        return { ok: true, response: rows[idx], created: false };
+        return { ok: true, response: rows[idx], created: false, token: tokenFor(rows[idx].id) };
       }
       const row = newRow(invitationId, input, 'guest');
       await save([...rows, row]);
-      return { ok: true, response: row, created: true };
+      return { ok: true, response: row, created: true, token: tokenFor(row.id) };
     },
     async addManual(invitationId, themeId, input) {
       await wait();

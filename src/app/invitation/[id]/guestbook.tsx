@@ -26,15 +26,24 @@ export default function GuestbookManage() {
   // 들어올 때의 확인 시각 기준으로 '신규'를 보여준다 (보는 중에 사라지지 않게)
   const [seenAt, setSeenAt] = useState<string | undefined>(undefined);
 
-  const load = useCallback(async () => setEntries(await invitationService.listGuestbook(id)), [id]);
+  // 실패하면 보이던 목록을 그대로 둔다
+  const load = useCallback(async () => {
+    try {
+      setEntries(await invitationService.listGuestbook(id));
+    } catch {
+      toast('방명록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+  }, [id]);
 
   useEffect(() => {
-    invitationService.get(id).then((inv) => {
-      setSeenAt(inv?.guestbookSeenAt);
-      load();
-    });
+    invitationService
+      .get(id)
+      .then((inv) => setSeenAt(inv?.guestbookSeenAt))
+      .catch(() => {}) // 신규 표시만 빠진다
+      .then(load);
     return () => {
-      invitationService.markGuestbookSeen(id, new Date().toISOString());
+      // 다음에 신규 표시가 남을 뿐이라 실패해도 안내하지 않는다
+      invitationService.markGuestbookSeen(id, new Date().toISOString()).catch(() => {});
     };
   }, [id, load]);
 
@@ -105,7 +114,7 @@ export default function GuestbookManage() {
             label: '삭제하기',
             onPress: async () => {
               if (!removing || !user) return;
-              const r = await invitationService.removeGuestbook(id, removing.id, { ownerId: user.id });
+              const r = await invitationService.removeGuestbook(id, removing.id, { ownerId: user.id }).catch(() => 'failed' as const);
               setRemoving(null);
               if (r === 'ok') {
                 toast('삭제가 완료되었습니다.');

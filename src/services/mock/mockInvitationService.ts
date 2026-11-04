@@ -1,5 +1,6 @@
 import { Invitation, isValidInvitationName, validateGuestbookEntry } from '../../features/invitation/model';
 import { screenStatus } from '../../features/invitation/status';
+import { applyOrder as applyOrderTo } from '../../features/wallet/pricing';
 import { GuestbookEntry, GuestbookInput, InvitationService, KeyValueStorage, RemoveGuestbookAuth } from '../types';
 import { createInvitationStore, StoredEntry } from './invitationStore';
 
@@ -14,6 +15,7 @@ export function createMockInvitationService(opts: {
 
   const { load, save } = createInvitationStore(storage);
   const strip = ({ password: _p, ...e }: StoredEntry): GuestbookEntry => e;
+  const newSlug = () => Math.random().toString(36).slice(2, 14);
 
   return {
     async list(ownerId) {
@@ -42,6 +44,7 @@ export function createMockInvitationService(opts: {
             number: stored.number,
             ownerId: stored.ownerId,
             createdAt: stored.createdAt,
+            slug: stored.slug,
             activatedAt: stored.activatedAt,
             expiresAt: stored.expiresAt,
             banned: stored.banned,
@@ -82,6 +85,33 @@ export function createMockInvitationService(opts: {
       if (!inv) return;
       inv.guestbookSeenAt = at;
       await save(db);
+    },
+
+    async applyOrder(order) {
+      await wait();
+      const db = await load();
+      const id = order.kind === 'edit' ? order.invitation.id : order.invitationId;
+      const idx = db.invitations.findIndex((i) => i.id === id);
+      if (idx < 0) return { ok: false, reason: 'not_found' };
+      const stored = db.invitations[idx];
+      const next = applyOrderTo(stored, order, now());
+      if (next === 'blocked' || next === 'invalid') return { ok: false, reason: next };
+      // slug 는 서버 값이다: 첫 활성화 때만 만들고 편집본 값은 읽지 않는다
+      const slug = stored.slug ?? (order.kind === 'activate' ? newSlug() : undefined);
+      const saved: Invitation = { ...next, slug, updatedAt: now().toISOString() };
+      db.invitations[idx] = saved;
+      await save(db);
+      return { ok: true, invitation: saved };
+    },
+
+    // mock 저장본에는 slug 가 없는 예전 값도 있어 id 로도 찾는다
+    async getBySlug(slug) {
+      await wait();
+      const inv = (await load()).invitations.find((i) => i.slug === slug || i.id === slug);
+      if (!inv) return { state: 'not_found' };
+      const status = screenStatus(inv, now());
+      if (status === 'active') return { state: 'active', invitation: inv };
+      return { state: status === 'expired' ? 'expired' : 'not_found' };
     },
 
     async listGuestbook(invitationId) {

@@ -9,7 +9,9 @@ import { createMockWalletService } from './mock/mockWalletService';
 import { clearAuthStorage } from './supabase/authStorage';
 import { createSupabaseClient } from './supabase/client';
 import { createSupabaseAuthService } from './supabase/supabaseAuthService';
-import type { AuthService } from './types';
+import { createSupabaseInvitationService } from './supabase/supabaseInvitationService';
+import { createSupabaseRsvpService } from './supabase/supabaseRsvpService';
+import type { AuthService, InvitationService, RsvpService } from './types';
 
 export * from './types';
 
@@ -17,18 +19,26 @@ export * from './types';
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-/** Supabase URL·키가 둘 다 있으면 실제 로그인, 아니면 mock (개발·테스트) */
-export const usingMockAuth = !(SUPABASE_URL && SUPABASE_ANON_KEY);
-export const authService: AuthService =
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createSupabaseAuthService(createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY), {
-        clearLocalSession: () => clearAuthStorage(AsyncStorage),
-      })
-    : createMockAuthService({ delayMs: 400, storage: AsyncStorage });
+/** Supabase URL·키가 둘 다 있으면 실서버(로그인·초대장·참석 응답), 아니면 mock (개발·테스트) */
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ? createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-// 아래 서비스는 아직 mock (실서버 도입 시 교체)
-export const invitationService = createMockInvitationService({ delayMs: 300, storage: AsyncStorage });
-export const walletService = createMockWalletService({ delayMs: 300, storage: AsyncStorage });
+export const usingMockAuth = !supabase;
+export const authService: AuthService = supabase
+  ? createSupabaseAuthService(supabase, { clearLocalSession: () => clearAuthStorage(AsyncStorage) })
+  : createMockAuthService({ delayMs: 400, storage: AsyncStorage });
+
+export const invitationService: InvitationService = supabase
+  ? createSupabaseInvitationService(supabase)
+  : createMockInvitationService({ delayMs: 300, storage: AsyncStorage });
+export const rsvpService: RsvpService = supabase
+  ? createSupabaseRsvpService(supabase)
+  : createMockRsvpService({ delayMs: 200, storage: AsyncStorage });
+
+// 아래 서비스는 아직 mock (실서버 도입 시 교체). 지갑은 잔액만 mock 이고 초대장 변경은 실서버로 간다
+export const walletService = createMockWalletService({
+  delayMs: 300,
+  storage: AsyncStorage,
+  invitations: supabase ? invitationService : undefined,
+});
 export const paymentService = createMockPaymentService();
 export const notificationService = createMockNotificationService({ delayMs: 200, storage: AsyncStorage });
-export const rsvpService = createMockRsvpService({ delayMs: 200, storage: AsyncStorage });

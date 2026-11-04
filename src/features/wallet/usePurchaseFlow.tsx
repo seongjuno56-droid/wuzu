@@ -42,8 +42,10 @@ export function usePurchaseFlow({ onDone }: { onDone: (invitation: Invitation) =
         } else if (r.reason === 'insufficient') setLacking(true);
         else if (r.reason === 'blocked') toast('사용불가 초대장은 구매할 수 없어요.');
         else toast('초대장 상태가 바뀌었어요. 다시 확인해 주세요.');
-      } catch {
-        toast('구매하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      } catch (e) {
+        // 예외로 끝나면 레터는 차감되지 않았다
+        if (e instanceof Error && e.message === 'account_unavailable') toast('이용할 수 없는 계정이에요.');
+        else toast('구매하지 못했어요. 잠시 후 다시 시도해 주세요.');
       } finally {
         setBusy(false);
       }

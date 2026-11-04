@@ -22,7 +22,7 @@ interface Props {
   /** 초대장 작성자 본인이면 비밀번호 없이 삭제 */
   isOwner: boolean;
   onAdd: (input: GuestbookInput) => Promise<void>;
-  onRemove: (entry: GuestbookEntry, password: string | null) => Promise<'ok' | 'wrong_password' | 'not_found'>;
+  onRemove: (entry: GuestbookEntry, password: string | null) => Promise<'ok' | 'wrong_password' | 'not_found' | 'rate_limited'>;
 }
 
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
@@ -45,6 +45,14 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
+/** 방명록 쓰기 거절 안내 (서비스가 던지는 메시지 기준) */
+const WRITE_ERROR: Record<string, string> = {
+  INVALID: '입력한 내용을 다시 확인해 주세요.',
+  CLOSED: '방명록을 받지 않는 초대장이에요.',
+  NOT_FOUND: '지금은 글을 남길 수 없는 초대장이에요.',
+  RATE_LIMITED: '지금은 글을 더 남길 수 없어요. 잠시 후 다시 시도해 주세요.',
+};
+
 function WriteSheet({ onClose, onAdd }: { onClose: () => void; onAdd: Props['onAdd'] }) {
   const g = LIMITS.guestbook;
   const [name, setName] = useState('');
@@ -58,6 +66,9 @@ function WriteSheet({ onClose, onAdd }: { onClose: () => void; onAdd: Props['onA
     try {
       await onAdd({ name, password, content });
       toast('방명록이 등록되었습니다.');
+    } catch (e) {
+      // 입력한 내용은 그대로 둔다
+      toast((e instanceof Error && WRITE_ERROR[e.message]) || '등록하지 못했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
       setBusy(false);
     }
@@ -111,9 +122,19 @@ function AllSheet({ onClose, entries, isOwner, onRemove }: Omit<Props, 'view' | 
   };
   const remove = async () => {
     if (!target) return;
-    const result = await onRemove(target, isOwner ? null : password);
+    let result: Awaited<ReturnType<Props['onRemove']>>;
+    try {
+      result = await onRemove(target, isOwner ? null : password);
+    } catch {
+      toast('삭제하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
     if (result === 'wrong_password') {
       setError('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+    if (result === 'rate_limited') {
+      toast('시도가 너무 많아요. 잠시 후 다시 시도해 주세요.');
       return;
     }
     close();

@@ -364,6 +364,10 @@ export interface Invitation {
   name: string;
   /** 초대장No (11자리) */
   number: string;
+  /** 공유 주소 조각. 서버가 첫 활성화 때 만들고 그 뒤로 바뀌지 않는다 */
+  slug?: string;
+  /** 링크 미리보기 이미지 (없으면 null) */
+  linkThumb?: string | null;
   /** 활성화 시작·종료 시각 (ISO). 한 번도 활성화하지 않았으면 없음 */
   activatedAt?: string;
   expiresAt?: string;

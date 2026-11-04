@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppModal } from '../../components/AppModal';
 import { TextField } from '../../components/TextField';
+import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
 import { colors, radius, spacing } from '../../theme';
 import { RSVP_LIMITS, RSVP_MESSAGE, RsvpField, RsvpInput, rsvpFields, validateRsvp } from './rsvp';
@@ -14,7 +15,7 @@ type Props = {
   title: string;
   submitLabel: string;
   onClose: () => void;
-  onSubmit: (input: RsvpInput) => Promise<'ok' | 'closed' | 'invalid'>;
+  onSubmit: (input: RsvpInput) => Promise<'ok' | 'closed' | 'invalid' | 'not_found' | 'rate_limited'>;
 };
 
 /**
@@ -37,7 +38,15 @@ function RsvpForm({ themeId, initial, title, submitLabel, onClose, onSubmit }: P
   const submit = async () => {
     setTried(true);
     if (bad.length) return;
-    const r = await onSubmit(v);
+    let r: Awaited<ReturnType<Props['onSubmit']>>;
+    try {
+      r = await onSubmit(v);
+    } catch {
+      toast('보내지 못했어요. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    if (r === 'rate_limited') toast('지금은 더 받을 수 없어요. 잠시 후 다시 시도해 주세요.');
+    if (r === 'not_found') toast('지금은 응답할 수 없는 초대장이에요.');
     if (r === 'closed') setClosed(true);
     setRejected(r === 'invalid');
     if (r === 'ok') onClose();

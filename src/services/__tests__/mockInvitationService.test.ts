@@ -144,3 +144,50 @@ describe('예전 저장본 보정(보기 형태·디자인)', () => {
     expect(listed.viewMode).toBe('story');
   });
 });
+
+describe('applyOrder 와 getBySlug (mock)', () => {
+  const NOW = new Date(2026, 9, 20, 12);
+  let at = NOW;
+  let s: ReturnType<typeof createMockInvitationService>;
+  const final = (id: string) => ({ ...make(id), name: '초대장', status: 'final' as const });
+  beforeEach(async () => {
+    at = NOW;
+    s = createMockInvitationService({ delayMs: 0, storage: memoryStorage(), now: () => at });
+    await s.save(final('a'));
+  });
+
+  it('첫 활성화에 slug 를 만들고, 다시 활성화해도 그대로다', async () => {
+    const first = await s.applyOrder({ kind: 'activate', invitationId: 'a', extendDays: 0 });
+    if (!first.ok) throw new Error('활성화 실패');
+    expect(first.invitation.slug).toBeTruthy();
+    at = new Date(2027, 0, 1);
+    const again = await s.applyOrder({ kind: 'activate', invitationId: 'a', extendDays: 0 });
+    expect(again.ok && again.invitation.slug).toBe(first.invitation.slug);
+  });
+
+  it('없으면 not_found, 지금 상태에서 할 수 없으면 invalid 이고 바뀌지 않는다', async () => {
+    expect(await s.applyOrder({ kind: 'activate', invitationId: 'z', extendDays: 0 })).toEqual({ ok: false, reason: 'not_found' });
+    expect(await s.applyOrder({ kind: 'extend', invitationId: 'a', extendDays: 30 })).toEqual({ ok: false, reason: 'invalid' });
+    expect((await s.get('a'))?.expiresAt).toBeUndefined();
+  });
+
+  it('getBySlug: 활성화 중이면 초대장, 만료면 상태만, 그 밖에는 not_found', async () => {
+    expect(await s.getBySlug('nope')).toEqual({ state: 'not_found' });
+    // slug 가 없는 mock 저장본은 id 로도 열린다. 활성화 전이므로 not_found
+    expect(await s.getBySlug('a')).toEqual({ state: 'not_found' });
+    const r = await s.applyOrder({ kind: 'activate', invitationId: 'a', extendDays: 0 });
+    const slug = r.ok ? r.invitation.slug! : '';
+    expect((await s.getBySlug(slug)).invitation?.id).toBe('a');
+    expect((await s.getBySlug('a')).state).toBe('active');
+    at = new Date(2027, 0, 1);
+    expect(await s.getBySlug(slug)).toEqual({ state: 'expired' });
+  });
+
+  it('일반 저장은 낡은 편집본의 slug 로 덮어쓰지 않는다', async () => {
+    const r = await s.applyOrder({ kind: 'activate', invitationId: 'a', extendDays: 0 });
+    const slug = r.ok ? r.invitation.slug : undefined;
+    at = new Date(2027, 0, 1);
+    const saved = await s.save({ ...final('a'), slug: 'stale' });
+    expect(saved.slug).toBe(slug);
+  });
+});

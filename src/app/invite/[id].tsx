@@ -12,7 +12,7 @@ import { screenStatus } from '../../features/invitation/status';
 import { themeDef } from '../../features/invitation/themes';
 import { InvitationView } from '../../features/invitation/view/InvitationView';
 import { lookFor } from '../../features/invitation/view/look';
-import { myRsvp } from '../../features/rsvp/myRsvp';
+import { myRsvp, submitWithMyRsvp } from '../../features/rsvp/myRsvp';
 import { emptyRsvpInput, isRsvpClosed, RsvpResponse, rsvpNotice } from '../../features/rsvp/rsvp';
 import { RsvpFormModal } from '../../features/rsvp/RsvpFormModal';
 import { GuestbookEntry, invitationService, notificationService, rsvpService } from '../../services';
@@ -35,19 +35,30 @@ export default function InvitationScreen() {
   useEffect(() => {
     myRsvp
       .get(id)
-      .then((rid) => (rid ? rsvpService.get(id, rid) : null))
-      .then((r) => {
-        setMine(r);
-        setMineLoaded(true);
-      });
+      .then((ref) => (ref ? rsvpService.get(id, ref.id, ref.token) : null))
+      .then(setMine)
+      // 못 읽어도 제출은 저장한 id·토큰으로 하므로 응답이 겹치지 않는다
+      .catch(() => {})
+      .finally(() => setMineLoaded(true));
   }, [id]);
 
-  const loadGuestbook = useCallback(async () => setEntries(await invitationService.listGuestbook(id)), [id]);
+  // 글 등록·삭제 뒤 새로 읽는 값이라, 실패해도 등록·삭제가 실패한 것처럼 보이면 안 된다. 보이던 목록을 둔다
+  const loadGuestbook = useCallback(
+    () =>
+      invitationService
+        .listGuestbook(id)
+        .then(setEntries)
+        .catch(() => {}),
+    [id],
+  );
 
   useEffect(() => {
-    invitationService.get(id).then(setInvitation);
-    invitationService.listGuestbook(id).then(setEntries);
-  }, [id]);
+    invitationService
+      .get(id)
+      .then(setInvitation)
+      .catch(() => toast('초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
+    loadGuestbook();
+  }, [id, loadGuestbook]);
 
   if (invitation === undefined) {
     return (
@@ -145,17 +156,16 @@ export default function InvitationScreen() {
           submitLabel={mine ? '고치기' : '보내기'}
           onClose={() => setRsvpOpen(false)}
           onSubmit={async (input) => {
-            const r = await rsvpService.submit({
+            const r = await submitWithMyRsvp(myRsvp, rsvpService, {
               invitationId: invitation.id,
               themeId: invitation.themeId,
               deadline,
               input,
-              id: mine?.id,
             });
             if (!r.ok) return r.reason;
             setMine(r.response);
-            await myRsvp.set(invitation.id, r.response.id);
-            if (r.created) {
+            // 하객 응답의 초대장에는 ownerId 가 없다 (빈 값)
+            if (r.created && invitation.ownerId) {
               await notificationService.add(
                 rsvpNotice({
                   name: r.response.name,

@@ -21,12 +21,20 @@ export default function RsvpManage() {
   const [rows, setRows] = useState<RsvpResponse[] | null>(null);
   const [editing, setEditing] = useState<RsvpResponse | 'new' | null>(null);
   const [removing, setRemoving] = useState<RsvpResponse | null>(null);
-  const load = useCallback(async () => setRows(await rsvpService.list(id)), [id]);
+  // 실패하면 보이던 명단을 그대로 둔다
+  const load = useCallback(async () => {
+    try {
+      setRows(await rsvpService.list(id));
+    } catch {
+      toast('명단을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+  }, [id]);
   useEffect(() => {
-    invitationService.get(id).then((i) => {
-      setInv(i);
-      load();
-    });
+    invitationService
+      .get(id)
+      .then(setInv)
+      .catch(() => toast('초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'))
+      .then(load);
   }, [id, load]);
   const themeId = inv?.themeId ?? 'corporate';
   const companions = rsvpFields(themeId).includes('companions');
@@ -121,8 +129,11 @@ export default function RsvpManage() {
           try {
             if (editing === 'new') await rsvpService.addManual(id, themeId, input);
             else if (editing) await rsvpService.update(id, themeId, editing.id, input);
-          } catch {
-            return 'invalid';
+          } catch (e) {
+            const message = e instanceof Error ? e.message : '';
+            if (message === 'INVALID') return 'invalid';
+            if (message === 'RATE_LIMITED') return 'rate_limited';
+            throw e; // 폼이 안내한다. 입력 내용은 그대로 둔다
           }
           await load();
           return 'ok';
@@ -138,7 +149,12 @@ export default function RsvpManage() {
             label: '삭제하기',
             onPress: async () => {
               if (!removing) return;
-              await rsvpService.remove(id, removing.id);
+              try {
+                await rsvpService.remove(id, removing.id);
+              } catch {
+                toast('삭제하지 못했어요. 잠시 후 다시 시도해 주세요.');
+                return;
+              }
               setRemoving(null);
               toast('삭제가 완료되었습니다.');
               load();

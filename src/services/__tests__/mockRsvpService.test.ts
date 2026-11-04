@@ -61,3 +61,13 @@ describe('참석 응답 mock 서비스', () => {
     await expect(s.addManual('i', 'corporate', emptyRsvpInput())).rejects.toThrow('INVALID');
   });
 });
+
+describe('참석 응답 mock 의 토큰', () => {
+  it('제출 결과에 토큰을 주고, get 은 토큰을 받아도 같은 행을 돌려준다', async () => {
+    const s = createMockRsvpService({ delayMs: 0, storage: memory() });
+    const r = await s.submit({ invitationId: 'i', themeId: 'corporate', deadline: '', input: corp });
+    expect(r.ok && r.token).toBeTruthy();
+    if (!r.ok) return;
+    expect((await s.get('i', r.response.id, r.token))?.id).toBe(r.response.id);
+  });
+});

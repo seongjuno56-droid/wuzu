@@ -66,7 +66,9 @@ export default function MyInvites() {
       list
         .filter((i) => i.enabled.guestbook)
         .map(async (i) => [i.id, hasNewGuestbook(await invitationService.listGuestbook(i.id), i.guestbookSeenAt)] as const),
-    ).then((pairs) => alive && setNewBook(Object.fromEntries(pairs)));
+    )
+      .then((pairs) => alive && setNewBook(Object.fromEntries(pairs)))
+      .catch(() => {}); // 부가 표시라 실패하면 이전 값을 둔다
     return () => {
       alive = false;
     };
@@ -78,7 +80,9 @@ export default function MyInvites() {
     let alive = true;
     Promise.all(
       list.filter((i) => i.enabled.rsvp).map(async (i) => [i.id, (await rsvpService.list(i.id)).length] as const),
-    ).then((pairs) => alive && setRsvpCounts(Object.fromEntries(pairs)));
+    )
+      .then((pairs) => alive && setRsvpCounts(Object.fromEntries(pairs)))
+      .catch(() => {}); // 부가 표시라 실패하면 이전 값을 둔다
     return () => {
       alive = false;
     };
@@ -219,7 +223,12 @@ export default function MyInvites() {
             label: '삭제하기',
             onPress: async () => {
               if (!deleting) return;
-              await invitationService.remove(deleting.id);
+              try {
+                await invitationService.remove(deleting.id);
+              } catch {
+                toast('삭제하지 못했어요. 잠시 후 다시 시도해 주세요.');
+                return;
+              }
               setDeleting(null);
               toast('삭제가 완료되었습니다.');
               reload();

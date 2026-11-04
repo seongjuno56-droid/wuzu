@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
+import { toast } from '../../../components/Toast';
 import { Txt } from '../../../components/Txt';
 import { Invitation } from '../../../features/invitation/model';
 import { periodLabel, screenStatus } from '../../../features/invitation/status';
@@ -22,7 +23,10 @@ export default function HistoryScreen() {
   const [entries, setEntries] = useState<LedgerEntry[] | null>(null);
 
   useEffect(() => {
-    invitationService.get(id).then(setInv);
+    invitationService
+      .get(id)
+      .then(setInv)
+      .catch(() => toast('초대장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'));
     if (user) walletService.history(user.id, { invitationId: id, kind: 'spend' }).then(setEntries);
   }, [id, user]);
 

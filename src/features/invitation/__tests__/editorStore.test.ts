@@ -171,3 +171,17 @@ describe('editor store', () => {
     expect(Object.keys(c().account.accounts)).toEqual([mom.id]);
   });
 });
+
+describe('서버 저장', () => {
+  beforeEach(() => useEditor.getState().reset());
+
+  it('markSaved 는 기기에서 만든 임시 id·번호를 서버 값으로 바꾼다', () => {
+    start();
+    const draft = useEditor.getState().draft!;
+    const server = { ...draft, id: '11111111-2222-4333-8444-555555555555', number: '12345678901' };
+    useEditor.getState().markSaved(server);
+    expect(useEditor.getState().draft?.id).toBe(server.id);
+    expect(useEditor.getState().draft?.number).toBe('12345678901');
+    expect(useEditor.getState().origin?.id).toBe(server.id);
+  });
+});

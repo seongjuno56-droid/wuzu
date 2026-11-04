@@ -81,13 +81,21 @@ export interface InvitationService {
   get(id: string): Promise<Invitation | null>;
   save(invitation: Invitation): Promise<Invitation>;
   remove(id: string): Promise<void>;
-  listGuestbook(invitationId: string): Promise<GuestbookEntry[]>;
+  /** 하객 공유 주소의 초대장. 실서버의 invitation 에는 만든 사람 전용 칸이 빈 값이고, 꺼 둔 항목의 content·design 이 없다 */
+  getBySlug(slug: string): Promise<{ state: 'active' | 'expired' | 'not_found'; invitation?: Invitation }>;
+  /** 활성화·연장·유료 수정. 정지·탈퇴 회원과 네트워크 오류는 값이 아니라 예외다 */
+  applyOrder(
+    order: SpendOrder,
+  ): Promise<{ ok: true; invitation: Invitation } | { ok: false; reason: 'not_found' | 'blocked' | 'invalid' }>;
+  /** 최신순. 기본은 만든 사람(본인 초대장의 전체 글). 'guest' 는 공개 목록이고 실서버에서 최신 200건까지다 */
+  listGuestbook(invitationId: string, as?: 'owner' | 'guest'): Promise<GuestbookEntry[]>;
+  /** 거절은 INVALID·CLOSED·NOT_FOUND·RATE_LIMITED 메시지로 던진다 */
   addGuestbook(invitationId: string, input: GuestbookInput): Promise<GuestbookEntry>;
   removeGuestbook(
     invitationId: string,
     entryId: string,
     auth: RemoveGuestbookAuth,
-  ): Promise<'ok' | 'wrong_password' | 'not_found'>;
+  ): Promise<'ok' | 'wrong_password' | 'not_found' | 'rate_limited'>;
   /** 이름만 바꾼다 (1~30자, 앞뒤 공백 제거) */
   rename(id: string, name: string): Promise<Invitation>;
   /** 작성자가 방명록 관리를 확인한 시각 */
@@ -138,7 +146,7 @@ export type SpendResult =
 export interface WalletService {
   balance(userId: string): Promise<number>;
   history(userId: string, filter?: { invitationId?: string; kind?: 'charge' | 'spend' }): Promise<LedgerEntry[]>;
-  /** 잔액 확인 → 차감 → 초대장 변경 → 기록을 한 번에. 실패하면 아무것도 바꾸지 않는다 */
+  /** 잔액 확인 → 초대장 변경(applyOrder) → 차감 → 기록. 초대장 변경이 거절되거나 던지면 차감하지 않는다 */
   spend(userId: string, order: SpendOrder): Promise<SpendResult>;
   /** 결제 성공 후에만 부른다. 새 잔액을 돌려준다 */
   charge(userId: string, productId: string): Promise<number>;
@@ -162,20 +170,22 @@ export interface PaymentService {
 // ── 참석 응답 ───────────────────────────────────────
 
 export type RsvpSubmitResult =
-  | { ok: true; response: RsvpResponse; created: boolean }
-  | { ok: false; reason: 'closed' | 'invalid' };
+  | { ok: true; response: RsvpResponse; created: boolean; token?: string }
+  | { ok: false; reason: 'closed' | 'invalid' | 'not_found' | 'rate_limited' };
 
 export interface RsvpService {
   /** 최신순 */
   list(invitationId: string): Promise<RsvpResponse[]>;
-  get(invitationId: string, id: string): Promise<RsvpResponse | null>;
-  /** 하객 제출. id 가 있고 그 행이 있으면 고친다. 마감·검사는 여기서 막는다 */
+  /** 하객이 자기 응답을 다시 읽는다. 실서버는 토큰이 맞아야 준다 */
+  get(invitationId: string, id: string, token?: string): Promise<RsvpResponse | null>;
+  /** 하객 제출. id 가 있고 그 행이 있으면 고친다. 마감·검사는 여기서 막는다. 실서버는 id·토큰이 틀리면 not_found 이고 새 행을 만들지 않는다 */
   submit(args: {
     invitationId: string;
     themeId: string;
     deadline: string;
     input: RsvpInput;
     id?: string;
+    token?: string;
   }): Promise<RsvpSubmitResult>;
   /** 만든 사람: 명단에 직접 넣기 (마감과 상관없음) */
   addManual(invitationId: string, themeId: string, input: RsvpInput): Promise<RsvpResponse>;
