@@ -62,4 +62,15 @@ function checkGuestEnv(env) {
   return problems;
 }
 
-module.exports = { checkGuestDist, checkGuestEnv };
+/**
+ * Supabase 는 fetch(자격 증명 없음)라 crossorigin 연결을 쓰고, 사진은 일반 이미지 요청(expo-image 의 img, react-native-web 의 Image)이라
+ * crossorigin 없는 연결을 쓴다. 맞지 않으면 미리 연 연결을 쓰지 못한다.
+ */
+function preconnectTags(supabaseUrl, mediaUrl) {
+  return (
+    `<link rel="preconnect" href="${new URL(supabaseUrl).origin}" crossorigin>` +
+    `<link rel="preconnect" href="${new URL(mediaUrl).origin}">`
+  );
+}
+
+module.exports = { checkGuestDist, checkGuestEnv, preconnectTags };

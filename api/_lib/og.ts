@@ -22,7 +22,8 @@ export interface GuestPageEnv {
 }
 
 export interface GuestPageDeps {
-  shell: string;
+  /** 빌드된 앱 껍데기. 못 읽었으면 null */
+  shell: string | null;
   env: GuestPageEnv;
   fetch: typeof globalThis.fetch;
   timeoutMs: number;
@@ -40,6 +41,12 @@ const DESCRIPTION_MAX = 80;
 // 숨김·기간 만료가 미리보기에 늦게 반영되는 시간의 상한이다. 봇 요청이 만료된 내용을 오래 붙들지 않게 짧게 둔다
 const CACHE_OK = 'public, max-age=0, s-maxage=60';
 const CACHE_FAILED = 'no-store';
+/**
+ * 함수가 껍데기 파일을 못 읽을 때 준다(includeFiles 가 빠진 배포 등). 미리보기 태그는 그대로 넣는다.
+ * 브라우저는 정적 /shell.html 을 받아 이 주소에 그대로 그리므로 하객 화면이 열린다. 그것도 실패하면 안내만 남는다.
+ * 태그 값은 이 스크립트 안에 들어가지 않는다.
+ */
+const SHELL_MISSING_PAGE = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>wuzu</title></head><body><noscript>잠시 후 다시 열어 주세요.</noscript><script>fetch('/shell.html').then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(h){document.open();document.write(h);document.close()}).catch(function(){document.body.textContent='잠시 후 다시 열어 주세요.'})</script></body></html>`;
 const SLUG = /^[A-Za-z0-9]{10,64}$/;
 const MEDIA_KEY = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*(\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*$/;
 
@@ -56,6 +63,16 @@ function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/** 껍데기 파일을 읽는다. 실패하면 null 과 기록 한 줄. 오류 메시지·경로는 남기지 않고 코드만 남긴다 */
+export function loadShell(read: () => string, log: (line: string) => void): string | null {
+  try {
+    return read();
+  } catch (error) {
+    log(`[guest-page] shell.html 을 읽지 못했다: ${(error as { code?: unknown } | null)?.code ?? 'UNKNOWN'}`);
+    return null;
+  }
 }
 
 /** 서버가 만드는 slug 모양인지. 주소로 들어온 값이라 이 검사를 지나야 서버에 보내고 태그에 쓴다 */
@@ -177,7 +194,8 @@ export async function buildGuestPage(slugs: string[], deps: GuestPageDeps): Prom
   }
   return {
     status: 200,
-    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': cache },
-    body: renderOg(deps.shell, meta),
+    // 껍데기가 없는 응답이 CDN 에 남으면 모든 하객이 받고 장애도 가려진다
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': deps.shell === null ? CACHE_FAILED : cache },
+    body: renderOg(deps.shell ?? SHELL_MISSING_PAGE, meta),
   };
 }

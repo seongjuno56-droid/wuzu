@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { checkGuestDist, checkGuestEnv } = require('../../../scripts/guest-web-rules.js') as {
+const { checkGuestDist, checkGuestEnv, preconnectTags } = require('../../../scripts/guest-web-rules.js') as {
+  preconnectTags: (supabaseUrl: string, mediaUrl: string) => string;
   checkGuestDist: (files: string[]) => string[];
   checkGuestEnv: (env: Record<string, string | undefined>) => string[];
 };
@@ -87,6 +88,14 @@ describe('빌드 출력 검사', () => {
     'assets/secret.sql',
   ])('허용되지 않은 파일 %s 는 막는다', (file) => {
     expect(checkGuestDist([...GOOD, file])).toEqual([`공개되면 안 되는 파일: ${file}`]);
+  });
+});
+
+describe('미리 연결', () => {
+  it('Supabase 는 fetch 라 crossorigin, 사진은 일반 이미지 요청이라 crossorigin 없이 연결한다', () => {
+    expect(preconnectTags('https://x.supabase.co/', 'https://pub-x.r2.dev/a')).toBe(
+      '<link rel="preconnect" href="https://x.supabase.co" crossorigin><link rel="preconnect" href="https://pub-x.r2.dev">',
+    );
   });
 });
 

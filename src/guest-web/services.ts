@@ -10,7 +10,7 @@ export * from '../services/types';
  * 로그인·실시간·저장소 클라이언트와 mock 서비스를 번들에 넣지 않는다.
  * 빌드가 환경 변수를 검사하므로(guest-web-rules.js) 이 파일은 언제나 실서버다.
  */
-const URL_BASE = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const URL_BASE = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').replace(/\/+$/, '');
 const KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 /** client.rpc 와 같은 모양. 오류 처리는 rpcCaller 가 한다. 네트워크 오류는 그대로 던진다 */

@@ -1,4 +1,4 @@
-import { buildGuestPage, GuestPageDeps, isGuestSlug, OgMeta, renderOg } from '../../../api/_lib/og';
+import { buildGuestPage, GuestPageDeps, isGuestSlug, loadShell, OgMeta, renderOg } from '../../../api/_lib/og';
 
 const SHELL = '<!DOCTYPE html><html><head><title>wuzu</title><script src="/_expo/app.js" defer></script></head><body><div id="root"></div></body></html>';
 const SLUG = 'abcDEF123456';
@@ -234,5 +234,84 @@ describe('buildGuestPage', () => {
       // 입력 값을 og:url 에 되돌려 쓰지 않는다
       expect(metaOf(page.body, 'og:url')).toBe('https://guest.example.app');
     }
+  });
+});
+
+describe('껍데기 파일을 못 읽을 때', () => {
+  const FALLBACK = { shell: null };
+
+  it('캐시하지 않고, 정적 껍데기를 받아 이 주소에 그리는 스크립트와 200 을 준다', async () => {
+    const page = await buildGuestPage([SLUG], deps(active(), FALLBACK));
+    expect(page.status).toBe(200);
+    expect(page.headers['Cache-Control']).toBe('no-store');
+    expect(page.body).toContain("fetch('/shell.html')");
+    expect(page.body).toContain('document.write');
+    // 받기도 실패하면 안내만 남는다
+    expect(page.body).toContain('잠시 후 다시 열어 주세요');
+  });
+
+  it('없는 초대장·잘못된 slug 도 캐시하지 않는다', async () => {
+    expect((await buildGuestPage([SLUG], deps({ state: 'not_found' }, FALLBACK))).headers['Cache-Control']).toBe('no-store');
+    expect((await buildGuestPage(['bad'], deps(active(), FALLBACK))).headers['Cache-Control']).toBe('no-store');
+  });
+
+  it('미리보기 태그는 그대로 나가고 값은 이스케이프한다', async () => {
+    const name = '</script><script>alert(1)</script>';
+    const page = await buildGuestPage([SLUG], deps(active({ name }), FALLBACK));
+    expect(metaOf(page.body, 'og:title')).toBe('&lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(page.body).not.toContain('<script>alert(1)');
+    expect(page.body.match(/<script>/g)).toHaveLength(1);
+  });
+
+  it('loadShell 은 읽은 값을 주고, 실패하면 null 과 비밀 없는 기록 한 줄을 남긴다', () => {
+    const log = jest.fn();
+    expect(loadShell(() => SHELL, log)).toBe(SHELL);
+    expect(log).not.toHaveBeenCalled();
+    const secretError = Object.assign(new Error('sb_publishable_secret 경로 /var/task/dist'), { code: 'ENOENT' });
+    expect(
+      loadShell(() => {
+        throw secretError;
+      }, log),
+    ).toBeNull();
+    expect(log).toHaveBeenCalledTimes(1);
+    const line = String(log.mock.calls[0].join(' '));
+    expect(line).toContain('ENOENT');
+    expect(line).toContain('shell.html');
+    expect(line).not.toContain('sb_publishable');
+  });
+});
+
+describe('함수를 직접 부를 때 (/api/guest-page 는 공개된 예외)', () => {
+  const realFetch = global.fetch;
+  const req = (query: string, method = 'GET') => ({ method, url: `https://guest.example.app/api/guest-page${query}` }) as Request;
+  const load = () => {
+    let handler!: { fetch: (r: Request) => Promise<Response> };
+    jest.isolateModules(() => {
+      jest.doMock('node:fs', () => ({ readFileSync: () => SHELL }));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      handler = require('../../../api/guest-page').default;
+    });
+    return handler;
+  };
+  afterEach(() => {
+    global.fetch = realFetch;
+    jest.dontMock('node:fs');
+  });
+
+  it.each(['', '?slug=', '?slug=bad', '?slug=../etc/passwd', `?slug=${SLUG}&slug=abcDEF654321`])('slug 가 %s 이면 서버를 부르지 않고 기본 태그만 준다', async (query) => {
+    const fetchMock = jest.fn(async () => ({ ok: true, json: async () => active() }) as Response);
+    global.fetch = fetchMock;
+    const res = await load().fetch(req(query));
+    const html = await res.text();
+    expect(res.status).toBe(200);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(metaOf(html, 'og:title')).toBe('wuzu 모바일 초대장');
+    expect(html).not.toContain('우리 결혼합니다');
+    expect(html).not.toContain('thumb.jpg');
+    expect(html).not.toContain('rel="preload"');
+  });
+
+  it('GET·HEAD 말고는 받지 않는다', async () => {
+    expect((await load().fetch(req('', 'POST'))).status).toBe(405);
   });
 });

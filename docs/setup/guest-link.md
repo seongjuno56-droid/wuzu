@@ -209,6 +209,18 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 5. Production 브랜치에 코드가 들어가면 Vercel 이 알아서 빌드합니다. 환경 변수를 나중에 넣었다면 **Deployments** 에서 맨 위 배포의 **…** → **Redeploy** 를 누릅니다 **(화면 확인)**. 환경 변수는 빌드 때 번들에 들어가므로 다시 빌드해야 반영됩니다.
 6. 빌드가 **Ready** 로 끝나는지 봅니다. 실패하면 기록(**Build Logs**)에서 `[build-guest-web]` 으로 시작하는 줄을 찾아 Claude 에게 알려 줍니다. 비밀 값이 보이지 않게 하세요.
 
+### 첫 배포 때 가장 먼저 볼 것
+
+코드와 문서로만 확인했고 Vercel·Supabase 실서버에서는 아직 시험하지 못한 세 가지입니다. 아래 순서대로 봅니다. 하나라도 어긋나면 Claude 에게 알려 주세요.
+
+1. **함수에 `dist/shell.html` 이 들어갔는가.** `vercel.json` 의 `includeFiles` 는 빌드가 끝난 파일을 가리킵니다. 함수가 빌드 뒤에 묶이는지는 실제 배포로만 알 수 있습니다.
+   - 확인: `wuzu-guest` → **Logs** 에서 `[guest-page] shell.html 을 읽지 못했다` 줄을 찾습니다 **(화면 확인)**. 없어야 정상입니다.
+   - 이 줄이 있어도 하객 화면은 정적 `/shell.html` 을 받아 열립니다. 다만 그 응답은 캐시되지 않으니 고쳐야 합니다.
+2. **`apikey` 헤더만으로 호출이 받아들여지는가.** 함수와 하객 화면이 `Authorization` 없이 publishable 키를 `apikey` 헤더로만 보냅니다.
+   - 확인: 활성화한 초대장의 `/i/<slug>` 에서 초대장이 보이면 정상입니다. **"초대장을 불러오지 못했어요"** 와 **다시 시도** 버튼이 나오면 거절된 것입니다. 이때는 하객 링크가 모두 열리지 않으니 바로 알려 주세요.
+3. **`X-Robots-Tag: noindex` 가 있어도 카카오톡 카드가 나오는가.** 사이트 전체에 이 헤더가 있고, 카카오톡 봇이 이것을 따르는지는 문서로 확인하지 못했습니다.
+   - 확인: 아래 **카카오톡 카드 확인** 을 합니다. 제목·썸네일이 안 나오면 이 헤더를 먼저 의심합니다.
+
 ### 주소 확인
 
 휴대폰이나 시크릿 창에서 엽니다. `<주소>` 는 `EXPO_PUBLIC_GUEST_WEB_URL` 값입니다.
@@ -219,6 +231,8 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 | `<주소>/privacy` | 개인정보 처리방침 |
 | `<주소>/` , `<주소>/home` , `<주소>/auth/login` , `<주소>/create` | "페이지를 찾을 수 없어요" 만. 로그인·홈이 보이면 안 됩니다 |
 | `<주소>/package.json` , `<주소>/.env` , `<주소>/admin` , `<주소>/docs` , `<주소>/supabase` | 같은 안내. 파일 내용이 보이면 **바로 Pause Project** 를 누르고 알려 주세요 |
+| `<주소>/api/guest-page` , `<주소>/api/guest-page?slug=없는값` | **열리는 것이 정상입니다(정해 둔 예외).** rewrite 가 이 주소를 쓰므로 막지 않습니다. 화면은 "페이지를 찾을 수 없어요" 이고, 페이지 소스의 `og:title` 은 기본값 `wuzu 모바일 초대장` 입니다. 초대장 이름·사진이 소스에 있으면 안 됩니다 |
+| `<주소>/shell.html` | **열리는 것이 정상입니다(정해 둔 예외).** `/privacy` 가 이 파일을 쓰므로 막지 않습니다. 화면은 "페이지를 찾을 수 없어요" 이고, 페이지 소스에 초대장 정보나 `og:` 태그가 없어야 합니다 |
 
 ### 카카오톡 카드 확인
 
@@ -243,6 +257,11 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 4. 카드 정보를 넣습니다.
 5. **Confirm and Upgrade** 를 누릅니다.
 6. **Settings** 의 **Spend Management** 에서 **Pause all production deployments** 를 **켜지 않습니다.** 켜 두면 사용량 때문에 하객 링크가 멈출 수 있습니다.
+
+### 출시 전에 함께 할 일
+
+- **`/i/*` 요청 수 제한을 권합니다.** `wuzu-guest` 의 **Firewall** 에 경로 `/i/` 로 시작하는 요청의 Rate Limit 규칙을 더합니다 **(화면 확인)**. 주소 뒤에 `?x=1` 같은 값을 붙이면 CDN 캐시를 비켜 함수와 Supabase 호출을 늘릴 수 있기 때문입니다. 한도 값은 실제 사용량을 본 뒤 정합니다. 결혼식 당일 하객이 몰려도 막히지 않을 만큼 넉넉해야 합니다.
+- **첫 EAS 설정 때 (미확인).** 저장소에 `app.config.js` 가 있어 `npx eas-cli@latest init` 이 `projectId` 를 `app.json` 에 저절로 쓰지 못할 수 있습니다. 그러면 안내에 나온 `extra.eas.projectId` 를 직접 넣어야 합니다. `app.config.js` 는 `config.extra` 를 그대로 이어받으므로 `app.json` 에 넣으면 됩니다. 실제로 해 보지 않았습니다.
 
 ## 뒤에 이어서 채울 내용
 

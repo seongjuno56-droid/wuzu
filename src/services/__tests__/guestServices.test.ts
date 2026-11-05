@@ -43,6 +43,18 @@ describe('공개 웹 전용 서비스', () => {
     expect(init.headers).toEqual({ apikey: 'sb_publishable_test', 'Content-Type': 'application/json' });
   });
 
+  it('주소 끝 슬래시를 정리한다', async () => {
+    const fetchMock = answer(200, { state: 'not_found' });
+    process.env.EXPO_PUBLIC_SUPABASE_URL = `${URL_VALUE}//`;
+    let mod!: typeof import('../../guest-web/services');
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      mod = require('../../guest-web/services');
+    });
+    await mod.invitationService.getBySlug('abcDEF123456');
+    expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toBe(`${URL_VALUE}/rest/v1/rpc/guest_invitation`);
+  });
+
   it('서버 오류는 DB 메시지로 던진다', async () => {
     answer(400, { message: 'RATE_LIMITED' });
     await expect(load().invitationService.getBySlug('abcDEF123456')).rejects.toThrow('RATE_LIMITED');

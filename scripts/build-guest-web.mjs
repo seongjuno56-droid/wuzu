@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const { checkGuestDist, checkGuestEnv } = require('./guest-web-rules.js');
+const { checkGuestDist, checkGuestEnv, preconnectTags } = require('./guest-web-rules.js');
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -44,10 +44,7 @@ if (exported.status !== 0) fail(['expo export 실패']);
 // 빌드 정보 파일. 하객 화면이 읽지 않는다
 rmSync(path.join(DIST, 'metadata.json'), { force: true });
 
-const origin = (url) => new URL(url).origin;
-const preconnect = [...new Set([process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_MEDIA_BASE_URL].map(origin))]
-  .map((url) => `<link rel="preconnect" href="${url}" crossorigin>`)
-  .join('');
+const preconnect = preconnectTags(process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_MEDIA_BASE_URL);
 // 라우터가 뿌리·하객 화면 JS 를 entry 실행 뒤에야 부르므로, 미리 받아 왕복을 줄인다
 const JS_DIR = '_expo/static/js/web';
 const preload = readdirSync(path.join(DIST, JS_DIR))
