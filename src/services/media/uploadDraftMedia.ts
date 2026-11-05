@@ -51,7 +51,7 @@ export class MediaUploadError extends Error {
 
 const CONCURRENCY = 3;
 const SIGN_TIMEOUT_MS = 20_000;
-/** 느린 LTE 를 생각해 초당 100KB 를 기준으로 잡는다. 20MB 동영상이면 4분 반쯤 */
+/** 느린 LTE 를 생각해 초당 100KB 를 기준으로 잡는다. 20MB 동영상이면 4분쯤 */
 const putTimeoutMs = (bytes: number) => 30_000 + bytes / 100;
 
 const EXT_TYPES: Record<string, string> = {

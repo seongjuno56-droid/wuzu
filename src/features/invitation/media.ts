@@ -25,9 +25,9 @@ const SAVE_FORMAT: Record<PhotoFormat, SaveFormat> = { webp: SaveFormat.WEBP, jp
 
 /**
  * 긴 변을 maxSide 이하로 줄여 저장하고 파일 주소를 돌려준다(늘리지는 않는다). 웹은 파일이 없어 data URI 다.
- * WebP 를 저장하지 못하는 플랫폼은 JPEG 로 대체한다(설계 "확인 결과"). 그 밖의 실패는 던진다.
+ * WebP 를 저장하지 못하는 플랫폼은 JPEG 로 대체한다(설계 "확인 결과"). exact 면 대체하지 않고 던진다. 그 밖의 실패도 던진다.
  */
-export async function encodePhoto(uri: string, opts: { maxSide: number; format: PhotoFormat }): Promise<string> {
+export async function encodePhoto(uri: string, opts: { maxSide: number; format: PhotoFormat; exact?: boolean }): Promise<string> {
   const original = await ImageManipulator.manipulate(uri).renderAsync();
   const ctx = ImageManipulator.manipulate(original);
   if (Math.max(original.width, original.height) > opts.maxSide) {
@@ -39,7 +39,7 @@ export async function encodePhoto(uri: string, opts: { maxSide: number; format: 
     const result = await ref.saveAsync({ compress: 0.7, format: SAVE_FORMAT[format], base64: web });
     return web && result.base64 ? `data:image/${format};base64,${result.base64}` : result.uri;
   };
-  if (opts.format !== 'webp') return save(opts.format);
+  if (opts.format !== 'webp' || opts.exact) return save(opts.format);
   try {
     return await save('webp');
   } catch {
@@ -50,10 +50,10 @@ export async function encodePhoto(uri: string, opts: { maxSide: number; format: 
 /** 올리기 직전에 다시 줄일 때 (원본이 남았거나 2MB 를 넘는 사진) */
 export const compressPhoto = (uri: string) => encodePhoto(uri, { maxSide: PHOTO_MAX_SIDE, format: 'webp' });
 
-/** 작은 사진. 주소를 본 이미지에서 만들므로 본 이미지와 같은 형식으로 만든다 */
+/** 작은 사진. 주소를 본 이미지에서 만들므로 본 이미지와 같은 형식으로 만든다. 다른 형식으로 대체하면 내용과 형식 표시가 어긋나므로 실패시킨다 */
 export function makePhotoThumb(uri: string, contentType: string): Promise<string> {
   const format: PhotoFormat = contentType === 'image/png' ? 'png' : contentType === 'image/jpeg' ? 'jpeg' : 'webp';
-  return encodePhoto(uri, { maxSide: THUMB_MAX_SIDE, format });
+  return encodePhoto(uri, { maxSide: THUMB_MAX_SIDE, format, exact: true });
 }
 
 /** 고를 때 줄여 둔다. 변환하지 못하면 원본을 두고, 올릴 때 다시 줄인다 */

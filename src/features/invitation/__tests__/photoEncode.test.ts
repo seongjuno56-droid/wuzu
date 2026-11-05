@@ -59,6 +59,13 @@ describe('사진 변환', () => {
     expect(mockResize).toHaveBeenCalledWith({ width: 400, height: null });
   });
 
+  it('작은 사진은 WebP 저장이 실패해도 JPEG 로 바꾸지 않고 던진다 (JPEG 내용에 webp 이름표가 붙지 않게)', async () => {
+    mockSave.mockRejectedValueOnce(new Error('지원 안 함'));
+    await expect(makePhotoThumb('file:///a.webp', 'image/webp')).rejects.toThrow('지원 안 함');
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockSave.mock.calls[0][0]).toMatchObject({ format: 'webp' });
+  });
+
   it('PNG 를 지정하면 PNG 로 둔다(투명 로고)', async () => {
     expect(await encodePhoto('file:///logo.png', { maxSide: PHOTO_MAX_SIDE, format: 'png' })).toBe('file:///out.png');
   });

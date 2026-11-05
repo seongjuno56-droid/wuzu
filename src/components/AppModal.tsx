@@ -3,6 +3,7 @@ import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet,
 
 import { colors, radius, spacing } from '../theme';
 import { Button } from './Button';
+import { ToastHost } from './Toast';
 import { Txt } from './Txt';
 
 export interface ModalAction {
@@ -23,9 +24,11 @@ interface Props {
   onDismiss?: () => void;
   /** iOS: 키보드가 버튼을 가리지 않게 카드를 올린다 (입력칸이 있고 카드가 낮은 모달용) */
   avoidKeyboard?: boolean;
+  /** 모달이 열린 채로 안내를 띄울 때. 네이티브 모달은 앱의 토스트를 가리므로 모달 안에도 둔다 */
+  withToast?: boolean;
 }
 
-export function AppModal({ visible, title, message, art, children, actions, onDismiss, avoidKeyboard }: Props) {
+export function AppModal({ visible, title, message, art, children, actions, onDismiss, avoidKeyboard, withToast }: Props) {
   // 버튼 문구가 길면 나란히 두면 줄바꿈되므로 세로로 쌓는다 (주 버튼이 위)
   const stacked = actions.some((a) => a.label.length > 8);
   const ordered = stacked ? [...actions].reverse() : actions;
@@ -70,6 +73,7 @@ export function AppModal({ visible, title, message, art, children, actions, onDi
             </View>
           </Pressable>
         </Pressable>
+        {withToast && <ToastHost />}
       </KeyboardAvoidingView>
     </Modal>
   );

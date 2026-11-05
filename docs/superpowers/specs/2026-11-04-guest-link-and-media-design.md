@@ -174,6 +174,7 @@ wuzu 의 핵심 가치는 만든 초대장을 사람들에게 보내는 것이�
 2026-11-04 Task 1 기록. 실기기 시험 없이 문서로 확인한 내용이다.
 
 - **WebP 저장**: `SaveFormat.WEBP` 는 Expo SDK 58 `expo-image-manipulator` 문서에 있지만 플랫폼별 동작은 미확인이다. 코드에서 WebP 저장이 실패하면 JPEG 로 대체하고, Task 11 에서 아이폰으로 확인한다.
+- **BGM wav·m4a 업로드**: Task 11 에서 안드로이드로 확인한다. 안드로이드는 Blob 자신의 형식이 content-type 헤더를 덮어쓰므로, 앱이 PUT 직전에 Blob 형식을 서명한 형식에 맞춘다. 기기가 알리는 형식(`audio/x-wav`, `audio/x-m4a` 등)이 서명한 형식과 다르기 쉬운 두 종류로 이 처리가 실제로 듣는지 본다.
 - **속도**: JS·글꼴·이미지 크기 (Task 9 측정 후 기록), LTE 표지 표시 시간 (Task 9 측정 후 기록).
 - **카카오톡 카드**: Task 9·11 에서 실제로 확인한다.
 - **Function 한도**: 하객 웹 호스팅이 Vercel 로 바뀌어 Cloudflare Function 한도 시험은 필요 없다. Vercel 문서 기준으로 Hobby 는 사용량을 넘으면 대개 30일을 기다려야 하고 비상업 용도로만 쓸 수 있으므로, 실제 하객에게 링크가 나가기 전에 Pro 로 올린다. Pro 에서는 Spend Management 의 Pause all production deployments 를 켜지 않는다. 실제 한도 도달 시험은 하지 않았다.

@@ -25,7 +25,9 @@ revoke all on table public.media_files from public, anon, authenticated;
 
 -- 서명 주소를 내주기 전에 sign-upload 가 본인 권한으로 부른다. 남의 초대장이면 NOT_FOUND 라 서명도 나가지 않는다.
 -- 처음에는 in_use = false: 초대장을 저장해야 쓰임 표시가 된다.
--- 재시도로 같은 키(작은 사진)가 다시 와도 한 줄이다. 키는 그 초대장 폴더 안이어야 해서 남의 줄을 덮어쓸 수 없다.
+-- 재시도로 같은 키(작은 사진)가 다시 와도 한 줄이다.
+-- 회원이 이 함수를 직접 부를 수 있으므로 앱·함수를 믿지 않고 키 전체 모양을 검사한다. 앞부분만 보면 invitations/<내 id>/../<남의 id>/...
+-- 가 통과해 나중에 파일 삭제가 남의 파일을 지울 수 있다. 확장자 표의 원본: supabase/functions/_shared/uploadRules.ts
 create function public.record_media_file(p_invitation uuid, p_key text, p_kind text, p_bytes bigint) returns void
 language plpgsql
 security definer
@@ -39,7 +41,15 @@ begin
   if not exists (select 1 from public.invitations where id = p_invitation and owner_id = p.id) then
     raise exception 'NOT_FOUND';
   end if;
-  if p_key is null or position(('invitations/' || p_invitation::text || '/') in p_key) <> 1 then
+  if p_key is null or p_key !~ ('^invitations/' || p_invitation::text || '/[0-9a-f]{32}' || case p_kind
+    when 'image' then '\.(webp|jpg|png)$'
+    when 'thumb' then '_thumb\.(webp|jpg|png)$'
+    when 'linkThumb' then '\.(jpg|png)$'
+    when 'gif' then '\.gif$'
+    when 'video' then '\.(mp4|mov)$'
+    when 'bgm' then '\.(mp3|m4a|aac|wav|ogg)$'
+    else '^$' -- 모르는 종류는 어떤 키도 맞지 않는다
+  end) then
     raise exception 'INVALID';
   end if;
   if (select count(*) from public.media_files where invitation_id = p_invitation and deleted_at is null) >= v_max_files then

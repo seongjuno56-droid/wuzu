@@ -37,6 +37,7 @@ export function SaveNameModal(props: {
       visible={visible}
       title={kind === 'final' ? '초대장 저장' : '초대장 임시저장'}
       onDismiss={cancel}
+      withToast
       actions={[
         { label: '취소', variant: 'outline', onPress: cancel },
         { label: saving ? '저장 중…' : '저장', onPress: () => valid && !saving && onSave(name.trim()) },

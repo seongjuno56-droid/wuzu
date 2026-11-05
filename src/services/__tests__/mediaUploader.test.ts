@@ -22,10 +22,12 @@ describe('createMediaUploader', () => {
   const realFetch = global.fetch;
   const saved = process.env.EXPO_PUBLIC_MEDIA_BASE_URL;
   const fetchMock = jest.fn();
-  const blob = { type: 'audio/mpeg', size: 10 };
+  const typed = { type: 'audio/mpeg', size: 10 };
+  const blob = { type: 'audio/x-wav', size: 10, slice: jest.fn(() => typed) };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    blob.slice.mockImplementation(() => typed);
     process.env.EXPO_PUBLIC_MEDIA_BASE_URL = 'https://media.example';
     global.fetch = fetchMock as unknown as typeof fetch;
     fetchMock.mockImplementation(async (url: string, init?: RequestInit) =>
@@ -51,8 +53,10 @@ describe('createMediaUploader', () => {
     });
     expect(fetchMock).toHaveBeenCalledWith(
       'https://r2/put',
-      expect.objectContaining({ method: 'PUT', headers: signed.headers, body: blob, signal: expect.anything() }),
+      expect.objectContaining({ method: 'PUT', headers: signed.headers, body: typed, signal: expect.anything() }),
     );
+    // 안드로이드는 Blob 자신의 형식이 헤더를 덮어쓴다. 서명한 형식과 다르면 언제나 403 이다
+    expect(blob.slice).toHaveBeenCalledWith(0, 10, 'audio/mpeg');
     expect((out.content as never as { bgm: { uri: string } }).bgm.uri).toBe(`https://media.example/${KEY}`);
   });
 

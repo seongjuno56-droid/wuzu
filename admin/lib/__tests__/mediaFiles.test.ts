@@ -22,6 +22,8 @@ async function asMember<T>(db: Db, id: string, fn: () => Promise<T>): Promise<T>
   }
 }
 
+/** 서명 함수가 만드는 모양의 키 */
+const R = (c: string) => c.repeat(32);
 const member = (db: Db, name = '회원') => addMember(db, { name });
 const newInv = async (db: Db, owner: string, data = sample()) => {
   const [r] = await asMember(db, owner, () =>
@@ -43,9 +45,9 @@ describe('media_files', () => {
     const db = await newTestDb();
     const a = await member(db);
     const id = await newInv(db, a);
-    await record(db, a, id, `invitations/${id}/a.webp`);
+    await record(db, a, id, `invitations/${id}/${R('a')}.webp`);
     const [f] = await files(db);
-    expect(f).toMatchObject({ r2_key: `invitations/${id}/a.webp`, invitation_id: id, kind: 'image', in_use: false });
+    expect(f).toMatchObject({ r2_key: `invitations/${id}/${R('a')}.webp`, invitation_id: id, kind: 'image', in_use: false });
     expect(Number(f.bytes)).toBe(1000);
   });
 
@@ -54,7 +56,7 @@ describe('media_files', () => {
     const a = await member(db, 'A');
     const b = await member(db, 'B');
     const id = await newInv(db, a);
-    await expect(record(db, b, id, `invitations/${id}/x.webp`)).rejects.toThrow('NOT_FOUND');
+    await expect(record(db, b, id, `invitations/${id}/${R('a')}.webp`)).rejects.toThrow('NOT_FOUND');
     expect(await files(db)).toEqual([]);
   });
 
@@ -62,7 +64,70 @@ describe('media_files', () => {
     const db = await newTestDb();
     const a = await member(db);
     const id = await newInv(db, a);
-    await expect(record(db, a, id, `invitations/other/x.webp`)).rejects.toThrow('INVALID');
+    await expect(record(db, a, id, `invitations/other/${R('a')}.webp`)).rejects.toThrow('INVALID');
+  });
+
+  it('.. 로 다른 초대장 폴더를 가리키는 키는 거부한다', async () => {
+    const db = await newTestDb();
+    const a = await member(db, 'A');
+    const b = await member(db, 'B');
+    const mine = await newInv(db, a);
+    const victim = await newInv(db, b);
+    for (const key of [
+      `invitations/${mine}/../${victim}/${R('a')}.webp`,
+      `invitations/${mine}/../../x.webp`,
+      `invitations/${mine}/${R('a')}/../${R('b')}.webp`,
+    ]) {
+      await expect(record(db, a, mine, key), key).rejects.toThrow('INVALID');
+    }
+    expect(await files(db)).toEqual([]);
+  });
+
+  it('난수 모양이 아닌 키는 거부한다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const id = await newInv(db, a);
+    for (const name of ['a.webp', `${R('A')}.webp`, `${R('a')}a.webp`, `${R('a')}`, `${R('a')}.webp\n`, `${R('a')}.webp/x`]) {
+      await expect(record(db, a, id, `invitations/${id}/${name}`), name).rejects.toThrow('INVALID');
+    }
+  });
+
+  it('종류와 확장자가 맞아야 하고, _thumb 은 작은 사진만 쓴다', async () => {
+    const db = await newTestDb();
+    const a = await member(db);
+    const id = await newInv(db, a);
+    const key = (ext: string, c = 'a', thumb = '') => `invitations/${id}/${R(c)}${thumb}.${ext}`;
+    for (const [kind, k] of [
+      ['image', key('gif')],
+      ['image', key('mp4')],
+      ['image', key('html')],
+      ['image', key('webp', 'a', '_thumb')],
+      ['thumb', key('webp')],
+      ['linkThumb', key('webp')],
+      ['gif', key('webp')],
+      ['video', key('mp3')],
+      ['bgm', key('mp4')],
+    ]) {
+      await expect(record(db, a, id, k, kind), `${kind} ${k}`).rejects.toThrow('INVALID');
+    }
+    const ok: [string, string][] = [
+      ['image', key('webp', '1')],
+      ['image', key('jpg', '2')],
+      ['image', key('png', '3')],
+      ['thumb', key('webp', '1', '_thumb')],
+      ['linkThumb', key('jpg', '4')],
+      ['linkThumb', key('png', '5')],
+      ['gif', key('gif', '6')],
+      ['video', key('mp4', '7')],
+      ['video', key('mov', '8')],
+      ['bgm', key('mp3', '9')],
+      ['bgm', key('m4a', 'b')],
+      ['bgm', key('aac', 'c')],
+      ['bgm', key('wav', 'd')],
+      ['bgm', key('ogg', 'e')],
+    ];
+    for (const [kind, k] of ok) await record(db, a, id, k, kind);
+    expect(await files(db)).toHaveLength(ok.length);
   });
 
   it('정지 회원은 기록할 수 없다', async () => {
@@ -70,23 +135,23 @@ describe('media_files', () => {
     const a = await member(db);
     const id = await newInv(db, a);
     await db.query(`update profiles set status = 'banned' where id = $1`, [a]);
-    await expect(record(db, a, id, `invitations/${id}/x.webp`)).rejects.toThrow('account_unavailable');
+    await expect(record(db, a, id, `invitations/${id}/${R('a')}.webp`)).rejects.toThrow('account_unavailable');
   });
 
   it('틀린 종류·크기는 표가 거부한다', async () => {
     const db = await newTestDb();
     const a = await member(db);
     const id = await newInv(db, a);
-    await expect(record(db, a, id, `invitations/${id}/x.exe`, 'exe')).rejects.toThrow();
-    await expect(record(db, a, id, `invitations/${id}/x.webp`, 'image', 0)).rejects.toThrow();
+    await expect(record(db, a, id, `invitations/${id}/${R('a')}.webp`, 'exe')).rejects.toThrow();
+    await expect(record(db, a, id, `invitations/${id}/${R('a')}.webp`, 'image', 0)).rejects.toThrow();
   });
 
   it('같은 키를 다시 기록해도(올리기 재시도) 한 줄이다', async () => {
     const db = await newTestDb();
     const a = await member(db);
     const id = await newInv(db, a);
-    await record(db, a, id, `invitations/${id}/t_thumb.webp`, 'thumb', 10);
-    await record(db, a, id, `invitations/${id}/t_thumb.webp`, 'thumb', 20);
+    await record(db, a, id, `invitations/${id}/${R('a')}_thumb.webp`, 'thumb', 10);
+    await record(db, a, id, `invitations/${id}/${R('a')}_thumb.webp`, 'thumb', 20);
     const rows = await files(db);
     expect(rows).toHaveLength(1);
     expect(Number(rows[0].bytes)).toBe(20);
@@ -101,7 +166,7 @@ describe('media_files', () => {
        select 'invitations/' || $1::text || '/' || g || '.webp', $1::uuid, 'image', 1 from generate_series(1, 500) g`,
       [id],
     );
-    await expect(record(db, a, id, `invitations/${id}/more.webp`)).rejects.toThrow('TOO_MANY');
+    await expect(record(db, a, id, `invitations/${id}/${R('a')}.webp`)).rejects.toThrow('TOO_MANY');
   });
 
   it('저장한 내용에 들어 있는 파일과 그 작은 사진만 쓰임 표시가 되고, 빠지면 표시만 풀린다', async () => {
@@ -109,24 +174,24 @@ describe('media_files', () => {
     const a = await member(db);
     const id = await newInv(db, a);
     const k = (n: string) => `invitations/${id}/${n}`;
-    await record(db, a, id, k('main.webp'));
-    await record(db, a, id, k('main_thumb.webp'), 'thumb');
-    await record(db, a, id, k('canvas.gif'), 'gif');
-    await record(db, a, id, k('link.jpg'), 'linkThumb');
-    await record(db, a, id, k('never.webp'));
+    await record(db, a, id, k(`${R('a')}.webp`));
+    await record(db, a, id, k(`${R('a')}_thumb.webp`), 'thumb');
+    await record(db, a, id, k(`${R('b')}.gif`), 'gif');
+    await record(db, a, id, k(`${R('c')}.jpg`), 'linkThumb');
+    await record(db, a, id, k(`${R('d')}.webp`));
 
     await saveInv(
       db,
       a,
       id,
       sample({
-        content: { theme: 'meetup', gallery: { photos: [`r2://${k('main.webp')}`] } },
-        design: { cover: { mode: 'canvas', canvas: { elements: [{ kind: 'gif', uri: `r2://${k('canvas.gif')}` }] } } },
-        linkThumb: `r2://${k('link.jpg')}`,
+        content: { theme: 'meetup', gallery: { photos: [`r2://${k(`${R('a')}.webp`)}`] } },
+        design: { cover: { mode: 'canvas', canvas: { elements: [{ kind: 'gif', uri: `r2://${k(`${R('b')}.gif`)}` }] } } },
+        linkThumb: `r2://${k(`${R('c')}.jpg`)}`,
       }),
     );
     const on = (await files(db)).filter((f) => f.in_use).map((f) => f.r2_key);
-    expect(on).toEqual([k('canvas.gif'), k('link.jpg'), k('main.webp'), k('main_thumb.webp')]);
+    expect(on).toEqual([k(`${R('a')}.webp`), k(`${R('a')}_thumb.webp`), k(`${R('b')}.gif`), k(`${R('c')}.jpg`)]);
 
     await saveInv(db, a, id, sample());
     const rows = await files(db);
@@ -140,8 +205,8 @@ describe('media_files', () => {
     const a = await member(db);
     const id = await newInv(db, a);
     const other = await newInv(db, a);
-    await record(db, a, id, `invitations/${id}/a.webp`);
-    await record(db, a, other, `invitations/${other}/b.webp`);
+    await record(db, a, id, `invitations/${id}/${R('a')}.webp`);
+    await record(db, a, other, `invitations/${other}/${R('b')}.webp`);
     await db.query(`select mark_media_removed($1::uuid)`, [id]);
     const rows = await files(db);
     const of = (n: string) => rows.find((r) => r.invitation_id === n)!;
@@ -154,7 +219,7 @@ describe('media_files', () => {
     const db = await newTestDb();
     const a = await member(db);
     const id = await newInv(db, a);
-    await record(db, a, id, `invitations/${id}/a.webp`);
+    await record(db, a, id, `invitations/${id}/${R('a')}.webp`);
     await asMember(db, a, () => db.query(`select remove_my_invitation($1::uuid)`, [id]));
     const rows = await files(db);
     expect(rows).toHaveLength(1);
