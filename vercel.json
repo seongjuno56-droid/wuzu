@@ -1,0 +1,36 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build:guest-web",
+  "outputDirectory": "dist",
+  "regions": ["icn1"],
+  "functions": {
+    "api/guest-page.ts": {
+      "maxDuration": 10,
+      "includeFiles": "dist/shell.html"
+    }
+  },
+  "rewrites": [
+    { "source": "/i/:slug", "destination": "/api/guest-page?slug=:slug" },
+    { "source": "/privacy", "destination": "/shell.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "same-origin" },
+        { "key": "X-Robots-Tag", "value": "noindex" }
+      ]
+    },
+    {
+      "source": "/_expo/static/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}

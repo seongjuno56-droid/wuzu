@@ -1,0 +1,9 @@
+# wuzu-guest 프로젝트가 올리지 않을 폴더. 공개를 막는 것은 vercel.json 의 outputDirectory 이고, 이 파일은 한 겹 더 막는다.
+# supabase/functions/_shared 는 앱 코드가 불러오므로 빼지 않는다
+/admin
+/docs
+/supabase/migrations
+/supabase/test
+/supabase/manual
+/.superpowers
+/.claude

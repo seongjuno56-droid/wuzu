@@ -115,7 +115,7 @@ export function ElementContent({
         </View>
       ) : null
     ) : uri ? (
-      <Image source={{ uri }} style={shape} contentFit={photoFit(el.bind)} onError={onError} />
+      <Image source={{ uri }} style={shape} contentFit={photoFit(el.bind)} onError={onError} priority="high" loading="eager" />
     ) : (
       // 표지 사진을 아직 안 넣었으면 빈 틀
       <View style={[shape, { backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>

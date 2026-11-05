@@ -25,7 +25,7 @@ export function CanvasSlide({ doc, content, templateBg, width, renderElement, ov
   const bg = doc.background;
   return (
     <View style={[styles.slide, { width, height, backgroundColor: bg.kind === 'color' ? bg.color : templateBg }]}>
-      {bg.kind === 'image' && <Image source={{ uri: bg.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />}
+      {bg.kind === 'image' && <Image source={{ uri: bg.uri }} style={StyleSheet.absoluteFill} contentFit="cover" priority="high" loading="eager" />}
       {doc.elements.map((el) => (
         <Fragment key={el.id}>
           {renderElement ? renderElement(el) : <ElementView el={el} content={content} slideW={width} />}

@@ -1,17 +1,21 @@
-import { Image, Linking, Modal, Platform, Text } from 'react-native';
+import { isValidElement } from 'react';
+import { Dimensions, Image, Linking, Modal, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { Stack } from 'expo-router';
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
 
 import RootLayout from '../../../app/_layout';
 import GuestInvitationRoute from '../../../app/i/[slug]';
 import PublicPrivacyScreen from '../../../app/privacy';
 import { LoadFailed } from '../../../components/LoadFailed';
+import GuestSiteNotFound from '../../../guest-site/+not-found';
+import GuestSiteLayout from '../../../guest-site/_layout';
 import { toast } from '../../../components/Toast';
 import { TERMS_PRIVACY } from '../../../data/terms';
 import { EN } from '../../../i18n';
 import { invitationService, notificationService, rsvpService } from '../../../services';
 import { restoreSession } from '../../../store/session';
 import { myRsvp } from '../../rsvp/myRsvp';
-import { RsvpFormModal } from '../../rsvp/RsvpFormModal';
+import { formMaxHeight, RsvpFormModal } from '../../rsvp/RsvpFormModal';
 import { GuestbookModals } from '../GuestbookModals';
 import { GUEST_DATA_NOTICE } from '../GuestDataNotice';
 import type { Invitation } from '../model';
@@ -243,6 +247,19 @@ describe('입력 폼의 수집 안내', () => {
     expect(all.indexOf('불참')).toBeLessThan(all.indexOf(NOTICE));
   });
 
+  it('낮은 화면에서도 버튼이 잘리지 않게 입력 칸만 높이를 제한해 스크롤한다', async () => {
+    const tree = await openRsvpForm();
+    const scroll = tree.root.findByType(RsvpFormModal).findByType(ScrollView);
+    const flat = StyleSheet.flatten(scroll.props.style);
+    expect(flat.maxHeight).toBe(formMaxHeight(Dimensions.get('window').height));
+    // 입력 칸은 스크롤 안, 버튼은 스크롤 밖이다
+    expect(texts(scroll)).toContain('불참');
+    expect(texts(scroll)).not.toContain('보내기');
+    expect(pressByLabel(tree.root.findByType(RsvpFormModal), '보내기')).toBeTruthy();
+    expect(formMaxHeight(300)).toBe(120);
+    expect(formMaxHeight(800)).toBe(570);
+  });
+
   it('만든 사람의 명단 입력 폼에는 하객 안내가 없다', async () => {
     const tree = await render(
       <RsvpFormModal
@@ -445,6 +462,31 @@ describe('공개 웹 경로', () => {
     const tree = await render(<PublicPrivacyScreen />);
     expect(texts(tree.root)).toContain(TERMS_PRIVACY);
     expect(tree.root.findAll((n) => n.props.accessibilityLabel === '뒤로 가기')).toHaveLength(0);
+  });
+});
+
+describe('공개 웹 라우터', () => {
+  it('없는 주소 화면에는 앱으로 나가는 버튼이 없다', async () => {
+    const tree = await render(<GuestSiteNotFound />);
+    expect(texts(tree.root)).toContain('페이지를 찾을 수 없어요');
+    expect(tree.root.findAll((n) => typeof n.props.onPress === 'function')).toHaveLength(0);
+  });
+  it('뿌리는 세션을 복구하지 않고, 글꼴을 기다리지 않고 바로 그린다', async () => {
+    await render(<GuestSiteLayout />);
+    expect(restoreSession).not.toHaveBeenCalled();
+    // 훅을 쓰지 않는 컴포넌트라 트리를 바로 본다. 글꼴·세션 조건 없이 Stack 이 있다
+    const hasStack = (node: unknown): boolean => {
+      if (Array.isArray(node)) return node.some(hasStack);
+      if (!isValidElement(node)) return false;
+      return node.type === Stack || hasStack((node.props as { children?: unknown }).children);
+    };
+    expect(hasStack(GuestSiteLayout())).toBe(true);
+  });
+  it('하객 경로 파일은 앱의 화면을 그대로 쓴다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    expect(require('../../../guest-site/i/[slug]').default).toBe(GuestInvitationRoute);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    expect(require('../../../guest-site/privacy').default).toBe(PublicPrivacyScreen);
   });
 });
 

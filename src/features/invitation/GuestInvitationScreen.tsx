@@ -11,6 +11,7 @@ import { myRsvp, submitWithMyRsvp } from '../rsvp/myRsvp';
 import { emptyRsvpInput, isRsvpClosed, RsvpResponse, rsvpNotice } from '../rsvp/rsvp';
 import { RsvpFormModal } from '../rsvp/RsvpFormModal';
 import { GuestbookModals, GuestbookView } from './GuestbookModals';
+import { loadGuestFontsLater } from './guestFonts';
 import { Invitation, rsvpOf } from './model';
 import { themeDef } from './themes';
 import { InvitationView } from './view/InvitationView';
@@ -174,6 +175,12 @@ export function GuestInvitationScreen({ slug }: { slug: string }) {
       stale = true;
     };
   }, [slug, attempt]);
+
+  // 초대장이 쓰는 글꼴만 뒤에서 받는다. 앱에서는 이미 읽혀 있어 아무 일도 하지 않는다
+  const active = loaded?.state === 'active' ? loaded.invitation : undefined;
+  useEffect(() => {
+    if (active) return loadGuestFontsLater(lookFor(active.themeId, active.templateId, active.paletteId));
+  }, [active]);
 
   if (failed) {
     return (

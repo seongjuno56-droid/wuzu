@@ -107,7 +107,7 @@
 13. 이름이 `wuzu-guest`, Root Directory 가 `./`, Build Command 가 `exit 1` 인지 다시 봅니다.
 14. **Deploy** 를 누릅니다.
 15. 빌드가 **실패(Error)** 로 끝나는 것을 확인합니다. **실패가 정상입니다.** 프로젝트는 만들어졌고 아무것도 공개되지 않았습니다.
-16. 앞으로 저장소에 push 할 때마다 같은 실패 알림이 올 수 있습니다. 하객 웹 코드가 들어갈 때까지 무시해도 됩니다.
+16. 앞으로 저장소에 push 할 때마다 같은 실패 알림이 올 수 있습니다. 4회차의 환경 변수를 넣을 때까지 무시해도 됩니다.
 
 - 빌드가 **성공(Ready)** 으로 나오면 11번이 빠진 것입니다. 바로 **Settings** → **General** → **Pause Project** 를 누릅니다. 창이 열리면 프로젝트 이름 `wuzu-guest` 를 입력하고 **Pause Project** 를 한 번 더 누른 뒤 Claude 에게 알려 주세요.
 
@@ -177,6 +177,58 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 
 **여기까지 하면 "3회차 됨" 이라고 보내 주세요.**
 
+## 4회차: 하객 웹 배포 (Vercel `wuzu-guest`)
+
+저장소에 `vercel.json` 이 들어가면서 2회차 11번의 `exit 1` 을 이 파일의 `buildCommand` 가 대신합니다. Vercel 문서상 `vercel.json` 값이 프로젝트 설정보다 먼저입니다. 앞 번호 회차(1·3회차)와 Supabase 마이그레이션을 먼저 마친 뒤에 합니다.
+
+> **언제 공개되나.** 정식 주소(`wuzu-guest.vercel.app`)는 Production 브랜치(보통 `main`)에 코드가 들어가야 바뀝니다. main 병합은 사용자가 정합니다. 작업 브랜치의 Preview 주소는 2회차의 **Standard Protection** 때문에 로그인한 사람만 열 수 있고, 카카오톡 봇은 읽지 못합니다. 카드 확인은 정식 주소로 합니다.
+
+### 환경 변수 넣기
+
+1. Vercel 대시보드에서 팀 **sjport** → 프로젝트 `wuzu-guest` 를 엽니다.
+2. **Settings** → **Environment Variables** 를 누릅니다.
+3. 아래 네 줄을 하나씩 넣습니다. 환경(**Environments**)은 **Production** 과 **Preview** 를 고르고 **Save** 를 누릅니다 **(화면 확인)**. 모두 공개 값입니다. Sensitive 로 표시하지 않아도 됩니다.
+
+| Key | Value | 어디서 보나 |
+|---|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | `https://….supabase.co` | Supabase **Project Settings** → **API Keys** 의 Project URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `sb_publishable_…` | 같은 화면의 **publishable** 키. **secret 키가 아닙니다** |
+| `EXPO_PUBLIC_MEDIA_BASE_URL` | `https://pub-….r2.dev` | 1회차 18번의 공개 주소 |
+| `EXPO_PUBLIC_GUEST_WEB_URL` | `https://wuzu-guest.vercel.app` | `wuzu-guest` 의 **Settings** → **Domains** 에 보이는 정식 주소. 끝에 `/` 없이 |
+
+- 네 값 중 하나라도 비었거나 주소가 `https` 가 아니면 빌드가 일부러 실패합니다. 값이 없는 채로 공개되면 하객이 시험용(mock) 화면을 보기 때문입니다. secret 키를 넣어도 빌드가 실패합니다.
+- `EXPO_PUBLIC_GUEST_SITE` 는 넣지 않습니다. 빌드 스크립트가 직접 켭니다.
+- service_role·R2 키는 이 화면에 넣지 않습니다.
+
+4. 앱 폴더의 `.env.local` 에도 `EXPO_PUBLIC_GUEST_WEB_URL` 한 줄을 같은 값으로 더합니다. 공유 버튼이 이 주소를 씁니다. 개발 서버를 켜 둔 상태면 껐다 켭니다.
+
+> **주소는 보낸 뒤 바꾸기 어렵습니다.** 이미 보낸 링크는 그 주소로 남습니다. 지금의 `vercel.app` 주소는 시험용으로만 쓰고, 출시 전에 자체 도메인으로 바꿉니다.
+
+### 배포
+
+5. Production 브랜치에 코드가 들어가면 Vercel 이 알아서 빌드합니다. 환경 변수를 나중에 넣었다면 **Deployments** 에서 맨 위 배포의 **…** → **Redeploy** 를 누릅니다 **(화면 확인)**. 환경 변수는 빌드 때 번들에 들어가므로 다시 빌드해야 반영됩니다.
+6. 빌드가 **Ready** 로 끝나는지 봅니다. 실패하면 기록(**Build Logs**)에서 `[build-guest-web]` 으로 시작하는 줄을 찾아 Claude 에게 알려 줍니다. 비밀 값이 보이지 않게 하세요.
+
+### 주소 확인
+
+휴대폰이나 시크릿 창에서 엽니다. `<주소>` 는 `EXPO_PUBLIC_GUEST_WEB_URL` 값입니다.
+
+| 주소 | 나와야 하는 것 |
+|---|---|
+| `<주소>/i/<활성화한 초대장의 slug>` | 초대장 화면 |
+| `<주소>/privacy` | 개인정보 처리방침 |
+| `<주소>/` , `<주소>/home` , `<주소>/auth/login` , `<주소>/create` | "페이지를 찾을 수 없어요" 만. 로그인·홈이 보이면 안 됩니다 |
+| `<주소>/package.json` , `<주소>/.env` , `<주소>/admin` , `<주소>/docs` , `<주소>/supabase` | 같은 안내. 파일 내용이 보이면 **바로 Pause Project** 를 누르고 알려 주세요 |
+
+### 카카오톡 카드 확인
+
+7. 활성화한 초대장의 링크를 카카오톡 나와의 채팅에 보냅니다.
+8. 제목(초대장 이름)과 썸네일이 나오는지, **가로세로 2:1(800×400) 이미지가 잘리지 않는지** 봅니다. 썸네일을 직접 올린 초대장과 안 올린 초대장을 각각 봅니다. 잘림 여부는 사용자와 함께 눈으로 확인합니다.
+9. 카드가 옛 내용으로 나오면 카카오톡이 기억하는 것입니다. [카카오 개발자 도구의 초기화 화면](https://developers.kakao.com/tool/clear/og)에서 주소를 넣고 초기화합니다 **(화면 확인)**. 이 화면은 카카오 개발자 로그인이 필요합니다.
+10. 썸네일이 전혀 안 나오면 알려 주세요. 사이트 전체에 검색 제외 헤더(`X-Robots-Tag: noindex`)가 있는데, 카카오톡 봇이 이것을 따르는지는 문서로 확인하지 못했습니다.
+
+**여기까지 하면 "4회차 됨" 이라고 보내 주세요.**
+
 ## 실제 하객에게 링크를 보내기 전에: Hobby → Pro
 
 > **꼭 해야 함.** 개발 중에는 무료 Hobby 로 둡니다. **실제 하객에게 링크가 나가기 전에** 팀 `sjport` 를 Pro 로 올립니다.
@@ -197,5 +249,3 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 아래는 해당 코드가 준비되면 이 문서에 더합니다. 지금은 할 일이 없습니다.
 
 - 나머지 마이그레이션 실행과 예약 작업, 파일 삭제 함수 `purge-media`
-- 환경 변수 (앱 `.env.local` 의 나머지, Vercel `wuzu-guest`)
-- `wuzu-guest` 실제 배포 (`vercel.json` 이 2회차 11번의 `exit 1` 을 대신합니다), 하객 주소 확인과 카카오톡 카드 확인

@@ -58,7 +58,8 @@
     "web": "expo start --web",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:guest-web": "node scripts/build-guest-web.mjs"
   },
   "private": true,
   "jest": {

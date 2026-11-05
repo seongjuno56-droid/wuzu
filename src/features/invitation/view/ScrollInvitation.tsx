@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { pageOrder } from '../model';
 import { CoverSlide } from './CoverSlide';
@@ -12,7 +12,9 @@ export const SCROLL_MAX_WIDTH = 480;
 /** 스크롤형: 9:16 표지 + 나머지 섹션을 세로로 이어 붙인다 */
 export function ScrollInvitation({ invitation, ...handlers }: { invitation: ViewInvitation } & GuestbookHandlers) {
   const look = useLook();
-  const [width, setWidth] = useState(0);
+  // 첫 그림부터 표지를 그린다(하객 화면 3초 목표). 실제 폭은 onLayout 이 고친다
+  const window = useWindowDimensions();
+  const [width, setWidth] = useState(Math.round(Math.min(window.width, SCROLL_MAX_WIDTH)));
   const pages = pageOrder(invitation.enabled, invitation.order);
   return (
     <View style={[styles.outer, { backgroundColor: look.bg }]}>
