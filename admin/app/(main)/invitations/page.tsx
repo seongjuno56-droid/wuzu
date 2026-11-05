@@ -7,6 +7,7 @@ import {
   INVITATION_EXPORT_LIMIT,
   invitationFilterFrom,
   listInvitations,
+  mediaPurgeBacklog,
   type InvitationFilter,
   type InvitationRow,
 } from '@/lib/invitations';
@@ -81,7 +82,7 @@ const columns: Column<InvitationRow>[] = [
   {
     key: 'delete',
     label: '삭제',
-    render: (i) => <DeleteInvitationDialog name={i.name} action={deleteInvitationAction.bind(null, i.id)} />,
+    render: (i) => <DeleteInvitationDialog name={i.name} active={i.state === 'active'} action={deleteInvitationAction.bind(null, i.id)} />,
   },
 ];
 
@@ -115,6 +116,7 @@ export default async function InvitationsPage({ searchParams }: { searchParams: 
 
   // uuid 가 아니거나 없는 회원이면 null (목록에서도 owner 걸러 보기는 무시되거나 0개)
   const ownerName = filter.owner ? await getInvitationOwnerName(db, filter.owner) : null;
+  const backlog = await mediaPurgeBacklog(db);
 
   return (
     <div>
@@ -138,6 +140,12 @@ export default async function InvitationsPage({ searchParams }: { searchParams: 
           CSV
         </a>
       </div>
+
+      {backlog.stuck > 0 && (
+        <p role="alert" style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--danger)', fontWeight: 600 }}>
+          삭제가 밀린 파일 {backlog.stuck.toLocaleString('ko-KR')}개 (가장 오래된 요청 {formatDateTime(backlog.oldest)}). 설정 안내 5회차의 대기열 점검을 확인하세요.
+        </p>
+      )}
 
       {filter.owner && (
         <p style={{ margin: '0 0 12px', fontSize: 13 }}>

@@ -341,14 +341,56 @@ select net.http_post(
 18. 몇 초 뒤 아래를 실행합니다.
 
 ```sql
-select status_code, content from net._http_response order by created desc limit 1;
+select status_code, content, timed_out, error_msg from net._http_response order by created desc limit 1;
 ```
 
-- `status_code` 가 `200` 이고 `content` 가 `{"deleted":…,"failed":…,"skipped":…}` 모양이면 연결된 것입니다. 이 표의 내용은 6시간 뒤 사라집니다.
+이 표의 내용은 6시간 뒤 사라집니다.
+
+- `200` 이고 `content` 가 `{"deleted":0,"failed":0,"skipped":0}` 이면 **비밀값과 DB 연결만** 확인된 것입니다. 대기열이 비어 있으면 R2 에 아무 요청도 보내지 않으므로, **R2 연결과 삭제 권한은 아직 모릅니다.** 아래 **실제로 파일이 지워지는지 확인** 을 꼭 합니다.
 - `401`: 3번과 6번 값이 다릅니다. 1번부터 다시 만들어 두 곳을 바꿉니다.
-- `500`: 함수에 비밀값이 빠졌습니다. **Edge Functions** → **Secrets** 에 `PURGE_MEDIA_SECRET` 과 3회차의 R2 네 값이 있는지 봅니다.
-- `failed` 가 0 보다 크면 R2 삭제가 거절된 것입니다. 1회차 23번의 토큰 권한이 **Object Read & Write** 인지 보고, 그래도 같으면 Claude 에게 알려 주세요. 실패한 파일은 대기열에 남아 다음 실행에 다시 지웁니다.
-- `skipped` 가 0 보다 크면 모양이 잘못된 기록입니다. 지우지 않고 남겨 둡니다. Claude 에게 알려 주세요.
+- `500`: 두 가지 중 하나입니다. **Edge Functions** → **Secrets** 에 `PURGE_MEDIA_SECRET` 이 없거나 32자보다 짧은 경우, 또는 함수가 DB 함수를 부르지 못한 경우입니다. 뒤의 경우 3회차 4번의 네 번째 마이그레이션을 실행했는지 봅니다.
+- `timed_out` 이 `true` 이거나 `error_msg` 에 글이 있으면 응답을 받지 못한 것입니다. 함수가 실행되었는지는 이 값으로 알 수 없으니 Claude 에게 알려 주세요.
+- `failed` 가 0 보다 크면 파일을 지우지 못한 것입니다. **Edge Functions** → **Secrets** 의 R2 네 값(빠지면 500 이 아니라 여기에 나옵니다), `R2_BUCKET` 철자, 1회차 23번의 토큰 권한 **Object Read & Write** 를 봅니다. 그래도 같으면 Claude 에게 알려 주세요. 실패한 파일은 대기열에 남고, 시도한 지 **1시간이 지나야** 다시 나옵니다. 값을 고쳤다면 1시간 뒤 17번을 다시 실행합니다.
+- `skipped` 가 0 보다 크면 아래 **대기열 점검** 의 건너뛴 파일을 봅니다.
+
+### 실제로 파일이 지워지는지 확인
+
+19. 앱에서 시험용 초대장을 만들고 음악 파일 하나나 사진 한 장을 넣어 저장합니다. 실제 하객에게 보낸 초대장을 쓰지 마세요.
+20. **R2** → `wuzu-media` → **Objects** 에서 `invitations/` 아래에 그 파일이 있는지 봅니다 **(화면 확인)**. 폴더 이름(초대장 id)을 메모합니다.
+21. 앱에서 그 초대장을 삭제합니다.
+22. **15분을 기다립니다.** 삭제 직전에 내준 올리기 주소가 끝나기를 기다리는 시간이라, 그 전에는 대기열에서 나오지 않습니다.
+23. 17번과 18번을 다시 실행합니다.
+    - 음악 파일 하나면 `deleted` 가 `1` 입니다. 사진은 본 이미지와 작은 사진 두 개라 `2` 입니다. `failed` 는 `0` 이어야 합니다.
+24. 20번 폴더를 다시 열어 파일이 없어졌는지 봅니다. `deleted` 숫자만 믿지 말고 눈으로 확인합니다.
+
+### 대기열 점검
+
+매일 새벽 지우므로 **요청한 지 이틀이 지난 파일은 없어야 합니다.** 어드민 **초대장** 화면 맨 위에 빨간 글자로 "삭제가 밀린 파일" 이 보이면 이 점검을 합니다. SQL Editor 에서도 볼 수 있습니다.
+
+```sql
+select count(*), min(delete_requested_at) from public.media_files
+ where delete_requested_at < now() - interval '2 days' and deleted_at is null;
+```
+
+- `count` 가 0 보다 크면 먼저 **Integrations** → **Cron** 에서 `purge-media` 가 돌았는지 보고 **(화면 확인)**, 17번과 18번으로 원인을 찾습니다.
+
+**건너뛴 파일(`skipped`)** 은 키 모양이 규칙과 달라 함수가 일부러 지우지 않은 기록입니다. 정상 사용으로는 생기지 않으므로 잘못된 값이 들어왔다는 신호입니다. 아래로 찾습니다.
+
+```sql
+select id, kind, r2_key, delete_requested_at from public.media_files
+ where delete_requested_at is not null and deleted_at is null
+   and r2_key !~ ('^invitations/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-f]{32}' || case kind
+     when 'image' then '\.(webp|jpg|png)$'
+     when 'thumb' then '_thumb\.(webp|jpg|png)$'
+     when 'linkThumb' then '\.(jpg|png)$'
+     when 'gif' then '\.gif$'
+     when 'video' then '\.(mp4|mov)$'
+     when 'bgm' then '\.(mp3|m4a|aac|wav|ogg)$'
+     else '^$' end);
+```
+
+- **R2 에서 비슷한 이름의 파일을 지우지 말고** 결과를 Claude 에게 보내 주세요. 키가 다른 초대장의 파일을 가리킬 수 있습니다.
+- 지우지 않고 두어도 다른 파일 삭제를 막지 않습니다. 다만 위 점검 숫자에 계속 잡힙니다.
 
 > **참고.** 예약이 돌 때 pg_net 은 요청을 보내기 전까지 비밀값이 든 헤더를 `net.http_request_queue` 표에 잠시 둡니다(Supabase 문서에 적힌 동작). 이 표를 조회하는 사람은 DB 에 로그인할 수 있는 운영자뿐이고, 새어도 대기열을 비우는 호출만 할 수 있습니다. 그래서 이 값을 Supabase secret 키나 R2 키와 따로 둡니다. 이 표를 조회한 화면을 캡처해 보내지 마세요.
 

@@ -109,13 +109,13 @@ describe('handlePurgeMedia', () => {
       deleteObject: jest.fn(async (key: string) => {
         if (key === KEY(2)) return 500;
         if (key === KEY(3)) throw new Error('네트워크 비밀값 sk-1234');
-        // 이미 없는 파일은 지워진 것과 같다
+        // 404 는 버킷 이름이 틀려도(NoSuchBucket) 온다. 지워졌다고 표시하면 파일이 남은 채 대기열에서 사라진다
         return key === KEY(4) ? 404 : 204;
       }),
     });
     const r = await handlePurgeMedia(SECRET, d);
-    expect(r).toEqual({ status: 200, body: { deleted: 2, failed: 2, skipped: 0 } });
-    expect(done.flat().sort()).toEqual([KEY(1), KEY(4)]);
+    expect(r).toEqual({ status: 200, body: { deleted: 1, failed: 3, skipped: 0 } });
+    expect(done.flat()).toEqual([KEY(1)]);
     expect(JSON.stringify((d.log as jest.Mock).mock.calls)).not.toContain('sk-1234');
     expect(JSON.stringify(r)).not.toContain('sk-1234');
   });
@@ -155,6 +155,19 @@ describe('handlePurgeMedia', () => {
     await handlePurgeMedia(SECRET, d);
     expect(peak).toBeLessThanOrEqual(5);
     expect(peak).toBeGreaterThan(1);
+  });
+
+  it('묶음 하나가 최악으로 걸려도 150초 안에 끝나게 65초 뒤에는 새 묶음을 읽지 않는다', async () => {
+    let t = 0;
+    const full = Array.from({ length: 50 }, (_, i) => ({ key: KEY(i), kind: 'image' }));
+    const { d } = deps([full, full, full], {
+      now: () => t,
+      markDone: jest.fn(async () => {
+        t += 65_000;
+      }),
+    });
+    await handlePurgeMedia(SECRET, d);
+    expect(d.claim).toHaveBeenCalledTimes(1);
   });
 
   it('시간 예산을 넘으면 다음 묶음을 읽지 않는다', async () => {

@@ -178,7 +178,7 @@ export async function setInvitationBanned(
 /**
  * 초대장 삭제(되돌릴 수 없음). 방명록·참석 응답은 cascade 로 지워지고 파일은 삭제 대기열에 들어간다.
  * confirmName 을 주면 잠근 행의 이름과 비교한다(화면에서 다시 입력한 값). 앞뒤 공백은 무시한다.
- * 작업 기록에는 초대장 이름을 남기지 않는다. 지운 뒤에도 개인정보가 남지 않게 번호·회원 id·파일 수만 적는다.
+ * 작업 기록에는 초대장 이름을 남기지 않는다. 지운 뒤에도 개인정보가 남지 않게 번호·회원 id·상태·기간·파일 수만 적는다.
  */
 export async function deleteInvitation(
   db: Db,
@@ -191,8 +191,19 @@ export async function deleteInvitation(
     db,
     { adminId, action: 'invitation.delete', targetType: 'invitation', targetId: id, memo: opts.memo },
     async (tx) => {
-      const [row] = await tx.query<{ number: string; name: string; ownerId: string; themeId: string }>(
-        `select number, name, owner_id as "ownerId", theme_id as "themeId" from invitations where id = $1 for update`,
+      const [row] = await tx.query<{
+        number: string;
+        name: string;
+        ownerId: string;
+        themeId: string;
+        status: string;
+        activatedAt: Date | null;
+        expiresAt: Date | null;
+        banned: boolean;
+      }>(
+        `select number, name, owner_id as "ownerId", theme_id as "themeId", status,
+                activated_at as "activatedAt", expires_at as "expiresAt", banned
+           from invitations where id = $1 for update`,
         [id],
       );
       if (!row) return { before: null, after: null, changed: false, result: 'not_found' as const };
@@ -208,11 +219,34 @@ export async function deleteInvitation(
       await tx.query(`select public.mark_media_removed($1::uuid)`, [id]);
       await tx.query(`delete from invitations where id = $1`, [id]);
       return {
-        before: { number: row.number, ownerId: row.ownerId, themeId: row.themeId, files },
+        before: {
+          number: row.number,
+          ownerId: row.ownerId,
+          themeId: row.themeId,
+          status: row.status,
+          activatedAt: row.activatedAt,
+          expiresAt: row.expiresAt,
+          banned: row.banned,
+          files,
+        },
         after: null,
         changed: true,
         result: 'ok' as const,
       };
     },
   );
+}
+
+/**
+ * 삭제 대기열이 막혔는지: 요청 뒤 이틀이 지나도 R2 에서 지우지 못한 파일 수와 가장 오래된 요청 시각.
+ * 매일 새벽 지우므로 정상이면 0 이다. 키 모양이 틀려 건너뛴 파일과 계속 실패하는 파일이 여기에 잡힌다.
+ */
+export async function mediaPurgeBacklog(db: Db): Promise<{ stuck: number; oldest: Date | null }> {
+  const [row] = await db.query<{ stuck: number; oldest: Date | null }>(
+    `select count(*)::int as stuck, min(delete_requested_at) as oldest
+       from media_files
+      where delete_requested_at < now() - interval '2 days'
+        and deleted_at is null`,
+  );
+  return row;
 }

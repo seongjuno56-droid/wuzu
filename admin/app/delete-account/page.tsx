@@ -45,7 +45,7 @@ export default function DeleteAccountPage() {
         <ul style={ul}>
           <li>이름, 이메일 같은 회원 정보</li>
           <li>만든 초대장과 올린 사진</li>
-          <li>초대장에 남겨진 방명록</li>
+          <li>초대장에 남겨진 방명록과 참석 응답</li>
         </ul>
         <p style={p}>
           결제와 레터 사용 기록은 전자상거래법에 따라 5년 동안 보관해요. 이때 누구의 기록인지 알 수 있는 회원 정보는 지워요.
@@ -73,7 +73,7 @@ export default function DeleteAccountPage() {
         <ul style={ul}>
           <li>Your profile information, such as your name and email</li>
           <li>Invitations you created and photos you uploaded</li>
-          <li>Guestbook messages left on your invitations</li>
+          <li>Guestbook messages and RSVP responses left on your invitations</li>
         </ul>
         <p style={p}>
           Payment and letter (in-app credit) records are kept for 5 years as required by Korean e-commerce law. Information that identifies you is removed from these records.

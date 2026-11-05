@@ -11,9 +11,12 @@ import { REASON_MAX_LENGTH, type ActionResult } from '@/lib/actionResult';
  */
 export default function DeleteInvitationDialog({
   name,
+  active,
   action,
 }: {
   name: string;
+  /** 활성화 중인 초대장이면 레터 안내를 더한다 */
+  active: boolean;
   action: (formData: FormData) => Promise<ActionResult>;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -53,6 +56,11 @@ export default function DeleteInvitationDialog({
             초대장과 방명록·참석 응답이 바로 지워지고, 사진·동영상·음악 파일은 삭제 대기열에 들어가 다음 새벽 작업에서 지워집니다.{' '}
             <b style={{ color: 'var(--danger)' }}>되돌릴 수 없습니다.</b> 잠시 가리려면 숨기기를 쓰세요.
           </p>
+          {active && (
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--danger)', fontWeight: 600 }}>
+              활성화 중인 초대장입니다. 하객 링크가 바로 닫히고, 사용한 레터는 환불되지 않습니다.
+            </p>
+          )}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
             <span>
               확인을 위해 이름 <b>{name}</b> 을(를) 그대로 입력하세요

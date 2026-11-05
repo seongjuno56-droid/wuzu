@@ -44,8 +44,11 @@ export interface PurgeMediaDeps {
 const MIN_SECRET_LENGTH = 32;
 const BATCH = 50;
 const CONCURRENCY = 5;
-/** Edge Function 은 150초 안에 답해야 한다. 묶음 하나가 최악 50초(50개 ÷ 동시 5개 × 5초)이므로 90초까지만 새 묶음을 읽는다. 남은 파일은 다음 실행이 지운다 */
-const TIME_BUDGET_MS = 90_000;
+/**
+ * Edge Function 은 150초 안에 답해야 한다. 묶음 하나가 최악 80초(읽기 15초, 삭제 50초 = 50개 ÷ 동시 5개 × 5초, 표시 15초)이므로
+ * 65초까지만 새 묶음을 읽는다. 남은 파일은 다음 실행이 지운다
+ */
+const TIME_BUDGET_MS = 65_000;
 
 async function deleteAll(
   keys: string[],
@@ -61,8 +64,8 @@ async function deleteAll(
       let status: string;
       try {
         const s = await deleteObject(key);
-        // 404: 이미 없는 파일. 지우려던 결과와 같다
-        if ((s >= 200 && s < 300) || s === 404) {
+        // 2xx 만 지운 것으로 친다. 404 는 버킷 이름이 틀려도(NoSuchBucket) 오므로, 표시하면 파일이 남은 채 대기열에서 사라진다
+        if (s >= 200 && s < 300) {
           done.push(key);
           continue;
         }

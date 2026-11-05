@@ -26,7 +26,7 @@ $$;
 select cron.schedule('purge-guest-data', '41 18 * * *', $$select public.purge_guest_data()$$);
 
 -- 파일 삭제: UTC 20:23(한국 5:23). 탈퇴 확정에서 대기열에 든 파일이 15분 지연을 넘긴 뒤 같은 밤에 지운다.
--- 함수가 최대 150초쯤 돌 수 있고 pg_net 기본 시간 제한은 2초라 늘려 둔다
+-- 함수가 최대 150초쯤 돌 수 있어 pg_net 시간 제한을 그만큼 늘려 둔다
 select cron.schedule(
   'purge-media',
   '23 20 * * *',

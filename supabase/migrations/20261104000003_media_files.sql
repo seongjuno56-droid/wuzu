@@ -26,6 +26,7 @@ revoke all on table public.media_files from public, anon, authenticated;
 -- 서명 주소를 내주기 전에 sign-upload 가 본인 권한으로 부른다. 남의 초대장이면 NOT_FOUND 라 서명도 나가지 않는다.
 -- 처음에는 in_use = false: 초대장을 저장해야 쓰임 표시가 된다.
 -- 재시도로 같은 키(작은 사진)가 다시 와도 한 줄이다.
+-- 키에 초대장 id 가 들어가므로 파일 하나는 초대장 하나에만 속한다. 삭제 대기열(20261104000004)이 이 전제에 기댄다.
 -- 회원이 이 함수를 직접 부를 수 있으므로 앱·함수를 믿지 않고 키 전체 모양을 검사한다. 앞부분만 보면 invitations/<내 id>/../<남의 id>/...
 -- 가 통과해 나중에 파일 삭제가 남의 파일을 지울 수 있다. 확장자 표의 원본: supabase/functions/_shared/uploadRules.ts
 create function public.record_media_file(p_invitation uuid, p_key text, p_kind text, p_bytes bigint) returns void
@@ -84,7 +85,7 @@ create trigger invitations_sync_media_in_use
   for each row execute function public.sync_media_in_use();
 
 -- 초대장을 지울 때 그 파일을 모두 삭제 대기열에 넣는다. invitation_id 가 비워지기 전에 불러야 한다.
--- security definer 함수 안에서만 부른다(앱이 직접 부르지 못한다)
+-- security definer 함수와, 함수 주인 계정으로 DB 에 직접 연결하는 어드민(deleteInvitation)이 부른다. 앱은 직접 부르지 못한다
 create function public.mark_media_removed(p_invitation uuid) returns void
 language sql
 set search_path = ''

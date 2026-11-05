@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Db } from '../db';
-import { deleteInvitation, listInvitations, setInvitationBanned } from '../invitations';
+import { deleteInvitation, listInvitations, mediaPurgeBacklog, setInvitationBanned } from '../invitations';
 import { addAdmin, addMember, newTestDb } from '../../test/db';
 
 const R = (c: string) => c.repeat(32);
@@ -114,7 +114,11 @@ describe('어드민 삭제', () => {
     await addGuestData(db, inv);
     const key = await addFile(db, inv, 'a');
     const key2 = await addFile(db, inv, 'b', 'gif');
-    const [{ number }] = await db.query<{ number: string }>(`select number from invitations where id = $1`, [inv]);
+    await db.query(`update invitations set banned = true where id = $1`, [inv]);
+    const [{ number, activated_at, expires_at }] = await db.query<{ number: string; activated_at: Date; expires_at: Date }>(
+      `select number, activated_at, expires_at from invitations where id = $1`,
+      [inv],
+    );
 
     expect(await deleteInvitation(db, adminId, inv)).toBe('ok');
 
@@ -135,7 +139,16 @@ describe('어드민 삭제', () => {
         action: 'invitation.delete',
         target_type: 'invitation',
         target_id: inv,
-        before: { number, ownerId: a, themeId: 'wedding', files: 2 },
+        before: {
+          number,
+          ownerId: a,
+          themeId: 'wedding',
+          status: 'final',
+          activatedAt: activated_at.toISOString(),
+          expiresAt: expires_at.toISOString(),
+          banned: true,
+          files: 2,
+        },
         after: null,
         memo: null,
       },
@@ -284,6 +297,7 @@ describe('파일 삭제 대기열 함수', () => {
     const k1 = await addFile(db, inv, 'a');
     const k2 = await addFile(db, inv, 'b');
     await db.query(`select mark_media_removed($1::uuid)`, [inv]);
+    await db.query(`delete from invitations where id = $1`, [inv]);
     expect(await claim(db)).toEqual([]);
 
     await db.query(`update media_files set delete_requested_at = now() - interval '2 hours' where r2_key = $1`, [k2]);
@@ -300,6 +314,7 @@ describe('파일 삭제 대기열 함수', () => {
     const k2 = await addFile(db, inv, 'b');
     const k3 = await addFile(db, inv, 'c');
     await db.query(`select mark_media_removed($1::uuid)`, [inv]);
+    await db.query(`delete from invitations where id = $1`, [inv]);
     await ageQueue(db);
 
     expect((await claim(db)).map((r) => r.r2_key).sort()).toEqual([k1, k2, k3]);
@@ -316,6 +331,44 @@ describe('파일 삭제 대기열 함수', () => {
     expect((await claim(db, 1)).map((r) => r.r2_key)).toEqual([k3]);
     expect((await claim(db, 5)).map((r) => r.r2_key)).toEqual([k2]);
     expect((await fileRow(db, k2)).deleted_at).toBeNull();
+  });
+
+  it('대기열 표시가 있어도 초대장이 살아 있는 파일은 내주지 않는다', async () => {
+    const db = await newTestDb();
+    const a = await addMember(db, { name: '김철수' });
+    const inv = await addInvitation(db, a);
+    const key = await addFile(db, inv, 'a');
+    await db.query(`select mark_media_removed($1::uuid)`, [inv]);
+    await ageQueue(db);
+    expect(await claim(db)).toEqual([]);
+    expect((await fileRow(db, key)).deleted_at).toBeNull();
+  });
+
+  it('이틀 넘게 남은 파일 수와 가장 오래된 시각을 알려 준다', async () => {
+    const db = await newTestDb();
+    const a = await addMember(db, { name: '김철수' });
+    const inv = await addInvitation(db, a);
+    expect(await mediaPurgeBacklog(db)).toEqual({ stuck: 0, oldest: null });
+
+    const old = await addFile(db, inv, 'a');
+    const older = await addFile(db, inv, 'b');
+    const recent = await addFile(db, inv, 'c');
+    const done = await addFile(db, inv, 'd');
+    await addFile(db, inv, 'e'); // 대기열에 없는 파일
+    const at = async (key: string, age: string) =>
+      db.query(`update media_files set delete_requested_at = now() - $1::interval where r2_key = $2`, [age, key]);
+    await at(old, '3 days');
+    await at(older, '5 days');
+    await at(recent, '1 day');
+    await at(done, '9 days');
+    await db.query(`update media_files set deleted_at = now() where r2_key = $1`, [done]);
+
+    const r = await mediaPurgeBacklog(db);
+    expect(r.stuck).toBe(2);
+    expect(r.oldest).toBeInstanceOf(Date);
+    const days = (Date.now() - r.oldest!.getTime()) / 86_400_000;
+    expect(days).toBeGreaterThan(4.9);
+    expect(days).toBeLessThan(5.1);
   });
 
   it('media_purge_done 은 대기열에 없는 파일을 표시하지 않는다', async () => {
@@ -373,6 +426,27 @@ describe('어드민 목록 찾기', () => {
     // 회원 상세에서 복사한 회원 id 그대로도 찾는다
     expect(await find(lee)).toEqual([invL]);
     expect(await find('없는값')).toEqual([]);
+  });
+});
+
+describe('설정 문서의 대기열 점검 SQL', () => {
+  it('건너뛴 파일 찾기는 모양이 틀린 키만 찾는다', async () => {
+    const doc = await readFile(path.resolve(process.cwd(), '..', 'docs', 'setup', 'guest-link.md'), 'utf8');
+    const sql = /```sql\n(select id, kind, r2_key[\s\S]*?)```/.exec(doc)?.[1];
+    expect(sql).toBeTruthy();
+
+    const db = await newTestDb();
+    const a = await addMember(db, { name: '김철수' });
+    const inv = await addInvitation(db, a);
+    await addFile(db, inv, 'a');
+    const bad = `invitations/${inv}/../${R('b')}.webp`;
+    await db.query(`insert into media_files(r2_key, invitation_id, kind, bytes) values ($1, $2, 'image', 100)`, [bad, inv]);
+    const wrongKind = `invitations/${inv}/${R('c')}.webp`;
+    await db.query(`insert into media_files(r2_key, invitation_id, kind, bytes) values ($1, $2, 'gif', 100)`, [wrongKind, inv]);
+    await db.query(`select mark_media_removed($1::uuid)`, [inv]);
+
+    const rows = await db.query<{ r2_key: string }>(sql!);
+    expect(rows.map((r) => r.r2_key).sort()).toEqual([bad, wrongKind].sort());
   });
 });
 
