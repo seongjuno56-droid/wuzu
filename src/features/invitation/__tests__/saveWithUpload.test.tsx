@@ -28,6 +28,7 @@ jest.mock('../../../services', () => ({
     return mockUpload;
   },
 }));
+jest.mock('../media', () => ({ makeLinkThumb: jest.fn(async () => 'file:///fallback.jpg') }));
 jest.mock('../../wallet/confirm', () => ({ confirmWithBiometrics: jest.fn(async () => true) }));
 jest.mock('../../canvas/editor/CanvasEditor', () => ({ CanvasEditor: () => null }));
 jest.mock('../editor/SlideStage', () => ({ SlideStage: () => null }));
@@ -123,7 +124,42 @@ describe('정보 입력 저장', () => {
   });
 });
 
+describe('링크 썸네일 대체 이미지', () => {
+  it('새 초대장: 첫 저장에는 기기 주소가 없고, 올리기와 마지막 저장에 대체 이미지가 간다', async () => {
+    startDraft();
+    mockUpload.mockImplementationOnce(async (inv: Invitation) => ({ ...inv, linkThumb: 'https://media/t.jpg' }));
+    const tree = await renderCompose();
+    await pressSave(tree);
+
+    expect(save.mock.calls[0][0].linkThumb).toBeNull();
+    expect(save.mock.calls[0][0].content.linkThumbSource).toBeNull();
+    const sent = mockUpload.mock.calls[0][0] as Invitation;
+    expect(sent.id).toBe(ID);
+    expect(sent.linkThumb).toBe('file:///fallback.jpg');
+    expect(sent.content.linkThumbSource).toBe(PHOTO);
+    expect(save.mock.calls[1][0].linkThumb).toBe('https://media/t.jpg');
+  });
+});
+
 describe('유료 수정', () => {
+  it('대체 이미지까지 올린 뒤 수정 주문을 낸다', async () => {
+    startDraft();
+    const draft = { ...useEditor.getState().draft!, id: ID };
+    mockUpload.mockImplementationOnce(async (inv: Invitation) => inv);
+    spend.mockResolvedValueOnce({ ok: false, reason: 'invalid' });
+    let run!: ReturnType<typeof usePurchaseFlow>['run'];
+    function Host() {
+      run = usePurchaseFlow({ onDone: jest.fn() }).run;
+      return null;
+    }
+    await act(async () => {
+      create(<Host />);
+    });
+    await act(async () => run({ kind: 'edit', invitation: draft }));
+    expect((mockUpload.mock.calls[0][0] as Invitation).linkThumb).toBe('file:///fallback.jpg');
+    expect(spend.mock.calls[0][1].invitation.linkThumb).toBe('file:///fallback.jpg');
+  });
+
   const edited = () => {
     startDraft();
     return { ...useEditor.getState().draft!, id: ID };

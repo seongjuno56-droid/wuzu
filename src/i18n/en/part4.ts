@@ -193,4 +193,10 @@ export const part4: Record<string, string> = {
   '사진을 올리지 못했어요. 다시 시도해 주세요.': "Couldn't upload your photos. Please try again.",
   '사진을 올리고 있어요.': 'Uploading your photos.',
   '사진을 올리는 중이에요 ({0}/{1})': 'Uploading photos ({0}/{1})',
+  '링크 썸네일': 'Link thumbnail',
+  '링크 썸네일 추가': 'Add link thumbnail',
+  '링크 썸네일 미리보기': 'Link thumbnail preview',
+  '권장 800×400px (가로:세로 2:1), JPG·PNG': 'Recommended 800×400px (2:1 width to height), JPG or PNG',
+  '다시 고르기': 'Choose again',
+  '이미지를 불러오지 못했어요. 다른 이미지를 골라 주세요.': "Couldn't load the image. Please choose another one.",
 };

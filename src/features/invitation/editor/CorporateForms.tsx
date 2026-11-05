@@ -12,6 +12,7 @@ import { CORP_LIMITS, DRESS_CODES, isEmail, isPhone } from '../corporate';
 import { useEditor } from '../editorStore';
 import { CeremonyInfo, CorporateContent, ProgramItem, RsvpSettings, Speaker } from '../model';
 import { DateField, FormLabel, Hint, PhotoOne } from './fields';
+import { LinkThumbField } from './LinkThumbField';
 import { ListEditor } from './ListEditor';
 import { addItem, newItemId, updateItem } from './listOps';
 import { TimePickerModal } from './Pickers';
@@ -84,6 +85,7 @@ export function CorporateBasicForm() {
         </View>
         {inviterHalf && <Hint>직함과 이름을 함께 넣어 주세요.</Hint>}
       </View>
+      <LinkThumbField />
     </View>
   );
 }

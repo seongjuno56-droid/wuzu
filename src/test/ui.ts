@@ -17,6 +17,7 @@ export function render(el: ReactElement) {
   const hosts = (type: string) => root().findAll((n) => n.type === type);
   const api = {
     rerender: (next: ReactElement) => act(() => r.update(next)),
+    unmount: () => act(() => r.unmount()),
     /** 그 글자를 그린 Text (정확히 같은 글자) */
     queryText: (text: string) => hosts('Text').find((n) => textOf(n) === text) ?? null,
     getText: (text: string) => {

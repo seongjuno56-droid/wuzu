@@ -10,6 +10,7 @@ import { addDays, birthDateProblem, DOL_LIMITS } from '../dol';
 import { useEditor } from '../editorStore';
 import { DolContent, LIMITS, TimelineItem, toDateString } from '../model';
 import { AccountFields, DateField, FormLabel, Hint, PhotoOne } from './fields';
+import { LinkThumbField } from './LinkThumbField';
 import { ListEditor } from './ListEditor';
 import { addItem, newItemId, updateItem } from './listOps';
 
@@ -89,6 +90,7 @@ export function DolBasicForm({ onDragChange }: { onDragChange?: (dragging: boole
         )}
       />
       <Hint>관계는 아빠·엄마·할머니처럼 자유롭게 적어 주세요.</Hint>
+      <LinkThumbField />
     </View>
   );
 }

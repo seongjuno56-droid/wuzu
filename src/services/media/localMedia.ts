@@ -20,7 +20,7 @@ export const isServerId = (id: string) => UUID_RE.test(id);
  * 파일 주소가 들어가는 칸의 이름. 값의 생김새로 찾으면 인사말에 쓴 "data: ..." 같은 글자를 파일로 착각하므로 칸 이름으로 찾는다.
  * 파일 칸을 새로 만들면 여기에 더한다(빠뜨리면 기기 주소가 남아 stripLocalMedia·서비스 검사를 지나친다).
  */
-const MEDIA_KEYS = new Set(['photo', 'photos', 'logo', 'mapImages', 'uri']);
+const MEDIA_KEYS = new Set(['photo', 'photos', 'logo', 'mapImages', 'uri', 'linkThumbSource']);
 const REMOVED = Symbol('removed');
 
 type Visit = (url: string, kind: LocalMediaKind, fileName?: string) => string | null;

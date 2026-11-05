@@ -330,7 +330,13 @@ export interface MeetupContent {
   bgm: BgmInfo;
 }
 
-export type InvitationContent = WeddingContent | DolContent | CorporateContent | MeetupContent;
+/** 모든 테마 공통 */
+interface LinkThumbMark {
+  /** 링크 썸네일이 저장 때 만든 대체 이미지일 때 그 원본 사진 주소. 직접 올렸거나 없으면 비어 있다 (linkThumb.ts) */
+  linkThumbSource?: string | null;
+}
+
+export type InvitationContent = (WeddingContent | DolContent | CorporateContent | MeetupContent) & LinkThumbMark;
 
 export const isDol = (c: InvitationContent): c is DolContent => c.theme === 'dol';
 export const isCorporate = (c: InvitationContent): c is CorporateContent => c.theme === 'corporate';

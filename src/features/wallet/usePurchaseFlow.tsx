@@ -5,6 +5,7 @@ import { AppModal } from '../../components/AppModal';
 import { toast } from '../../components/Toast';
 import { mediaUploader, SpendOrder, walletService } from '../../services';
 import { useSession } from '../../store/session';
+import { prepareLinkThumb } from '../invitation/linkThumb';
 import type { Invitation } from '../invitation/model';
 import { confirmWithBiometrics } from './confirm';
 import { orderCost } from './pricing';
@@ -41,7 +42,7 @@ export function usePurchaseFlow({ onDone }: { onDone: (invitation: Invitation) =
         try {
           target = {
             kind: 'edit',
-            invitation: await mediaUploader(order.invitation, (done, total) => setUploading({ done, total })),
+            invitation: await mediaUploader(await prepareLinkThumb(order.invitation), (done, total) => setUploading({ done, total })),
           };
         } catch {
           toast('사진을 올리지 못했어요. 다시 시도해 주세요.');

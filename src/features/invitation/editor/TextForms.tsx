@@ -9,6 +9,7 @@ import { useEditor } from '../editorStore';
 import { pickImages } from '../media';
 import { asWedding, defaultAccountMessage, LIMITS, withGallery } from '../model';
 import { AccountFields, Check, FormLabel, Hint, PersonFields } from './fields';
+import { LinkThumbField } from './LinkThumbField';
 
 const useContent = () => useEditor((s) => s.draft!.content);
 const usePatch = () => useEditor((s) => s.patch);
@@ -29,6 +30,7 @@ export function BasicForm() {
       <PersonFields label="신부" required person={b.bride} titlePlaceholder="딸" onChange={(bride) => patch('basic', { bride })} />
       <PersonFields label="신부 아버지" showDeceased person={b.brideFather} titlePlaceholder="아버지" onChange={(brideFather) => patch('basic', { brideFather })} />
       <PersonFields label="신부 어머니" showDeceased person={b.brideMother} titlePlaceholder="어머니" onChange={(brideMother) => patch('basic', { brideMother })} />
+      <LinkThumbField />
     </View>
   );
 }

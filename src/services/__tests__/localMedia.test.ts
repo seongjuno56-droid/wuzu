@@ -66,6 +66,18 @@ describe('collectLocalMedia', () => {
     expect(collectLocalMedia(inv).find((m) => m.kind === 'bgm')?.fileName).toBe('노래.mp3');
   });
 
+  it('대체 썸네일의 원본 표시는 사진과 같이 바뀌고 지워지며, 파일은 사진 종류로 센다', () => {
+    const w = createInvitation({ id: 'x', ownerId: 'u', themeId: 'wedding', templateId: 'wedding-1' }).content as never as { greeting: object };
+    const inv = base('wedding', {
+      greeting: { ...w.greeting, photo: 'file:///g.webp' },
+      linkThumbSource: 'file:///g.webp',
+    });
+    expect(collectLocalMedia(inv).map((m) => m.kind)).toEqual(['image', 'image']);
+    expect(stripLocalMedia(inv).content.linkThumbSource).toBeNull();
+    const mapped = mapInvitationMedia(inv, (u) => u.replace('file:///', 'https://m/'));
+    expect(mapped.content.linkThumbSource).toBe('https://m/g.webp');
+  });
+
   it('돌잔치의 표지·프로필·타임라인 사진을 찾는다', () => {
     const inv = base('dol', {
       basic: { childName: '', nickname: '', birthDate: '', photo: 'file:///cover.webp', guardians: [] },

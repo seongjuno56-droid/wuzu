@@ -56,6 +56,30 @@ export function makePhotoThumb(uri: string, contentType: string): Promise<string
   return encodePhoto(uri, { maxSide: THUMB_MAX_SIDE, format, exact: true });
 }
 
+/** 링크 썸네일 크기. 카카오톡 미리보기가 WebP 를 못 읽을 수 있어 JPEG 만 쓴다 */
+export const LINK_THUMB_WIDTH = 800;
+export const LINK_THUMB_HEIGHT = 400;
+
+/** 가운데 기준으로 2:1 로 잘라 800×400 JPEG 새 파일을 만든다. 작은 사진은 늘려서라도 크기를 맞춘다. 실패하면 던진다 */
+export async function makeLinkThumb(uri: string): Promise<string> {
+  const original = await ImageManipulator.manipulate(uri).renderAsync();
+  const { width, height } = original;
+  const cropWidth = Math.min(width, height * 2);
+  const cropHeight = Math.max(1, Math.round(cropWidth / 2));
+  const ctx = ImageManipulator.manipulate(original);
+  ctx.crop({
+    originX: Math.floor((width - cropWidth) / 2),
+    originY: Math.floor((height - cropHeight) / 2),
+    width: cropWidth,
+    height: cropHeight,
+  });
+  ctx.resize({ width: LINK_THUMB_WIDTH, height: LINK_THUMB_HEIGHT });
+  const ref = await ctx.renderAsync();
+  const web = Platform.OS === 'web';
+  const result = await ref.saveAsync({ compress: 0.8, format: SaveFormat.JPEG, base64: web });
+  return web && result.base64 ? `data:image/jpeg;base64,${result.base64}` : result.uri;
+}
+
 /** 고를 때 줄여 둔다. 변환하지 못하면 원본을 두고, 올릴 때 다시 줄인다 */
 async function shrink(asset: ImagePicker.ImagePickerAsset, keepPng = false): Promise<string> {
   try {

@@ -7,6 +7,7 @@ import { useEditor } from '../editorStore';
 import { MEETUP_LIMITS } from '../meetup';
 import { MeetupContent, Notice } from '../model';
 import { FormLabel, Hint, PhotoOne } from './fields';
+import { LinkThumbField } from './LinkThumbField';
 import { ListEditor } from './ListEditor';
 import { addItem, newItemId, updateItem } from './listOps';
 
@@ -42,6 +43,7 @@ export function MeetupBasicForm() {
         <PhotoOne label="대표 사진" uri={b.photo} onChange={(photo) => set({ photo })} />
         <Hint>넣으면 표지에 들어가요.</Hint>
       </View>
+      <LinkThumbField />
     </View>
   );
 }

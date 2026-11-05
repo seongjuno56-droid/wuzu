@@ -44,6 +44,8 @@ interface EditorState {
   applyCanvas: (page: PageKey, doc: CanvasDoc) => void;
   /** [템플릿 원래대로]: 형식으로 되돌림 */
   resetDesign: (page: PageKey) => void;
+  /** 링크 썸네일을 직접 고르거나(주소) 지운다(null). 어느 쪽이든 대체 이미지 표시는 푼다 */
+  setLinkThumb: (uri: string | null) => void;
   markSaved: (saved: Invitation) => void;
   /** 서버 id 만 받아 둔다(편집 내용은 그대로). 파일 올리기가 실패해도 다시 저장하면 같은 행을 고치도록 */
   setDraftId: (id: string) => void;
@@ -145,6 +147,13 @@ export const useEditor = create<EditorState>()((set, get) => ({
       if (!s.draft) return s;
       const { [page]: _removed, ...design } = s.draft.design;
       return { draft: { ...s.draft, design }, dirty: true };
+    }),
+
+  setLinkThumb: (uri) =>
+    set((s) => {
+      if (!s.draft) return s;
+      const { linkThumbSource: _auto, ...content } = s.draft.content;
+      return { draft: { ...s.draft, linkThumb: uri, content: content as InvitationContent }, dirty: true };
     }),
 
   markSaved: (saved) => set({ draft: saved, dirty: false, origin: saved }),
