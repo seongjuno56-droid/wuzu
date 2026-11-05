@@ -128,8 +128,20 @@
 
 1. Supabase 대시보드에서 프로젝트 `wuzu` 를 엽니다.
 2. 왼쪽 메뉴 **SQL Editor** 를 누릅니다.
-3. Claude 가 클립보드에 넣어 준 `supabase/migrations/20261104000003_media_files.sql` 내용을 붙여 넣습니다. **앞 번호 파일(`20261104000001`, `20261104000002`)을 먼저 실행해야 합니다.**
-4. **Run** 을 누릅니다. **한 번만** 실행합니다. 다시 실행하면 "이미 있다" 오류가 납니다.
+3. 먼저 아래 한 줄을 붙여 넣고 **Run** 을 누릅니다. 결과가 정확히 `extensions` 여야 합니다. 다른 값이거나 결과가 없으면 **여기서 멈추고** Claude 에게 알려 주세요. 초대장 주소를 만드는 함수가 이 위치의 pgcrypto 를 씁니다.
+
+```sql
+select extnamespace::regnamespace from pg_extension where extname='pgcrypto';
+```
+
+4. 마이그레이션 네 파일을 **아래 순서대로** 하나씩 실행합니다. Claude 가 한 파일씩 클립보드에 넣어 줍니다. 내용을 붙여 넣고 **Run** 을 누른 뒤, 오류가 없으면 다음 파일로 갑니다. 각 파일은 **한 번만** 실행합니다. 다시 실행하면 "이미 있다" 오류가 납니다.
+
+| 순서 | 파일 | 하는 일 |
+|---|---|---|
+| 1 | `supabase/migrations/20261104000001_invitation_owner.sql` | 앱이 쓰는 내 초대장 함수 |
+| 2 | `supabase/migrations/20261104000002_guest_access.sql` | 하객 화면·방명록·참석 응답 |
+| 3 | `supabase/migrations/20261104000003_media_files.sql` | 파일 기록 표 |
+| 4 | `supabase/migrations/20261104000004_invitation_purge.sql` | 삭제 대기열, 하객 데이터 파기, 탈퇴 확정 고침 |
 
 ### 비밀값 넣기
 
@@ -214,7 +226,7 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 코드와 문서로만 확인했고 Vercel·Supabase 실서버에서는 아직 시험하지 못한 세 가지입니다. 아래 순서대로 봅니다. 하나라도 어긋나면 Claude 에게 알려 주세요.
 
 1. **함수에 `dist/shell.html` 이 들어갔는가.** `vercel.json` 의 `includeFiles` 는 빌드가 끝난 파일을 가리킵니다. 함수가 빌드 뒤에 묶이는지는 실제 배포로만 알 수 있습니다.
-   - 확인: `wuzu-guest` → **Logs** 에서 `[guest-page] shell.html 을 읽지 못했다` 줄을 찾습니다 **(화면 확인)**. 없어야 정상입니다.
+   - 확인: 먼저 활성화한 초대장의 `/i/<slug>` 주소를 휴대폰이나 시크릿 창에서 **한 번 엽니다.** 함수가 한 번도 불리지 않으면 기록이 없어 정상처럼 보입니다. 그다음 `wuzu-guest` → **Logs** 에서 `[guest-page] shell.html 을 읽지 못했다` 줄을 찾습니다 **(화면 확인)**. 없어야 정상입니다.
    - 이 줄이 있어도 하객 화면은 정적 `/shell.html` 을 받아 열립니다. 다만 그 응답은 캐시되지 않으니 고쳐야 합니다.
 2. **`apikey` 헤더만으로 호출이 받아들여지는가.** 함수와 하객 화면이 `Authorization` 없이 publishable 키를 `apikey` 헤더로만 보냅니다.
    - 확인: 활성화한 초대장의 `/i/<slug>` 에서 초대장이 보이면 정상입니다. **"초대장을 불러오지 못했어요"** 와 **다시 시도** 버튼이 나오면 거절된 것입니다. 이때는 하객 링크가 모두 열리지 않으니 바로 알려 주세요.
@@ -243,6 +255,105 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 
 **여기까지 하면 "4회차 됨" 이라고 보내 주세요.**
 
+## 5회차: 삭제 예약 (파일 삭제 함수와 매일 예약)
+
+초대장을 지우거나 탈퇴가 확정된 회원의 파일을 R2 에서 실제로 지우는 함수 `purge-media` 를 올리고, 하객 데이터 파기와 함께 매일 돌게 예약합니다. 3회차를 끝낸 뒤에 합니다.
+
+**이 회차를 하기 전에는 지운 초대장의 파일이 R2 에 그대로 남고, 하객 데이터도 기간이 지나도 지워지지 않습니다.** 처리방침에 적은 약속이므로 실제 하객에게 링크를 보내기 전에 꼭 끝냅니다.
+
+### 호출 비밀값 만들기
+
+예약 작업이 함수를 부를 때 내는 비밀값입니다. R2 키나 Supabase secret 키가 아니라 이 일에만 쓰는 새 값입니다.
+
+1. 컴퓨터의 PowerShell 에서 아래를 실행합니다. 화면에 나오지 않고 클립보드에 들어갑니다.
+
+```powershell
+$b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); (($b | ForEach-Object { $_.ToString('x2') }) -join '') | Set-Clipboard
+```
+
+2. Supabase 대시보드 **Edge Functions** → **Secrets** 를 누릅니다.
+3. **Add new secrets** 의 **Key** 에 `PURGE_MEDIA_SECRET`, **Value** 에 클립보드 값을 붙여 넣고 **Save** 를 누릅니다.
+
+### Vault 에 넣기
+
+> SQL Editor 의 `vault.create_secret` 대신 화면으로 넣습니다. SQL 로 넣으면 비밀값이 SQL Editor 기록에 남을 수 있습니다.
+
+4. Supabase 대시보드 **Integrations** → **Vault** 를 누릅니다 **(화면 확인)**. 안 보이면 **Integrations** 목록에서 Vault 를 찾아 켭니다.
+5. **Secrets** 탭의 새 비밀값 추가 버튼을 누릅니다 **(화면 확인)**.
+6. **Name** 에 `purge_media_secret`, **Secret value** 에 클립보드 값(1번과 같은 값)을 넣고 저장합니다 **(화면 확인)**.
+7. 같은 방법으로 하나 더 넣습니다. **Name** 은 `wuzu_project_url`, 값은 `https://<프로젝트 ID>.supabase.co` 입니다. 끝에 `/` 를 붙이지 않습니다. 이 값은 비밀이 아닙니다.
+8. 클립보드를 다른 내용으로 덮어씁니다(아무 글자나 복사). 이 비밀값은 다시 볼 일이 없습니다. 잃어버리면 1번부터 새로 만들어 3번과 6번 두 곳 모두 바꾸면 됩니다.
+
+- 두 곳의 값이 다르면 함수가 401 로 거절하고 파일이 지워지지 않습니다.
+- `Name` 철자가 틀리면 15번에서 "Vault 에 … 이(가) 없습니다" 오류가 나고 예약되지 않습니다.
+
+### 함수 배포
+
+3회차의 9~10번을 했다면 그대로 이어서 합니다. 저장소 폴더(`invite app`)의 PowerShell 에서 실행합니다.
+
+9. 아래 명령을 실행합니다. `<프로젝트 ID>` 를 3회차 10번 값으로 바꿉니다.
+
+```powershell
+npx supabase functions deploy purge-media --no-verify-jwt --project-ref <프로젝트 ID>
+```
+
+- `--no-verify-jwt` 를 빠뜨리지 마세요. 예약 작업은 로그인 토큰이 없고, 함수가 `x-purge-secret` 헤더를 직접 확인합니다. 비밀값이 틀린 요청은 함수가 401 로 거절합니다.
+- Docker 가 없다는 오류가 나면 끝에 `--use-api` 를 붙여 다시 실행합니다.
+
+10. 대시보드 **Edge Functions** 목록에 `purge-media` 가 보이는지 확인합니다.
+
+### 확장 켜기와 예약
+
+11. 대시보드 **Database** → **Extensions** 를 누릅니다.
+12. 검색 칸에 `pg_cron` 을 넣고 켭니다. 이미 켜져 있으면 그대로 둡니다.
+13. 검색 칸에 `pg_net` 을 넣고 켭니다.
+14. 왼쪽 메뉴 **SQL Editor** 를 누릅니다.
+15. Claude 가 클립보드에 넣어 준 `supabase/manual/schedule_guest_link.sql` 내용을 붙여 넣고 **Run** 을 누릅니다. 이 파일은 다시 실행해도 예약이 겹치지 않습니다.
+16. 아래를 실행합니다.
+
+```sql
+select jobname, schedule, active from cron.job order by jobname;
+```
+
+아래 세 줄이 나와야 합니다. 시각은 UTC 입니다.
+
+| jobname | schedule | 한국 시각 | 하는 일 |
+|---|---|---|---|
+| `finalize-withdrawals` | `17 19 * * *` | 새벽 4:17 | 탈퇴 확정 |
+| `purge-guest-data` | `41 18 * * *` | 새벽 3:41 | 만료 30일 지난 방명록·참석 응답 삭제 |
+| `purge-media` | `23 20 * * *` | 새벽 5:23 | 대기열의 파일을 R2 에서 삭제 |
+
+- `finalize-withdrawals` 줄이 없으면 `supabase/manual/schedule_withdraw_finalize.sql` 을 같은 방법으로 실행합니다.
+
+### 바로 한 번 돌려 보기
+
+17. SQL Editor 에서 아래를 실행합니다. 비밀값은 Vault 에서 읽으므로 고칠 곳이 없습니다.
+
+```sql
+select net.http_post(
+  url := (select decrypted_secret from vault.decrypted_secrets where name = 'wuzu_project_url') || '/functions/v1/purge-media',
+  headers := jsonb_build_object('Content-Type', 'application/json', 'x-purge-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'purge_media_secret')),
+  body := '{}'::jsonb,
+  timeout_milliseconds := 150000
+);
+```
+
+18. 몇 초 뒤 아래를 실행합니다.
+
+```sql
+select status_code, content from net._http_response order by created desc limit 1;
+```
+
+- `status_code` 가 `200` 이고 `content` 가 `{"deleted":…,"failed":…,"skipped":…}` 모양이면 연결된 것입니다. 이 표의 내용은 6시간 뒤 사라집니다.
+- `401`: 3번과 6번 값이 다릅니다. 1번부터 다시 만들어 두 곳을 바꿉니다.
+- `500`: 함수에 비밀값이 빠졌습니다. **Edge Functions** → **Secrets** 에 `PURGE_MEDIA_SECRET` 과 3회차의 R2 네 값이 있는지 봅니다.
+- `failed` 가 0 보다 크면 R2 삭제가 거절된 것입니다. 1회차 23번의 토큰 권한이 **Object Read & Write** 인지 보고, 그래도 같으면 Claude 에게 알려 주세요. 실패한 파일은 대기열에 남아 다음 실행에 다시 지웁니다.
+- `skipped` 가 0 보다 크면 모양이 잘못된 기록입니다. 지우지 않고 남겨 둡니다. Claude 에게 알려 주세요.
+
+> **참고.** 예약이 돌 때 pg_net 은 요청을 보내기 전까지 비밀값이 든 헤더를 `net.http_request_queue` 표에 잠시 둡니다(Supabase 문서에 적힌 동작). 이 표를 조회하는 사람은 DB 에 로그인할 수 있는 운영자뿐이고, 새어도 대기열을 비우는 호출만 할 수 있습니다. 그래서 이 값을 Supabase secret 키나 R2 키와 따로 둡니다. 이 표를 조회한 화면을 캡처해 보내지 마세요.
+
+**여기까지 하면 "5회차 됨" 이라고 보내 주세요.**
+
 ## 실제 하객에게 링크를 보내기 전에: Hobby → Pro
 
 > **꼭 해야 함.** 개발 중에는 무료 Hobby 로 둡니다. **실제 하객에게 링크가 나가기 전에** 팀 `sjport` 를 Pro 로 올립니다.
@@ -260,11 +371,5 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 
 ### 출시 전에 함께 할 일
 
-- **`/i/*` 요청 수 제한을 권합니다.** `wuzu-guest` 의 **Firewall** 에 경로 `/i/` 로 시작하는 요청의 Rate Limit 규칙을 더합니다 **(화면 확인)**. 주소 뒤에 `?x=1` 같은 값을 붙이면 CDN 캐시를 비켜 함수와 Supabase 호출을 늘릴 수 있기 때문입니다. 한도 값은 실제 사용량을 본 뒤 정합니다. 결혼식 당일 하객이 몰려도 막히지 않을 만큼 넉넉해야 합니다.
+- **`/i/*` 와 `/api/guest-page` 요청 수 제한을 권합니다.** `wuzu-guest` 의 **Firewall** 에 경로가 `/i/` 로 시작하거나 `/api/guest-page` 로 시작하는 요청의 Rate Limit 규칙을 더합니다 **(화면 확인)**. 두 경로 모두 같은 함수를 부르므로 `/i/*` 만 막으면 `/api/guest-page?slug=…` 로 비켜 갈 수 있습니다. 주소 뒤에 `?x=1` 같은 값을 붙이면 CDN 캐시를 비켜 함수와 Supabase 호출을 늘릴 수 있기 때문입니다. 한도 값은 실제 사용량을 본 뒤 정합니다. 결혼식 당일 하객이 몰려도 막히지 않을 만큼 넉넉해야 합니다.
 - **첫 EAS 설정 때 (미확인).** 저장소에 `app.config.js` 가 있어 `npx eas-cli@latest init` 이 `projectId` 를 `app.json` 에 저절로 쓰지 못할 수 있습니다. 그러면 안내에 나온 `extra.eas.projectId` 를 직접 넣어야 합니다. `app.config.js` 는 `config.extra` 를 그대로 이어받으므로 `app.json` 에 넣으면 됩니다. 실제로 해 보지 않았습니다.
-
-## 뒤에 이어서 채울 내용
-
-아래는 해당 코드가 준비되면 이 문서에 더합니다. 지금은 할 일이 없습니다.
-
-- 나머지 마이그레이션 실행과 예약 작업, 파일 삭제 함수 `purge-media`

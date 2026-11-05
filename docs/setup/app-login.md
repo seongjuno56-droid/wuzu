@@ -278,6 +278,6 @@ wuzu 는 카카오·구글로만 가입합니다. Supabase 기본값인 이메�
 
 ## 나중에 할 일 (메모)
 
-- **1-D (사진 저장소 R2 도입) 때**: `finalize_withdrawals()` 가 탈퇴 확정 회원의 업로드 파일도 지우도록 연결합니다. 지금은 DB 행만 정리합니다.
+- **1-D (사진 저장소 R2 도입)**: `finalize_withdrawals()` 가 탈퇴 확정 회원의 파일을 삭제 대기열에 넣도록 연결했습니다(`20261104000004_invitation_purge.sql`). 켜는 순서는 `docs/setup/guest-link.md` 3회차·5회차입니다.
 - **2단계 (원장 서버화) 때**: 탈퇴 확정 시 `ledger_entries` 의 `invitation_name`·`memo` 도 익명화합니다.
-- 두 가지 모두 6번에서 올리는 마이그레이션(`20261029000001_member_auth.sql`)을 고치지 말고 **새 마이그레이션** 으로 `finalize_withdrawals` 를 바꿉니다.
+- 6번에서 올리는 마이그레이션(`20261029000001_member_auth.sql`)을 고치지 말고 **새 마이그레이션** 으로 `finalize_withdrawals` 를 바꿉니다.

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/admins';
 import { REASON_MAX_LENGTH, type ActionResult } from '@/lib/actionResult';
 import { getDb } from '@/lib/db';
-import { setInvitationBanned } from '@/lib/invitations';
+import { deleteInvitation, setInvitationBanned } from '@/lib/invitations';
 
 /**
  * 초대장 숨김(banned=true)·숨김 해제(false). 사유는 formData 'memo'.
@@ -29,6 +29,30 @@ export async function setInvitationBannedAction(
   if (result === 'not_found') return { ok: false, message: '초대장을 찾을 수 없습니다.' };
   revalidatePath('/invitations');
   // 회원 상세의 초대장 표에도 숨김 표시가 있다
+  revalidatePath('/members/[id]', 'page');
+  return { ok: true };
+}
+
+/**
+ * 초대장 삭제(파일 포함, 되돌릴 수 없음). 사유는 formData 'memo', 다시 입력한 이름은 'confirmName'.
+ * 이름은 화면에서만 믿지 않고 서버에서 다시 비교한다.
+ */
+export async function deleteInvitationAction(invitationId: string, formData: FormData): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (typeof invitationId !== 'string') return { ok: false, message: '잘못된 요청입니다.' };
+  const memo = String(formData.get('memo') ?? '').trim();
+  if (!memo) return { ok: false, message: '사유를 적어 주세요.' };
+  if (memo.length > REASON_MAX_LENGTH) {
+    return { ok: false, message: `사유는 ${REASON_MAX_LENGTH}자 이하로 적어 주세요.` };
+  }
+
+  const result = await deleteInvitation(await getDb(), admin.id, invitationId, {
+    confirmName: String(formData.get('confirmName') ?? ''),
+    memo,
+  });
+  if (result === 'not_found') return { ok: false, message: '초대장을 찾을 수 없습니다.' };
+  if (result === 'name_mismatch') return { ok: false, message: '초대장 이름이 맞지 않습니다.' };
+  revalidatePath('/invitations');
   revalidatePath('/members/[id]', 'page');
   return { ok: true };
 }

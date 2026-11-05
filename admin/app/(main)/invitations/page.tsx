@@ -14,7 +14,8 @@ import { INVITATION_STATE_LABEL, INVITATION_STATES, THEME_LABEL, THEMES } from '
 import { clampPage, PAGE_SIZE, parseListQuery, type SearchParams } from '@/lib/listQuery';
 import { DataTable, Pager, SearchBar, type Column } from '@/components/ui';
 import ReasonConfirmForm from '@/components/ReasonConfirmForm';
-import { setInvitationBannedAction } from './actions';
+import DeleteInvitationDialog from './DeleteInvitationDialog';
+import { deleteInvitationAction, setInvitationBannedAction } from './actions';
 
 export const metadata = { title: '초대장 · wuzu 어드민' };
 
@@ -76,6 +77,11 @@ const columns: Column<InvitationRow>[] = [
           숨기기
         </ReasonConfirmForm>
       ),
+  },
+  {
+    key: 'delete',
+    label: '삭제',
+    render: (i) => <DeleteInvitationDialog name={i.name} action={deleteInvitationAction.bind(null, i.id)} />,
   },
 ];
 
@@ -149,7 +155,7 @@ export default async function InvitationsPage({ searchParams }: { searchParams: 
         </p>
       )}
 
-      <SearchBar defaultValue={query.q} placeholder="초대장 이름·초대장No·만든 사람">
+      <SearchBar defaultValue={query.q} placeholder="초대장 이름·초대장No·만든 사람·회원 아이디">
         {filter.owner && <input type="hidden" name="owner" value={filter.owner} />}
         <select name="theme" defaultValue={filter.theme ?? ''} aria-label="테마" style={selectStyle}>
           <option value="">테마 전체</option>

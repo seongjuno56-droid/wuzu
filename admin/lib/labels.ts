@@ -51,6 +51,7 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   'member.unban': '회원 정지 해제',
   'invitation.hide': '초대장 숨김',
   'invitation.unhide': '초대장 숨김 해제',
+  'invitation.delete': '초대장 삭제',
   'admin.create': '운영자 추가',
   'admin.deactivate': '운영자 비활성화',
   'admin.reactivate': '운영자 다시 켜기',

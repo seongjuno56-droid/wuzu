@@ -72,7 +72,13 @@ function invitationWhere(f: InvitationFilter): { where: string; params: unknown[
   if (f.q) {
     params.push(likePattern(f.q));
     const p = `$${params.length}`;
-    conds.push(`(i.name ilike ${p} escape '\\' or i.number ilike ${p} escape '\\' or p.name ilike ${p} escape '\\')`);
+    const text = [`i.name`, `i.number`, `p.name`, `p.login_id`].map((c) => `${c} ilike ${p} escape '\\'`);
+    // 회원 상세에서 복사한 회원 id 그대로도 찾는다
+    if (isUuid(f.q)) {
+      params.push(f.q);
+      text.push(`i.owner_id = $${params.length}::uuid`);
+    }
+    conds.push(`(${text.join(' or ')})`);
   }
   if (isOneOf(THEMES, f.theme)) {
     params.push(f.theme);
@@ -110,7 +116,7 @@ function selectInvitations(db: Db, f: InvitationFilter, limit: number, offset: n
   );
 }
 
-/** 초대장 목록: 이름·초대장No·만든 사람 이름 검색, 테마·상태·숨김·만든 사람 걸러 보기, 최신순, 20개씩 */
+/** 초대장 목록: 이름·초대장No·만든 사람 이름·회원 아이디·회원 id 검색,테마·상태·숨김·만든 사람 걸러 보기, 최신순, 20개씩 */
 export async function listInvitations(
   db: Db,
   q: InvitationFilter & { page: number },
@@ -165,6 +171,48 @@ export async function setInvitationBanned(
 
       await tx.query(`update invitations set banned = $1 where id = $2`, [banned, id]);
       return { before: { banned: row.banned }, after: { banned }, changed: true, result: 'ok' as const };
+    },
+  );
+}
+
+/**
+ * 초대장 삭제(되돌릴 수 없음). 방명록·참석 응답은 cascade 로 지워지고 파일은 삭제 대기열에 들어간다.
+ * confirmName 을 주면 잠근 행의 이름과 비교한다(화면에서 다시 입력한 값). 앞뒤 공백은 무시한다.
+ * 작업 기록에는 초대장 이름을 남기지 않는다. 지운 뒤에도 개인정보가 남지 않게 번호·회원 id·파일 수만 적는다.
+ */
+export async function deleteInvitation(
+  db: Db,
+  adminId: string,
+  id: string,
+  opts: { confirmName?: string; memo?: string } = {},
+): Promise<'ok' | 'not_found' | 'name_mismatch'> {
+  if (!isUuid(id)) return 'not_found';
+  return withAudit(
+    db,
+    { adminId, action: 'invitation.delete', targetType: 'invitation', targetId: id, memo: opts.memo },
+    async (tx) => {
+      const [row] = await tx.query<{ number: string; name: string; ownerId: string; themeId: string }>(
+        `select number, name, owner_id as "ownerId", theme_id as "themeId" from invitations where id = $1 for update`,
+        [id],
+      );
+      if (!row) return { before: null, after: null, changed: false, result: 'not_found' as const };
+      if (opts.confirmName !== undefined && opts.confirmName.trim() !== row.name.trim()) {
+        return { before: null, after: null, changed: false, result: 'name_mismatch' as const };
+      }
+
+      const [{ files }] = await tx.query<{ files: number }>(
+        `select count(*)::int as files from media_files where invitation_id = $1 and deleted_at is null`,
+        [id],
+      );
+      // 지우기 전에 표시한다. 지우고 나면 invitation_id 가 비어 파일을 찾을 수 없다
+      await tx.query(`select public.mark_media_removed($1::uuid)`, [id]);
+      await tx.query(`delete from invitations where id = $1`, [id]);
+      return {
+        before: { number: row.number, ownerId: row.ownerId, themeId: row.themeId, files },
+        after: null,
+        changed: true,
+        result: 'ok' as const,
+      };
     },
   );
 }

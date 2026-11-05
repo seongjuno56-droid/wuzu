@@ -8,6 +8,7 @@ export type AuditAction =
   | 'member.unban'
   | 'invitation.hide'
   | 'invitation.unhide'
+  | 'invitation.delete'
   | 'admin.create'
   | 'admin.deactivate'
   | 'admin.reactivate'
