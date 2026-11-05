@@ -29,6 +29,31 @@ describe('나의 초대장 카드 — 참석 응답', () => {
   });
 });
 
+describe('공유하기 버튼', () => {
+  const active = (slug?: string): Invitation => ({
+    ...card('wedding'),
+    activatedAt: new Date(2026, 9, 20).toISOString(),
+    expiresAt: new Date(2026, 10, 20).toISOString(),
+    slug,
+  });
+  it('slug 가 없으면 공유 버튼이 없다', () => {
+    const ui = render(<InviteCard invitation={active()} now={now} hasNew={false} onAction={jest.fn()} />);
+    expect(ui.queryText('공유하기')).toBeNull();
+    expect(ui.getText('기간 연장')).toBeTruthy();
+  });
+  it('활성화 중이고 slug 가 있으면 공유 버튼이 있다', () => {
+    const onAction = jest.fn();
+    const ui = render(<InviteCard invitation={active('abc123')} now={now} hasNew={false} onAction={onAction} />);
+    press(ui.getText('공유하기'));
+    expect(onAction).toHaveBeenCalledWith('share');
+  });
+  it('기간이 끝난 초대장은 slug 가 있어도 공유 버튼이 없다', () => {
+    const expired = { ...active('abc123'), expiresAt: new Date(2026, 9, 21).toISOString() };
+    const ui = render(<InviteCard invitation={expired} now={now} hasNew={false} onAction={jest.fn()} />);
+    expect(ui.queryText('공유하기')).toBeNull();
+  });
+});
+
 describe('참석 신청을 끈 기업 카드', () => {
   it('개수 없이 꺼진 [참석 응답] — 받은 응답이 있어도 (0) 으로 보이지 않는다', () => {
     const inv = { ...card('corporate'), enabled: { ...card('corporate').enabled, rsvp: false } };

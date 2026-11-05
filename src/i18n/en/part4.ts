@@ -199,4 +199,7 @@ export const part4: Record<string, string> = {
   '권장 800×400px (가로:세로 2:1), JPG·PNG': 'Recommended 800×400px (2:1 width to height), JPG or PNG',
   '다시 고르기': 'Choose again',
   '이미지를 불러오지 못했어요. 다른 이미지를 골라 주세요.': "Couldn't load the image. Please choose another one.",
+  '초대장이 완성되었습니다.': 'Your invitation is ready.',
+  '공유 주소를 만들지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't create the share link. Please try again shortly.",
+  '공유하지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't share. Please try again shortly.",
 };

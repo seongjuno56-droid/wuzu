@@ -159,7 +159,8 @@ export function InviteCard({
         {status === 'active' && (
           <>
             <CardButton label="기간 연장" onPress={() => onAction('extend')} />
-            <CardButton label="공유하기" onPress={() => onAction('share')} />
+            {/* 주소는 첫 활성화 때 생긴다. 없으면 보낼 주소가 없다 */}
+            {!!invitation.slug && <CardButton label="공유하기" onPress={() => onAction('share')} />}
             {bookButton(true)}
             {more}
           </>

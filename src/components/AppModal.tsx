@@ -26,14 +26,16 @@ interface Props {
   avoidKeyboard?: boolean;
   /** 모달이 열린 채로 안내를 띄울 때. 네이티브 모달은 앱의 토스트를 가리므로 모달 안에도 둔다 */
   withToast?: boolean;
+  /** iOS 전용: 닫힘 애니메이션까지 끝났을 때. 안드로이드·웹에서는 불리지 않는다 */
+  onClosed?: () => void;
 }
 
-export function AppModal({ visible, title, message, art, children, actions, onDismiss, avoidKeyboard, withToast }: Props) {
+export function AppModal({ visible, title, message, art, children, actions, onDismiss, avoidKeyboard, withToast, onClosed }: Props) {
   // 버튼 문구가 길면 나란히 두면 줄바꿈되므로 세로로 쌓는다 (주 버튼이 위)
   const stacked = actions.some((a) => a.label.length > 8);
   const ordered = stacked ? [...actions].reverse() : actions;
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss} onDismiss={onClosed}>
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={avoidKeyboard && Platform.OS === 'ios' ? 'padding' : undefined}

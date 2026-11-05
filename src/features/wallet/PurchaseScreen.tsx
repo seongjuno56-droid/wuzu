@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 
+import { AppModal } from '../../components/AppModal';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { LoadFailed } from '../../components/LoadFailed';
@@ -15,6 +16,7 @@ import { colors, radius, spacing } from '../../theme';
 import type { Invitation } from '../invitation/model';
 import { periodLabel } from '../invitation/status';
 import { invitationKind } from '../../data/themes';
+import { shareInvitation } from '../my-invites/share';
 import { ACTIVATION, EXTEND_OPTIONS, orderCost, orderLines } from './pricing';
 import { usePurchaseFlow } from './usePurchaseFlow';
 import { useWallet } from './useWallet';
@@ -60,12 +62,50 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
   const [failed, setFailed] = useState(false);
   const loaded = useRef(false);
   const [days, setDays] = useState<ExtendDays | 0>(0);
+  // 첫 활성화 완료 안내. 활성화된 값을 들고 있어 공유 뒤에도 잃지 않는다
+  const [completed, setCompleted] = useState<Invitation | null>(null);
+  // 안내를 띄운 뒤로는 이 화면의 초대장 값이 낡았으므로 다시 구매하지 못하게 한다
+  const [finished, setFinished] = useState(false);
+  const leaving = useRef(false);
+  const shareOnClosed = useRef<Invitation | null>(null);
   const flow = usePurchaseFlow({
-    onDone: () => {
+    onDone: (saved) => {
+      // 만료 뒤 다시 활성화할 때는 activatedAt 이 남아 있어 첫 활성화가 아니다
+      if (mode === 'activate' && inv && !inv.activatedAt) {
+        setFinished(true);
+        setCompleted(saved);
+        return;
+      }
       toast('구매를 완료하였습니다.');
       router.back();
     },
   });
+
+  const toMyInvites = () => router.dismissTo('/my-invites');
+  // 취소·실패(안내는 shareInvitation 이 한다)여도 활성화는 끝났고, 나의 초대장 카드에서 다시 공유할 수 있다
+  const shareAndLeave = async (target: Invitation) => {
+    await shareInvitation(target);
+    toMyInvites();
+  };
+  const closeNotice = () => {
+    if (leaving.current) return;
+    leaving.current = true;
+    setCompleted(null);
+    toMyInvites();
+  };
+  const shareNotice = () => {
+    if (leaving.current || !completed) return;
+    leaving.current = true;
+    setCompleted(null);
+    // iOS 는 모달이 사라지는 중에 공유 시트를 띄우지 못한다. 웹 복사는 누른 순간에 해야 해서 기다리지 않는다
+    if (Platform.OS === 'ios') shareOnClosed.current = completed;
+    else void shareAndLeave(completed);
+  };
+  const onNoticeClosed = () => {
+    const target = shareOnClosed.current;
+    shareOnClosed.current = null;
+    if (target) void shareAndLeave(target);
+  };
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -131,7 +171,7 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
   const period = periodLabel(inv);
 
   const buy = () => {
-    if (!order) return;
+    if (!order || finished) return;
     void flow.ask(order, '상품을 구매하시겠습니까?', mode === 'activate' ? '구매 시 서비스가 활성화 됩니다.' : undefined);
   };
 
@@ -141,7 +181,7 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
       contentStyle={styles.content}
       footer={
         <View style={styles.footer}>
-          <Button label={flow.busy ? '처리 중…' : '레터로 구매하기'} onPress={buy} disabled={!order || flow.busy} />
+          <Button label={flow.busy ? '처리 중…' : '레터로 구매하기'} onPress={buy} disabled={!order || flow.busy || finished} />
           <Txt variant="tiny" color={colors.muted} align="center">
             <Txt variant="tiny" color={colors.muted} onPress={() => router.push('/about/terms')}>이용약관</Txt>
             {' | '}
@@ -250,6 +290,16 @@ export function PurchaseScreen({ mode, invitationId }: { mode: 'activate' | 'ext
         구매 후 남은 레터 {after}
       </Txt>
       {flow.modals}
+      <AppModal
+        visible={!!completed}
+        title="초대장이 완성되었습니다."
+        onDismiss={closeNotice}
+        onClosed={onNoticeClosed}
+        actions={[
+          { label: '닫기', variant: 'outline', onPress: closeNotice },
+          { label: '공유하기', onPress: shareNotice },
+        ]}
+      />
     </Screen>
   );
 }
