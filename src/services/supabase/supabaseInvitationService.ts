@@ -9,6 +9,8 @@ import { rpcCaller } from './rpc';
 
 /** 저장은 모달을 닫을 수 없는 동안 돈다. 멈춘 요청도 이 시간 뒤에는 다시 시도할 수 있는 실패로 끝난다 */
 export const SAVE_TIMEOUT_MS = 30_000;
+/** 하객 링크 읽기. 멈춘 요청도 이 시간 뒤에는 [다시 시도] 가 나온다 */
+export const GUEST_READ_TIMEOUT_MS = 15_000;
 
 /** 서버 값(r2://키) → 앱 값(공개 주소) */
 const fromServer = (inv: Invitation) => mapInvitationMedia(inv, fromMediaRef);
@@ -89,9 +91,10 @@ export function createSupabaseInvitationService(client: SupabaseClient): Invitat
     },
 
     async getBySlug(slug) {
-      const r = await call<{ state: 'active' | 'expired' | 'not_found'; invitation?: GuestInvitation }>('guest_invitation', {
-        p_slug: slug,
-      });
+      const r = await withTimeout(
+        () => call<{ state: 'active' | 'expired' | 'not_found'; invitation?: GuestInvitation }>('guest_invitation', { p_slug: slug }),
+        GUEST_READ_TIMEOUT_MS,
+      );
       return r.invitation ? { state: r.state, invitation: fromServer(fromGuest(r.invitation)) } : { state: r.state };
     },
 

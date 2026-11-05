@@ -27,7 +27,7 @@ interface Props {
   isOwner: boolean;
   /** 하객이 쓰는 폼이면 수집 안내를 폼 아래에 둔다 (템플릿 미리보기는 저장하지 않으므로 없다) */
   guestNotice?: boolean;
-  onAdd:(input: GuestbookInput) => Promise<void>;
+  onAdd: (input: GuestbookInput) => Promise<void>;
   onRemove: (entry: GuestbookEntry, password: string | null) => Promise<'ok' | 'wrong_password' | 'not_found' | 'rate_limited'>;
 }
 

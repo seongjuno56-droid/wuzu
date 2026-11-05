@@ -26,7 +26,7 @@ interface Props {
   avoidKeyboard?: boolean;
   /** 모달이 열린 채로 안내를 띄울 때. 네이티브 모달은 앱의 토스트를 가리므로 모달 안에도 둔다 */
   withToast?: boolean;
-  /** iOS 전용: 닫힘 애니메이션까지 끝났을 때. 안드로이드·웹에서는 불리지 않는다 */
+  /** iOS·웹: 닫힘 애니메이션까지 끝났을 때. 안드로이드에서는 불리지 않는다 */
   onClosed?: () => void;
 }
 

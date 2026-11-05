@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { AppModal } from '../../components/AppModal';
 import { TextField } from '../../components/TextField';
@@ -30,6 +30,7 @@ export function RsvpFormModal(props: Props) {
 }
 
 function RsvpForm({ themeId, initial, title, submitLabel, guestNotice, onClose, onSubmit }: Props) {
+  const { height } = useWindowDimensions();
   const [v, setV] = useState(initial);
   const [tried, setTried] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -66,7 +67,8 @@ function RsvpForm({ themeId, initial, title, submitLabel, guestNotice, onClose, 
         { label: submitLabel, onPress: submit },
       ]}
     >
-      <View style={styles.form}>
+      {/* 낮은 화면에서도 제목과 버튼은 그대로 두고 입력 칸만 스크롤한다 */}
+      <ScrollView style={{ maxHeight: formMaxHeight(height) }} contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <TextField
           label="이름"
           required
@@ -145,10 +147,13 @@ function RsvpForm({ themeId, initial, title, submitLabel, guestNotice, onClose, 
           </Txt>
         )}
         {guestNotice && <GuestDataNotice />}
-      </View>
+      </ScrollView>
     </AppModal>
   );
 }
+
+/** 모달의 제목·버튼·여백이 차지하는 높이를 뺀 값. 아주 낮은 화면에서도 칸 하나는 보이게 한다 */
+export const formMaxHeight = (windowHeight: number) => Math.max(120, windowHeight - 230);
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

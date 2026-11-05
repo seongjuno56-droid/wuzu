@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Invitation } from '../../features/invitation/model';
 import { createInvitation } from '../../features/invitation/themes';
-import { createSupabaseInvitationService, SAVE_TIMEOUT_MS } from '../supabase/supabaseInvitationService';
+import { createSupabaseInvitationService, GUEST_READ_TIMEOUT_MS, SAVE_TIMEOUT_MS } from '../supabase/supabaseInvitationService';
 
 const UUID = '11111111-2222-4333-8444-555555555555';
 const ENTRY = '99999999-2222-4333-8444-555555555555';
@@ -217,6 +217,20 @@ describe('Supabase 초대장 서비스', () => {
 
     it('네트워크 오류는 not_found 로 바꾸지 않고 던진다', async () => {
       await expect(fake({ guest_invitation: NETWORK }).service.getBySlug('s')).rejects.toThrow('Network');
+    });
+
+    it('응답이 멈추면 시간 제한 뒤 던져 [다시 시도] 가 나오게 한다', async () => {
+      jest.useFakeTimers();
+      try {
+        const rpc = jest.fn(() => new Promise(() => {}));
+        const service = createSupabaseInvitationService({ rpc } as unknown as SupabaseClient);
+        const result = service.getBySlug('s');
+        const failed = expect(result).rejects.toThrow('TIMEOUT');
+        await jest.advanceTimersByTimeAsync(GUEST_READ_TIMEOUT_MS);
+        await failed;
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 
