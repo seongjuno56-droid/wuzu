@@ -202,4 +202,9 @@ export const part4: Record<string, string> = {
   '초대장이 완성되었습니다.': 'Your invitation is ready.',
   '공유 주소를 만들지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't create the share link. Please try again shortly.",
   '공유하지 못했어요. 잠시 후 다시 시도해 주세요.': "Couldn't share. Please try again shortly.",
+  '입력하신 이름·소속·연락처·내용은 초대장을 만든 분께 전달하기 위해 수집하며, 초대장 기간이 끝나고 30일 뒤 삭제돼요.':
+    'Your name, organization, phone number and message are collected to pass on to the person who made this invitation, and are deleted 30 days after the invitation period ends.',
+  '개인정보 처리방침 보기': 'View Privacy Policy',
+  '기간이 끝난 초대장이에요': 'This invitation has expired',
+  '최근 200개만 보여요': 'Showing the latest 200 only',
 };

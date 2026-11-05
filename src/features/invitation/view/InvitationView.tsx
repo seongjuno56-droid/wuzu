@@ -31,7 +31,7 @@ export function InvitationView({ invitation, mode, showBgm = true, ...handlers }
         ) : (
           <ScrollInvitation invitation={invitation} {...handlers} />
         )}
-        {showBgm && enabled.bgm && content.bgm.uri && <BgmButton bgm={content.bgm} />}
+        {showBgm && enabled.bgm && !!content.bgm.uri && <BgmButton bgm={content.bgm} />}
       </View>
     </LookProvider>
   );

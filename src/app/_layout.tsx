@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
 import { Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,8 +18,11 @@ const FONT_TIMEOUT_MS = 3000;
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
   const hydrated = useSession((s) => s.hydrated);
+  const segment = useSegments()[0] as string | undefined;
   // 하객이 웹으로 여는 초대장은 폴드·태블릿·PC 폭을 그대로 쓴다
-  const fullBleed = useSegments()[0] === 'invite';
+  const fullBleed = segment === 'invite' || segment === 'i';
+  // 공개 웹 화면(하객 링크·처리방침)은 로그인과 상관없다: 세션 복구를 부르지 않고 기다리지도 않는다
+  const publicRoute = segment === 'i' || segment === 'privacy';
   // 폰트 CDN이 느리거나 막혀도 시스템 폰트로 계속 진행
   const [fontTimedOut, setFontTimedOut] = useState(false);
   useEffect(() => {
@@ -28,11 +31,14 @@ export default function RootLayout() {
   }, []);
 
   // 저장된 세션이 복구되면 회원 정보를 서버에서 새로 읽는다 (정지·탈퇴 신청·세션 만료면 로그아웃)
+  const restored = useRef(false);
   useEffect(() => {
-    if (hydrated) restoreSession(authService);
-  }, [hydrated]);
+    if (!hydrated || publicRoute || restored.current) return;
+    restored.current = true;
+    restoreSession(authService);
+  }, [hydrated, publicRoute]);
 
-  const ready = hydrated && (fontsLoaded || !!fontError || fontTimedOut);
+  const ready = (hydrated || publicRoute) && (fontsLoaded || !!fontError || fontTimedOut);
 
   return (
     <GestureHandlerRootView style={styles.flex}>
@@ -52,7 +58,7 @@ export default function RootLayout() {
                 <Stack.Screen name="notifications" options={{ presentation: 'fullScreenModal' }} />
               </Stack>
             )}
-            <PaymentSheetHost />
+            {!publicRoute && <PaymentSheetHost />}
             <ToastHost />
           </View>
         </View>

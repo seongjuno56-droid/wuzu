@@ -11,9 +11,13 @@ import { toast, ToastHost } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
 import type { GuestbookEntry, GuestbookInput } from '../../services/types';
 import { colors, spacing } from '../../theme';
+import { GuestDataNotice } from './GuestDataNotice';
 import { LIMITS, validateGuestbookEntry } from './model';
 
 export type GuestbookView = 'write' | 'all' | null;
+
+/** 서버가 하객에게 주는 방명록 최대 개수 (guest_list_guestbook). 만든 사람은 전체를 본다 */
+const GUEST_LIST_LIMIT = 200;
 
 interface Props {
   view: GuestbookView;
@@ -21,7 +25,9 @@ interface Props {
   entries: GuestbookEntry[];
   /** 초대장 작성자 본인이면 비밀번호 없이 삭제 */
   isOwner: boolean;
-  onAdd: (input: GuestbookInput) => Promise<void>;
+  /** 하객이 쓰는 폼이면 수집 안내를 폼 아래에 둔다 (템플릿 미리보기는 저장하지 않으므로 없다) */
+  guestNotice?: boolean;
+  onAdd:(input: GuestbookInput) => Promise<void>;
   onRemove: (entry: GuestbookEntry, password: string | null) => Promise<'ok' | 'wrong_password' | 'not_found' | 'rate_limited'>;
 }
 
@@ -53,7 +59,7 @@ const WRITE_ERROR: Record<string, string> = {
   RATE_LIMITED: '지금은 글을 더 남길 수 없어요. 잠시 후 다시 시도해 주세요.',
 };
 
-function WriteSheet({ onClose, onAdd }: { onClose: () => void; onAdd: Props['onAdd'] }) {
+function WriteSheet({ onClose, onAdd, guestNotice }: { onClose: () => void; onAdd: Props['onAdd']; guestNotice?: boolean }) {
   const g = LIMITS.guestbook;
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -105,12 +111,13 @@ function WriteSheet({ onClose, onAdd }: { onClose: () => void; onAdd: Props['onA
           minHeight={180}
         />
         <Button label="방명록 남기기" disabled={!valid} loading={busy} onPress={submit} />
+        {guestNotice && <GuestDataNotice />}
       </ScrollView>
     </Sheet>
   );
 }
 
-function AllSheet({ onClose, entries, isOwner, onRemove }: Omit<Props, 'view' | 'onChangeView' | 'onAdd'> & { onClose: () => void }) {
+function AllSheet({ onClose, entries, isOwner, onRemove }: Omit<Props, 'view' | 'onChangeView' | 'onAdd' | 'guestNotice'> & { onClose: () => void }) {
   const [target, setTarget] = useState<GuestbookEntry | null>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +154,11 @@ function AllSheet({ onClose, entries, isOwner, onRemove }: Omit<Props, 'view' | 
         <Txt variant="caption" color={colors.muted} align="center">
           초대장을 받은 모든 사용자가 내용을 열람할 수 있어요.
         </Txt>
+        {!isOwner && entries.length >= GUEST_LIST_LIMIT && (
+          <Txt variant="caption" color={colors.muted} align="center">
+            최근 200개만 보여요
+          </Txt>
+        )}
         {entries.length === 0 && (
           <Txt color={colors.faint} align="center" style={styles.empty}>
             아직 남겨진 방명록이 없어요.
@@ -209,10 +221,11 @@ function AllSheet({ onClose, entries, isOwner, onRemove }: Omit<Props, 'view' | 
 }
 
 /** 방명록 작성 / 전체보기 / 삭제 — 미리보기와 실제 초대장이 같이 쓴다 */
-export function GuestbookModals({ view, onChangeView, entries, isOwner, onAdd, onRemove }: Props) {
+export function GuestbookModals({ view, onChangeView, entries, isOwner, guestNotice, onAdd, onRemove }: Props) {
   if (view === 'write')
     return (
       <WriteSheet
+        guestNotice={guestNotice}
         onClose={() => onChangeView(null)}
         onAdd={async (input) => {
           await onAdd(input);

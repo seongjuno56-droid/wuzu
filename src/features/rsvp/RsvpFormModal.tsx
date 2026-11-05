@@ -6,6 +6,7 @@ import { TextField } from '../../components/TextField';
 import { toast } from '../../components/Toast';
 import { Txt } from '../../components/Txt';
 import { colors, radius, spacing } from '../../theme';
+import { GuestDataNotice } from '../invitation/GuestDataNotice';
 import { RSVP_LIMITS, RSVP_MESSAGE, RsvpField, RsvpInput, rsvpFields, validateRsvp } from './rsvp';
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   initial: RsvpInput;
   title: string;
   submitLabel: string;
+  /** 하객이 쓰는 폼이면 수집 안내를 폼 아래에 둔다 (만든 사람의 직접 넣기에는 없다) */
+  guestNotice?: boolean;
   onClose: () => void;
   onSubmit: (input: RsvpInput) => Promise<'ok' | 'closed' | 'invalid' | 'not_found' | 'rate_limited'>;
 };
@@ -26,7 +29,7 @@ export function RsvpFormModal(props: Props) {
   return props.visible ? <RsvpForm {...props} /> : null;
 }
 
-function RsvpForm({ themeId, initial, title, submitLabel, onClose, onSubmit }: Props) {
+function RsvpForm({ themeId, initial, title, submitLabel, guestNotice, onClose, onSubmit }: Props) {
   const [v, setV] = useState(initial);
   const [tried, setTried] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -56,6 +59,8 @@ function RsvpForm({ themeId, initial, title, submitLabel, onClose, onSubmit }: P
       visible
       title={title}
       onDismiss={onClose}
+      // 거절 안내(rate_limited 등) 토스트가 모달 뒤로 가려지지 않게
+      withToast
       actions={[
         { label: '취소', variant: 'outline', onPress: onClose },
         { label: submitLabel, onPress: submit },
@@ -139,6 +144,7 @@ function RsvpForm({ themeId, initial, title, submitLabel, onClose, onSubmit }: P
             마감되었어요
           </Txt>
         )}
+        {guestNotice && <GuestDataNotice />}
       </View>
     </AppModal>
   );

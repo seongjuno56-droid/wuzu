@@ -41,6 +41,7 @@ jest.mock('../../../services', () => ({
     markGuestbookSeen: jest.fn(async () => {}),
   },
   rsvpService: { list: jest.fn(), get: jest.fn(), submit: jest.fn(), addManual: jest.fn() },
+  usingMockAuth: true,
   notificationService: { add: jest.fn() },
 }));
 jest.mock('@react-native-async-storage/async-storage', () => {
