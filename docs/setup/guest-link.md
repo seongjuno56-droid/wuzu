@@ -7,6 +7,8 @@
 
 ## 먼저 알아 둘 것 (비밀 값)
 
+작성 시험은 앱에서 합니다. 개발용 웹 화면에서 만들면 R2 CORS 설정이 없어 사진 올리기가 막힐 수 있습니다. 설치 앱과 하객 화면과는 관계없습니다.
+
 | 값 | 어디에 넣나 | 남에게 보여도 되나 |
 |---|---|---|
 | R2 **Secret Access Key** | **Supabase Edge Function 비밀값(secrets)에만** | **절대 안 됨** |
@@ -191,6 +193,10 @@ EXPO_PUBLIC_MEDIA_BASE_URL=https://pub-….r2.dev
 
 ## 4회차: 하객 웹 배포 (Vercel `wuzu-guest`)
 
+> **순서 경고.** 3회차의 SQL 파일 4개를 운영 DB 에 올리기 전에는 `main` 에 병합하지 않습니다. 병합하면 `wuzu-admin` 도 새 코드로 배포되는데, 새 표(`media_files`)가 없어 어드민 **초대장** 화면이 오류로 멈춥니다.
+
+> **시험 동안만 브랜치 바꾸기.** 카카오톡 카드 확인에는 정식 주소가 필요합니다. `wuzu-guest` 프로젝트에서만 **Settings** → **Environments** → **Production** 의 **Branch Tracking** 을 `feat/guest-link` 로 바꿉니다(화면 확인). `wuzu-admin` 은 건드리지 않습니다. 시험과 병합이 끝나면 `main` 으로 되돌립니다.
+
 저장소에 `vercel.json` 이 들어가면서 2회차 11번의 `exit 1` 을 이 파일의 `buildCommand` 가 대신합니다. Vercel 문서상 `vercel.json` 값이 프로젝트 설정보다 먼저입니다. 앞 번호 회차(1·3회차)와 Supabase 마이그레이션을 먼저 마친 뒤에 합니다.
 
 > **언제 공개되나.** 정식 주소(`wuzu-guest.vercel.app`)는 Production 브랜치(보통 `main`)에 코드가 들어가야 바뀝니다. main 병합은 사용자가 정합니다. 작업 브랜치의 Preview 주소는 2회차의 **Standard Protection** 때문에 로그인한 사람만 열 수 있고, 카카오톡 봇은 읽지 못합니다. 카드 확인은 정식 주소로 합니다.
@@ -338,10 +344,10 @@ select net.http_post(
 );
 ```
 
-18. 몇 초 뒤 아래를 실행합니다.
+18. 17번 결과에 숫자 하나(요청 번호)가 나옵니다. 몇 초 뒤 아래의 `요청번호` 자리에 그 숫자를 넣어 실행합니다. 결과가 비어 있으면 몇 초 더 기다렸다 다시 실행합니다.
 
 ```sql
-select status_code, content, timed_out, error_msg from net._http_response order by created desc limit 1;
+select status_code, content, timed_out, error_msg from net._http_response where id = 요청번호;
 ```
 
 이 표의 내용은 6시간 뒤 사라집니다.
@@ -359,8 +365,8 @@ select status_code, content, timed_out, error_msg from net._http_response order 
 20. **R2** → `wuzu-media` → **Objects** 에서 `invitations/` 아래에 그 파일이 있는지 봅니다 **(화면 확인)**. 폴더 이름(초대장 id)을 메모합니다.
 21. 앱에서 그 초대장을 삭제합니다.
 22. **15분을 기다립니다.** 삭제 직전에 내준 올리기 주소가 끝나기를 기다리는 시간이라, 그 전에는 대기열에서 나오지 않습니다.
-23. 17번과 18번을 다시 실행합니다.
-    - 음악 파일 하나면 `deleted` 가 `1` 입니다. 사진은 본 이미지와 작은 사진 두 개라 `2` 입니다. `failed` 는 `0` 이어야 합니다.
+23. 17번을 다시 실행해 새 요청 번호를 받고, 그 번호로 18번을 실행합니다.
+    - 음악 파일 하나면 `deleted` 가 `1` 입니다. 사진이 든 초대장은 본 이미지, 작은 사진, 링크 썸네일까지 파일이 더 있어 숫자가 더 큽니다. 숫자가 얼마든 `failed` 는 `0` 이어야 합니다.
 24. 20번 폴더를 다시 열어 파일이 없어졌는지 봅니다. `deleted` 숫자만 믿지 말고 눈으로 확인합니다.
 
 ### 대기열 점검

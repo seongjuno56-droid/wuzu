@@ -72,6 +72,16 @@ describe('uploadDraftMedia', () => {
     expect(deps.put).not.toHaveBeenCalled();
   });
 
+  it('공개 주소 설정이 없으면 파일을 올리기 전에 실패한다', async () => {
+    const { deps } = fakeDeps();
+    deps.publicUrl = () => {
+      throw new Error('no base');
+    };
+    const inv = invitation({ photos: ['file:///a.webp'] });
+    await expect(uploadDraftMedia(inv, deps)).rejects.toBeInstanceOf(MediaUploadError);
+    expect(deps.put).not.toHaveBeenCalled();
+  });
+
   it('한 파일이 실패하면 던지고, 다시 부르면 성공한 파일은 다시 올리지 않는다', async () => {
     const { deps, failing } = fakeDeps();
     failing.add('file:///b.webp');

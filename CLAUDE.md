@@ -68,6 +68,14 @@
 - [x] 10번 실서버 확인(2026-11-04): 가입 트리거, 탈퇴 확정과 재가입, cron, /delete-account(미리보기 배포) 통과. 안드로이드 /auth/callback 은 안드로이드 폰이 없어 못 봄. `main` 병합·운영 배포 완료(`6add700`), 운영 `/delete-account` 열림과 POST 제한 확인. **다음은 1-C**. 앱 전반 테스트(사진·음악·순서 바꾸기)는 사용자 확인 대기
 - 안내 방식: 사이트별 회차(1회차 Supabase → 2회차 구글 → 3회차 카카오 → 4회차 Vercel), 단계 하나 끝나면 사용자가 "N 됨" 이라고 보냄.
 
+### 1-C·1-D 하객 링크와 사진 — 브랜치 `feat/guest-link`
+
+- 설계 `docs/superpowers/specs/2026-11-04-guest-link-and-media-design.md`, 계획 `docs/superpowers/plans/2026-11-04-guest-link-and-media.md`, 사용자 설정 안내 `docs/setup/guest-link.md`.
+- 작업 1~10 코드 완료·검토 통과, 최종 전체 검토 완료(2026-11-06). **남은 일은 작업 11 실서버 확인**. 운영 DB·Cloudflare·`wuzu-guest` 는 아직 아무것도 안 함. 마이그레이션 4개 실행 전에는 main 병합 금지.
+- 하객 웹은 Vercel 새 프로젝트 `wuzu-guest`. 실제 하객에게 보내기 전에 Pro 로 올린다. 2단계 전에는 정식 출시하지 않는다(레터 없이 활성화 가능).
+- 작업 11 에서 처음 확인할 것: R2 content-length 서명과 없는 키 삭제 응답, `content:` 읽기·20MB 메모리, 공유 시트(iOS 모달 닫힘 신호), `includeFiles`, `apikey` 헤더, 카카오 카드. 공개 전 판단: 숨김 중 저장, 도배 제한, 폼 안내의 공개 범위, 처리방침 법적 확인.
+- 토큰 절약 요청(2026-11-05): 하위 에이전트와 30분 예약을 꼭 필요할 때만 쓴다.
+
 ### 미뤄 둔 것
 
 - 1-D 때 `finalize_withdrawals` 가 R2 파일도 지우게 새 마이그레이션으로 고친다("사진 30일 뒤 삭제" 문구가 이미 공개됨).

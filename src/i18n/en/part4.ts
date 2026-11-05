@@ -107,6 +107,8 @@ export const part4: Record<string, string> = {
   '탈퇴 신청으로부터 30일이 초과된 시점부터는 계정을 복구하실 수 없습니다.': 'After 30 days, your account cannot be recovered.',
   '탈퇴 신청일 :': 'Requested on:',
   '탈퇴 철회하기': 'Cancel deletion',
+  '내가 만든 초대장의 사진과, 하객이 남긴 방명록·참석 응답도 함께 삭제됩니다.':
+    'Photos in invitations you made, and guestbook entries and RSVPs left by guests, are deleted as well.',
   '탈퇴 후 커뮤니티 등 서비스 내에 작성한 게시물과 댓글은 삭제 처리가 불가합니다.': 'Posts and comments you wrote cannot be deleted after you leave.',
   '탈퇴를 진행하는 30일 동안 동일한 채널을 통한 가입은 불가합니다.': "During the 30 days, you can't sign up again with the same account.",
   '탈퇴신청 후 30일 이내': 'Within 30 days',

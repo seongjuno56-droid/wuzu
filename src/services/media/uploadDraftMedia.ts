@@ -128,6 +128,12 @@ export async function uploadDraftMedia(inv: Invitation, deps: UploadDeps): Promi
   const items = collectLocalMedia(inv).filter((m) => !seen.has(m.uri) && !!seen.add(m.uri));
   if (items.length === 0) return inv;
   if (!isServerId(inv.id)) throw new MediaUploadError(new Error(/* i18n-ignore */ '서버 id 가 없다'));
+  // 주소 설정이 없으면 올린 뒤에야 실패해 다시 시도할 때마다 파일이 쌓인다. 올리기 전에 막는다
+  try {
+    deps.publicUrl('check');
+  } catch (e) {
+    throw new MediaUploadError(e);
+  }
 
   let done = 0;
   let next = 0;
