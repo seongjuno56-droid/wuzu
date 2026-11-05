@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Keyboard } from 'react-native';
 
 import { AppModal } from '../../../components/AppModal';
 import { TextField } from '../../../components/TextField';
@@ -40,7 +41,14 @@ export function SaveNameModal(props: {
       withToast
       actions={[
         { label: '취소', variant: 'outline', onPress: cancel },
-        { label: saving ? '저장 중…' : '저장', onPress: () => valid && !saving && onSave(name.trim()) },
+        {
+          label: saving ? '저장 중…' : '저장',
+          onPress: () => {
+            // 토스트는 화면 아래에 뜨므로 키보드를 먼저 내려야 실패 안내가 가려지지 않는다
+            Keyboard.dismiss();
+            if (valid && !saving) onSave(name.trim());
+          },
+        },
       ]}
     >
       <TextField

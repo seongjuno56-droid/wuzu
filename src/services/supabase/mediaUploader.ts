@@ -26,7 +26,8 @@ export function createMediaUploader(client: SupabaseClient): MediaUploader {
         return { body, type: body.type, bytes: body.size };
       },
       async put(url, headers, body, signal) {
-        // 안드로이드는 Blob 자신의 형식이 content-type 헤더를 덮어쓴다. 서명한 형식과 다르면 R2 가 언제나 403 으로 거절하므로 맞춘다
+        // 방어용: Expo 58 의 전역 fetch(expo/fetch)는 직접 준 헤더가 이기지만, RN 기본 XHR fetch 는 안드로이드에서 Blob 형식이 헤더를 덮어쓴다.
+        // 그 fetch 로 돌아가도 서명한 형식과 어긋나 R2 가 403 으로 거절하지 않게 맞춘다
         const typed = body.slice(0, body.size, headers['content-type']);
         const r = await fetch(url, { method: 'PUT', headers, body: typed, signal });
         if (!r.ok) throw new Error(`put_${r.status}`);
