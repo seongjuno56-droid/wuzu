@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { act } from 'react-test-renderer';
 
 import { mapInvitationMedia } from '../../../services/media/localMedia';
 import { press, render } from '../../../test/ui';
@@ -18,6 +19,9 @@ const mockResize = jest.fn();
 const mockSave = jest.fn();
 const mockManipulate = jest.fn();
 const mockPick = jest.fn();
+const mockDownload = jest.fn();
+const mockExists = jest.fn();
+const mockDelete = jest.fn();
 let mockSize = { width: 4000, height: 3000 };
 
 jest.mock('expo-image-manipulator', () => ({
@@ -33,6 +37,24 @@ jest.mock('expo-image-manipulator', () => ({
     },
   },
 }));
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: 'file:///cache' },
+  File: class {
+    static downloadFileAsync(...args: unknown[]): unknown {
+      return mockDownload(...args);
+    }
+    uri: string;
+    constructor(...parts: string[]) {
+      this.uri = parts.join('/');
+    }
+    get exists() {
+      return mockExists(this.uri);
+    }
+    delete() {
+      mockDelete(this.uri);
+    }
+  },
+}));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: (...args: unknown[]) => mockPick(...args) }));
 jest.mock('../../../components/Toast', () => ({ toast: jest.fn(), ToastHost: () => null }));
 
@@ -46,6 +68,8 @@ let made = 0;
 beforeEach(() => {
   jest.clearAllMocks();
   mockSize = { width: 4000, height: 3000 };
+  mockExists.mockReturnValue(true);
+  mockDownload.mockImplementation(async (_url: string, to: unknown) => to);
   mockSave.mockImplementation(async () => {
     made += 1;
     return { uri: `file:///made-${made}.jpg` };
@@ -176,18 +200,87 @@ describe('prepareLinkThumb', () => {
     expect(out.content.linkThumbSource).toBeUndefined();
   });
 
-  it('원본이 서버 주소면 내려받지 않고 건너뛴다', async () => {
+  it('원본이 서버 주소면 캐시에 내려받아 만들고, 내려받은 임시 파일은 지운다', async () => {
     const out = await prepareLinkThumb(inv('wedding', { gallery: [REMOTE] }));
-    expect(out.linkThumb ?? null).toBeNull();
+    expect(mockDownload).toHaveBeenCalledTimes(1);
+    const [url, to, options] = mockDownload.mock.calls[0];
+    expect(url).toBe(REMOTE);
+    expect(to.uri).toMatch(/^file:\/\/\/cache\//);
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+    expect(mockManipulate).toHaveBeenCalledWith(to.uri);
+    expect(out.linkThumb).toMatch(/^file:\/\/\/made-/);
+    expect(out.content.linkThumbSource).toBe(REMOTE);
+    expect(mockDelete).toHaveBeenCalledWith(to.uri);
+  });
+
+  it('직접 올린 썸네일을 지우고 저장하면 서버 사진으로 대체 이미지를 다시 만든다', async () => {
+    const photo = 'https://media.example/removed-case.webp';
+    const out = await prepareLinkThumb(inv('wedding', { gallery: [photo] }, { linkThumb: null }));
+    expect(out.linkThumb).toMatch(/^file:\/\/\/made-/);
+    expect(out.content.linkThumbSource).toBe(photo);
+  });
+
+  /** 옛 사진으로 만든 대체 이미지가 남아 있고, 원본은 다른 서버 사진으로 바뀐 초대장 */
+  function staleFallback(photo: string): Invitation {
+    const old = inv('wedding', { gallery: [photo] }, { linkThumb: 'https://media.example/old-thumb.jpg' });
+    return { ...old, content: { ...old.content, linkThumbSource: 'https://media.example/old.webp' } };
+  }
+
+  it('원본이 다른 서버 사진으로 바뀌면 대체 이미지를 새로 만든다', async () => {
+    const photo = 'https://media.example/reordered.webp';
+    const out = await prepareLinkThumb(staleFallback(photo));
+    expect(out.linkThumb).toMatch(/^file:\/\/\/made-/);
+    expect(out.content.linkThumbSource).toBe(photo);
+  });
+
+  it('내려받기가 실패하면 옛 이미지를 남기지 않고 null 이며, 다음 저장 때 다시 시도한다', async () => {
+    const photo = 'https://media.example/retry-next.webp';
+    mockDownload.mockRejectedValueOnce(new Error('끊김'));
+    const failed = await prepareLinkThumb(staleFallback(photo));
+    expect(failed.linkThumb).toBeNull();
+    expect(failed.content.linkThumbSource).toBeUndefined();
+
+    const next = await prepareLinkThumb(failed);
+    expect(mockDownload).toHaveBeenCalledTimes(2);
+    expect(next.linkThumb).toMatch(/^file:\/\/\/made-/);
+    expect(next.content.linkThumbSource).toBe(photo);
+  });
+
+  it('내려받기가 15초를 넘으면 끊고 null 로 저장을 잇는다', async () => {
+    jest.useFakeTimers();
+    try {
+      let signal!: AbortSignal;
+      mockDownload.mockImplementationOnce((_u: string, _t: unknown, o: { signal: AbortSignal }) => {
+        signal = o.signal;
+        return new Promise(() => {});
+      });
+      const pending = prepareLinkThumb(inv('wedding', { gallery: ['https://media.example/slow.webp'] }));
+      await jest.advanceTimersByTimeAsync(15_000);
+      const out = await pending;
+      expect(out.linkThumb ?? null).toBeNull();
+      expect(signal.aborted).toBe(true);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('유료 수정: 원본이 서버 주소여도 바뀐 게 없으면 내려받지도 만들지도 않는다', async () => {
+    const photo = 'https://media.example/unchanged.webp';
+    const old = inv('wedding', { gallery: [photo] }, { linkThumb: 'https://media.example/t.jpg' });
+    const same = { ...old, content: { ...old.content, linkThumbSource: photo } };
+    expect(await prepareLinkThumb(same)).toBe(same);
+    expect(mockDownload).not.toHaveBeenCalled();
     expect(mockManipulate).not.toHaveBeenCalled();
   });
 
-  it('원본이 다른 서버 주소로 바뀌었는데 만들 수 없으면 옛 사진의 대체 이미지를 남기지 않는다', async () => {
-    const old = inv('wedding', { gallery: [REMOTE] }, { linkThumb: 'https://media.example/old-thumb.jpg' });
-    const stale = { ...old, content: { ...old.content, linkThumbSource: 'https://media.example/old.webp' } };
-    const out = await prepareLinkThumb(stale);
-    expect(out.linkThumb).toBeNull();
-    expect(out.content.linkThumbSource).toBeUndefined();
+  it('기억해 둔 파일이 캐시에서 지워졌으면 다시 만든다', async () => {
+    const draft = inv('meetup', { cover: 'file:///cleared.webp' });
+    const first = await prepareLinkThumb(draft);
+    mockExists.mockReturnValue(false);
+    const again = await prepareLinkThumb(draft);
+    expect(mockExists).toHaveBeenCalledWith(first.linkThumb);
+    expect(mockSave).toHaveBeenCalledTimes(2);
+    expect(again.linkThumb).not.toBe(first.linkThumb);
   });
 });
 
@@ -203,6 +296,11 @@ describe('pickLinkThumb', () => {
     mockPick.mockResolvedValueOnce({ canceled: true, assets: [] });
     expect(await pickLinkThumb()).toBeNull();
     mockPick.mockResolvedValueOnce({ canceled: false, assets: [{ uri: 'file:///p.gif', mimeType: 'image/gif' }] });
+    expect(await pickLinkThumb()).toBeNull();
+  });
+
+  it('사진 앱을 열지 못해도 던지지 않고 null', async () => {
+    mockPick.mockRejectedValueOnce(new Error('권한 없음'));
     expect(await pickLinkThumb()).toBeNull();
   });
 
@@ -267,6 +365,71 @@ describe('입력 칸', () => {
     useEditor.getState().patch('basic', { photo: COVER });
     useEditor.getState().markSaved(await prepareLinkThumb(useEditor.getState().draft!));
     expect(show(<LinkThumbField />).queryText('지우기')).toBeNull();
+  });
+
+  describe('고르는 중', () => {
+    const ADD = '링크 썸네일 추가';
+    const asset = { canceled: false, assets: [{ uri: 'file:///p.png', mimeType: 'image/png' }] };
+    /** 사진 앱이 열려 있는 상태를 만든다 */
+    function holdPicker() {
+      let finish!: (v: unknown) => void;
+      mockPick.mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            finish = r;
+          }),
+      );
+      return (v: unknown = asset) => act(async () => finish(v));
+    }
+
+    it('고르는 동안 다시 눌러도 사진 앱을 한 번만 열고, 칸이 잠겼다가 풀린다', async () => {
+      start('wedding');
+      const finish = holdPicker();
+      const ui = show(<LinkThumbField />);
+      press(ui.getLabel(ADD));
+      expect(ui.getLabel(ADD).props.disabled).toBe(true);
+      press(ui.getLabel(ADD));
+      expect(mockPick).toHaveBeenCalledTimes(1);
+      await finish({ canceled: true, assets: [] });
+      expect(ui.getLabel(ADD).props.disabled).toBe(false);
+    });
+
+    it('고르는 동안 다른 초안으로 바뀌면 결과를 넣지 않는다', async () => {
+      start('wedding');
+      const finish = holdPicker();
+      const ui = show(<LinkThumbField />);
+      press(ui.getLabel(ADD));
+      act(() => start('wedding'));
+      await finish();
+      expect(useEditor.getState().draft!.linkThumb ?? null).toBeNull();
+    });
+
+    it('같은 초대장이면 고르는 동안 다른 칸을 고쳤거나 id 를 받아도 결과를 넣는다', async () => {
+      start('wedding');
+      const finish = holdPicker();
+      const ui = show(<LinkThumbField />);
+      press(ui.getLabel(ADD));
+      act(() => {
+        useEditor.getState().setPalette('p1');
+        useEditor.getState().setDraftId('11111111-2222-4333-8444-555555555555');
+      });
+      await finish();
+      expect(useEditor.getState().draft!.linkThumb).toMatch(/^file:\/\/\/made-/);
+    });
+
+    it('고르는 동안 초안이 비워지면 결과를 넣지 않고 다음 초안에도 남기지 않는다', async () => {
+      start('wedding');
+      const finish = holdPicker();
+      const ui = show(<LinkThumbField />);
+      press(ui.getLabel(ADD));
+      ui.unmount();
+      shown = null;
+      useEditor.getState().reset();
+      await finish();
+      expect(useEditor.getState().draft).toBeNull();
+      start('wedding');
+      expect(useEditor.getState().draft!.linkThumb ?? null).toBeNull();
+    });
   });
 
   it('선택 항목이라 비어 있어도 빨간 점이 생기지 않는다', () => {

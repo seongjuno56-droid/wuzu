@@ -24,6 +24,8 @@ interface EditorState {
   dirty: boolean;
   /** 나의 초대장에서 불러온 저장본 (수정 모드 판단용). 새로 만들면 null */
   origin: Invitation | null;
+  /** 초안을 새로 열거나 비울 때마다 바뀐다. 오래 걸리는 일의 결과가 다른 초안에 들어가지 않게 비교한다 (id 는 저장하며 바뀔 수 있어 못 쓴다) */
+  session: number;
   start: (args: { ownerId: string; themeId: string; templateId: string; today?: Date; viewMode?: ViewMode }) => void;
   load: (invitation: Invitation) => void;
   /** 서버의 최신 저장본으로 기준만 바꾼다 (편집 중 내용은 그대로) — 다른 곳에서 활성화된 경우 등 */
@@ -61,19 +63,21 @@ export const useEditor = create<EditorState>()((set, get) => ({
   draft: null,
   dirty: false,
   origin: null,
+  session: 0,
 
   start: ({ ownerId, themeId, templateId, today, viewMode }) =>
     set({
       draft: createInvitation({ id: newId(), ownerId, themeId, templateId, today, viewMode }),
       dirty: false,
       origin: null,
+      session: get().session + 1,
     }),
 
-  load: (invitation) => set({ draft: invitation, dirty: false, origin: invitation }),
+  load: (invitation) => set((s) => ({ draft: invitation, dirty: false, origin: invitation, session: s.session + 1 })),
 
   setOrigin: (invitation) => set({ origin: invitation }),
 
-  reset: () => set({ draft: null, dirty: false, origin: null }),
+  reset: () => set((s) => ({ draft: null, dirty: false, origin: null, session: s.session + 1 })),
 
   setEnabled: (key, value) =>
     set((s) => (s.draft ? { draft: { ...s.draft, enabled: { ...s.draft.enabled, [key]: value } }, dirty: true } : s)),
